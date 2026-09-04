@@ -13,7 +13,8 @@ export function contentTypeDaExtensao(extensao: "png" | "jpg") {
 }
 
 export async function salvarLogoBlob(bytes: Buffer, contentType: string) {
-  await store().set(KEY, bytes, { metadata: { contentType } });
+  const blob = new Blob([Uint8Array.from(bytes)]);
+  await store().set(KEY, blob, { metadata: { contentType } });
 }
 
 export async function obterLogoBlob(): Promise<{
