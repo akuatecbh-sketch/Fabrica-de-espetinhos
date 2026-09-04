@@ -1,0 +1,571 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model caixa {
+  id                                           Int                  @id @default(autoincrement())
+  usuario_abertura_id                          Int
+  usuario_fechamento_id                        Int?
+  valor_abertura                               Decimal              @default(0) @db.Decimal(12, 2)
+  valor_fechamento_informado                   Decimal?             @db.Decimal(12, 2)
+  valor_fechamento_sistema                     Decimal?             @db.Decimal(12, 2)
+  diferenca                                    Decimal?             @db.Decimal(12, 2)
+  data_abertura                                DateTime             @default(now()) @db.Timestamp(6)
+  data_fechamento                              DateTime?            @db.Timestamp(6)
+  status                                       String               @default("aberto") @db.VarChar(20)
+  usuario_caixa_usuario_abertura_idTousuario   usuario              @relation("caixa_usuario_abertura_idTousuario", fields: [usuario_abertura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario_caixa_usuario_fechamento_idTousuario usuario?             @relation("caixa_usuario_fechamento_idTousuario", fields: [usuario_fechamento_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  movimentacao_caixa                           movimentacao_caixa[]
+  venda                                        venda[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model categoria_financeira {
+  id          Int           @id @default(autoincrement())
+  nome        String        @db.VarChar(80)
+  tipo        String        @db.VarChar(20)
+  conta_pagar conta_pagar[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model categoria_produto {
+  id      Int       @id @default(autoincrement())
+  nome    String    @db.VarChar(80)
+  tipo    String    @db.VarChar(20)
+  produto produto[]
+}
+
+model cliente {
+  id              Int             @id @default(autoincrement())
+  nome            String          @db.VarChar(150)
+  cpf             String?         @unique @db.Char(11)
+  telefone        String?         @db.VarChar(20)
+  email           String?         @db.VarChar(150)
+  endereco        String?         @db.VarChar(255)
+  data_nascimento DateTime?       @db.Date
+  criado_em       DateTime        @default(now()) @db.Timestamp(6)
+  conta_receber   conta_receber[]
+  venda           venda[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conta_pagar {
+  id                     Int                  @id @default(autoincrement())
+  fornecedor_id          Int?
+  funcionario_id         Int?
+  categoria_id           Int
+  nota_fiscal_entrada_id Int?
+  descricao              String               @db.VarChar(200)
+  valor                  Decimal              @db.Decimal(12, 2)
+  data_vencimento        DateTime             @db.Date
+  data_pagamento         DateTime?            @db.Date
+  status                 String               @default("aberta") @db.VarChar(20)
+  recorrente             Boolean              @default(false)
+  criado_em              DateTime             @default(now()) @db.Timestamp(6)
+  categoria_financeira   categoria_financeira @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fornecedor             fornecedor?          @relation(fields: [fornecedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  funcionario            funcionario?         @relation(fields: [funcionario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nota_fiscal_entrada    nota_fiscal_entrada? @relation(fields: [nota_fiscal_entrada_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model conta_receber {
+  id               Int       @id @default(autoincrement())
+  cliente_id       Int?
+  venda_id         Int?
+  descricao        String    @db.VarChar(200)
+  valor            Decimal   @db.Decimal(12, 2)
+  data_vencimento  DateTime  @db.Date
+  data_recebimento DateTime? @db.Date
+  status           String    @default("aberta") @db.VarChar(20)
+  criado_em        DateTime  @default(now()) @db.Timestamp(6)
+  cliente          cliente?  @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda            venda?    @relation(fields: [venda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ferias {
+  id                        Int         @id @default(autoincrement())
+  funcionario_id            Int
+  periodo_aquisitivo_inicio DateTime    @db.Date
+  periodo_aquisitivo_fim    DateTime    @db.Date
+  data_inicio_programada    DateTime?   @db.Date
+  data_fim_programada       DateTime?   @db.Date
+  dias_gozados              Int?
+  dias_vendidos             Int?        @default(0)
+  status                    String      @default("pendente") @db.VarChar(20)
+  observacao                String?
+  funcionario               funcionario @relation(fields: [funcionario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ficha_tecnica {
+  id                                              Int     @id @default(autoincrement())
+  produto_final_id                                Int
+  insumo_id                                       Int
+  quantidade                                      Decimal @db.Decimal(12, 4)
+  produto_ficha_tecnica_insumo_idToproduto        produto @relation("ficha_tecnica_insumo_idToproduto", fields: [insumo_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  produto_ficha_tecnica_produto_final_idToproduto produto @relation("ficha_tecnica_produto_final_idToproduto", fields: [produto_final_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([produto_final_id, insumo_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model forma_pagamento {
+  id                 Int                  @id @default(autoincrement())
+  nome               String               @db.VarChar(40)
+  tipo               String               @db.VarChar(20)
+  movimentacao_caixa movimentacao_caixa[]
+  taxa_cartao        taxa_cartao[]
+  venda_pagamento    venda_pagamento[]
+}
+
+model fornecedor {
+  id                  Int                   @id @default(autoincrement())
+  razao_social        String                @db.VarChar(150)
+  nome_fantasia       String?               @db.VarChar(150)
+  cnpj_cpf            String                @unique @db.VarChar(18)
+  inscricao_estadual  String?               @db.VarChar(20)
+  telefone            String?               @db.VarChar(20)
+  email               String?               @db.VarChar(150)
+  endereco            String?               @db.VarChar(255)
+  contato_nome        String?               @db.VarChar(100)
+  ativo               Boolean               @default(true)
+  criado_em           DateTime              @default(now()) @db.Timestamp(6)
+  conta_pagar         conta_pagar[]
+  nota_fiscal_entrada nota_fiscal_entrada[]
+}
+
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model funcionario {
+  id              Int           @id @default(autoincrement())
+  usuario_id      Int?
+  nome            String        @db.VarChar(150)
+  cpf             String        @unique @db.Char(11)
+  rg              String?       @db.VarChar(20)
+  data_nascimento DateTime      @db.Date
+  telefone        String?       @db.VarChar(20)
+  email           String?       @db.VarChar(150)
+  endereco        String?       @db.VarChar(255)
+  cargo           String        @db.VarChar(80)
+  salario         Decimal       @db.Decimal(10, 2)
+  data_admissao   DateTime      @db.Date
+  data_demissao   DateTime?     @db.Date
+  ativo           Boolean       @default(true)
+  criado_em       DateTime      @default(now()) @db.Timestamp(6)
+  conta_pagar     conta_pagar[]
+  ferias          ferias[]
+  usuario         usuario?      @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model movimentacao_caixa {
+  id                 Int              @id @default(autoincrement())
+  caixa_id           Int
+  tipo               String           @db.VarChar(20)
+  forma_pagamento_id Int?
+  valor              Decimal          @db.Decimal(12, 2)
+  origem_tipo        String?          @db.VarChar(30)
+  origem_id          Int?
+  usuario_id         Int?
+  observacao         String?
+  criado_em          DateTime         @default(now()) @db.Timestamp(6)
+  caixa              caixa            @relation(fields: [caixa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  forma_pagamento    forma_pagamento? @relation(fields: [forma_pagamento_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario            usuario?         @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model movimentacao_estoque {
+  id             Int      @id @default(autoincrement())
+  produto_id     Int
+  tipo           String   @db.VarChar(20)
+  quantidade     Decimal  @db.Decimal(12, 3)
+  saldo_anterior Decimal  @db.Decimal(12, 3)
+  saldo_atual    Decimal  @db.Decimal(12, 3)
+  origem_tipo    String?  @db.VarChar(30)
+  origem_id      Int?
+  usuario_id     Int?
+  observacao     String?
+  criado_em      DateTime @default(now()) @db.Timestamp(6)
+  produto        produto  @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario        usuario? @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([produto_id, criado_em], map: "idx_movimentacao_produto")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model nfce {
+  id                    Int       @id @default(autoincrement())
+  venda_id              Int       @unique
+  chave_acesso          String?   @unique @db.Char(44)
+  numero                Int?
+  serie                 Int?
+  protocolo_autorizacao String?   @db.VarChar(50)
+  status                String    @default("pendente") @db.VarChar(20)
+  xml_url               String?   @db.VarChar(255)
+  danfe_url             String?   @db.VarChar(255)
+  data_emissao          DateTime? @db.Timestamp(6)
+  mensagem_sefaz        String?
+  venda                 venda     @relation(fields: [venda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model nota_fiscal_entrada {
+  id                       Int                        @id @default(autoincrement())
+  fornecedor_id            Int
+  numero                   String                     @db.VarChar(20)
+  serie                    String?                    @db.VarChar(10)
+  chave_acesso             String?                    @unique @db.Char(44)
+  data_emissao             DateTime                   @db.Date
+  data_entrada             DateTime                   @default(dbgenerated("CURRENT_DATE")) @db.Date
+  valor_produtos           Decimal                    @db.Decimal(12, 2)
+  valor_frete              Decimal?                   @default(0) @db.Decimal(12, 2)
+  valor_desconto           Decimal?                   @default(0) @db.Decimal(12, 2)
+  valor_total              Decimal                    @db.Decimal(12, 2)
+  status                   String                     @default("lancada") @db.VarChar(20)
+  xml_url                  String?                    @db.VarChar(255)
+  usuario_id               Int?
+  criado_em                DateTime                   @default(now()) @db.Timestamp(6)
+  conta_pagar              conta_pagar[]
+  fornecedor               fornecedor                 @relation(fields: [fornecedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario                  usuario?                   @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nota_fiscal_entrada_item nota_fiscal_entrada_item[]
+
+  @@unique([fornecedor_id, numero, serie])
+}
+
+model nota_fiscal_entrada_item {
+  id                     Int                 @id @default(autoincrement())
+  nota_fiscal_entrada_id Int
+  produto_id             Int
+  quantidade             Decimal             @db.Decimal(12, 3)
+  valor_unitario         Decimal             @db.Decimal(12, 4)
+  valor_total            Decimal             @db.Decimal(12, 2)
+  lote                   String?             @db.VarChar(50)
+  data_validade          DateTime?           @db.Date
+  nota_fiscal_entrada    nota_fiscal_entrada @relation(fields: [nota_fiscal_entrada_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  produto                produto             @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model produto {
+  id                                                    Int                        @id @default(autoincrement())
+  codigo                                                String?                    @unique @db.VarChar(30)
+  nome                                                  String                     @db.VarChar(150)
+  categoria_id                                          Int
+  tipo                                                  String                     @db.VarChar(20)
+  unidade_medida_id                                     Int
+  controla_estoque                                      Boolean                    @default(true)
+  estoque_minimo                                        Decimal?                   @default(0) @db.Decimal(12, 3)
+  estoque_atual                                         Decimal                    @default(0) @db.Decimal(12, 3)
+  preco_custo_medio                                     Decimal?                   @default(0) @db.Decimal(12, 4)
+  preco_venda                                           Decimal?                   @db.Decimal(12, 2)
+  ativo                                                 Boolean                    @default(true)
+  criado_em                                             DateTime                   @default(now()) @db.Timestamp(6)
+  codigo_barras                                         String?                    @unique @db.Char(13)
+  estoque_ideal                                         Decimal?                   @db.Decimal(12, 3)
+  estoque_maximo                                        Decimal?                   @db.Decimal(12, 3)
+  quantidade_por_pacote                                 Decimal                    @default(1) @db.Decimal(12, 3)
+  preco_pacote                                          Decimal?                   @db.Decimal(12, 2)
+  permite_venda_pacote                                  Boolean                    @default(false)
+  dias_validade                                         Int?
+  vendido_por_peso                                      Boolean                    @default(false)
+  peso_aproximado_g                                     Decimal?                   @db.Decimal(12, 1)
+  ingredientes                                          String?
+  contem_alergenicos                                    String?
+  pode_conter_tracos                                    String?
+  etiqueta_impressao                                    etiqueta_impressao[]
+  ficha_tecnica_ficha_tecnica_insumo_idToproduto        ficha_tecnica[]            @relation("ficha_tecnica_insumo_idToproduto")
+  ficha_tecnica_ficha_tecnica_produto_final_idToproduto ficha_tecnica[]            @relation("ficha_tecnica_produto_final_idToproduto")
+  movimentacao_estoque                                  movimentacao_estoque[]
+  nota_fiscal_entrada_item                              nota_fiscal_entrada_item[]
+  categoria_produto                                     categoria_produto          @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  unidade_medida                                        unidade_medida             @relation(fields: [unidade_medida_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda_item                                            venda_item[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model taxa_cartao {
+  id                 Int               @id @default(autoincrement())
+  forma_pagamento_id Int
+  adquirente         String            @default("Padrão") @db.VarChar(60)
+  numero_parcelas    Int               @default(1)
+  percentual         Decimal           @db.Decimal(5, 2)
+  vigencia_inicio    DateTime          @default(dbgenerated("CURRENT_DATE")) @db.Date
+  vigencia_fim       DateTime?         @db.Date
+  usuario_id         Int?
+  criado_em          DateTime          @default(now()) @db.Timestamp(6)
+  atualizado_em      DateTime          @default(now()) @db.Timestamp(6)
+  forma_pagamento    forma_pagamento   @relation(fields: [forma_pagamento_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario            usuario?          @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda_pagamento    venda_pagamento[]
+
+  @@unique([forma_pagamento_id, adquirente, numero_parcelas], map: "idx_taxa_cartao_vigente", where: raw("(vigencia_fim IS NULL)"))
+}
+
+model terminal_pdv {
+  id            Int     @id @default(autoincrement())
+  identificador String  @unique @db.VarChar(50)
+  descricao     String? @db.VarChar(100)
+  venda         venda[]
+}
+
+model unidade_medida {
+  id        Int       @id @default(autoincrement())
+  sigla     String    @unique @db.VarChar(10)
+  descricao String    @db.VarChar(50)
+  produto   produto[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model usuario {
+  id                                                           Int                    @id @default(autoincrement())
+  nome                                                         String                 @db.VarChar(150)
+  email                                                        String                 @unique @db.VarChar(150)
+  senha_hash                                                   String                 @db.VarChar(255)
+  perfil                                                       String                 @db.VarChar(30)
+  ativo                                                        Boolean                @default(true)
+  criado_em                                                    DateTime               @default(now()) @db.Timestamp(6)
+  ultimo_login                                                 DateTime?              @db.Timestamp(6)
+  senha_provisoria                                             Boolean                @default(false)
+  criado_por_id                                                Int?
+  caixa_caixa_usuario_abertura_idTousuario                     caixa[]                @relation("caixa_usuario_abertura_idTousuario")
+  caixa_caixa_usuario_fechamento_idTousuario                   caixa[]                @relation("caixa_usuario_fechamento_idTousuario")
+  etiqueta_impressao                                           etiqueta_impressao[]
+  funcionario                                                  funcionario[]
+  movimentacao_caixa                                           movimentacao_caixa[]
+  movimentacao_estoque                                         movimentacao_estoque[]
+  nota_fiscal_entrada                                          nota_fiscal_entrada[]
+  permissao_usuario_permissao_usuario_definido_por_idTousuario permissao_usuario[]    @relation("permissao_usuario_definido_por_idTousuario")
+  permissao_usuario                                            permissao_usuario[]
+  taxa_cartao                                                  taxa_cartao[]
+  criado_por                                                   usuario?               @relation("usuario_criado_por", fields: [criado_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  usuarios_criados                                             usuario[]              @relation("usuario_criado_por")
+  venda                                                        venda[]
+
+  @@index([criado_por_id], map: "idx_usuario_criado_por")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model venda {
+  id              Int               @id @default(autoincrement())
+  numero          Int               @default(autoincrement())
+  terminal_id     Int?
+  caixa_id        Int?
+  cliente_id      Int?
+  operador_id     Int
+  aba_rotulo      String?           @db.VarChar(30)
+  status          String            @default("aberta") @db.VarChar(20)
+  subtotal        Decimal           @default(0) @db.Decimal(12, 2)
+  desconto        Decimal           @default(0) @db.Decimal(12, 2)
+  total           Decimal           @default(0) @db.Decimal(12, 2)
+  criado_em       DateTime          @default(now()) @db.Timestamp(6)
+  atualizado_em   DateTime          @default(now()) @db.Timestamp(6)
+  finalizado_em   DateTime?         @db.Timestamp(6)
+  tipo_cupom      String            @default("fiscal") @db.VarChar(20)
+  conta_receber   conta_receber[]
+  nfce            nfce?
+  caixa           caixa?            @relation(fields: [caixa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cliente         cliente?          @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario         usuario           @relation(fields: [operador_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  terminal_pdv    terminal_pdv?     @relation(fields: [terminal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda_item      venda_item[]
+  venda_pagamento venda_pagamento[]
+
+  @@index([terminal_id, status], map: "idx_venda_status_terminal")
+}
+
+model venda_item {
+  id                    Int      @id @default(autoincrement())
+  venda_id              Int
+  produto_id            Int
+  quantidade            Decimal  @db.Decimal(12, 3)
+  preco_unitario        Decimal  @db.Decimal(12, 2)
+  desconto              Decimal  @default(0) @db.Decimal(12, 2)
+  subtotal              Decimal  @db.Decimal(12, 2)
+  observacao            String?  @db.VarChar(200)
+  vendido_em_pacote     Boolean  @default(false)
+  quantidade_pacotes    Int?
+  preco_pacote_aplicado Decimal? @db.Decimal(12, 2)
+  produto               produto  @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda                 venda    @relation(fields: [venda_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model venda_pagamento {
+  id                       Int             @id @default(autoincrement())
+  venda_id                 Int
+  forma_pagamento_id       Int
+  valor                    Decimal         @db.Decimal(12, 2)
+  troco                    Decimal?        @default(0) @db.Decimal(12, 2)
+  status                   String          @default("confirmado") @db.VarChar(20)
+  autorizacao_id           String?         @db.VarChar(100)
+  criado_em                DateTime        @default(now()) @db.Timestamp(6)
+  numero_parcelas          Int             @default(1)
+  taxa_cartao_id           Int?
+  taxa_percentual_aplicada Decimal         @default(0) @db.Decimal(5, 2)
+  valor_taxa               Decimal         @default(0) @db.Decimal(12, 2)
+  valor_liquido            Decimal         @default(0) @db.Decimal(12, 2)
+  forma_pagamento          forma_pagamento @relation(fields: [forma_pagamento_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  taxa_cartao              taxa_cartao?    @relation(fields: [taxa_cartao_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda                    venda           @relation(fields: [venda_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model verificacao_saude_execucao {
+  id                     Int                      @id @default(autoincrement())
+  iniciado_em            DateTime                 @default(now()) @db.Timestamp(6)
+  finalizado_em          DateTime?                @db.Timestamp(6)
+  total_verificacoes     Int                      @default(0)
+  total_ok               Int                      @default(0)
+  total_avisos           Int                      @default(0)
+  total_erros            Int                      @default(0)
+  correcoes_aplicadas    Int                      @default(0)
+  status_geral           String                   @default("ok") @db.VarChar(20)
+  verificacao_saude_item verificacao_saude_item[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model verificacao_saude_item {
+  id                         Int                        @id @default(autoincrement())
+  execucao_id                Int
+  codigo                     String                     @db.VarChar(80)
+  titulo                     String                     @db.VarChar(150)
+  categoria                  String                     @db.VarChar(40)
+  resultado                  String                     @db.VarChar(20)
+  mensagem                   String
+  correcao_aplicada          Boolean                    @default(false)
+  detalhes                   Json?
+  criado_em                  DateTime                   @default(now()) @db.Timestamp(6)
+  verificacao_saude_execucao verificacao_saude_execucao @relation(fields: [execucao_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([execucao_id], map: "idx_verificacao_saude_item_execucao")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model modulo {
+  id                  Int                 @id @default(autoincrement())
+  chave               String              @unique @db.VarChar(40)
+  nome                String              @db.VarChar(80)
+  somente_super_admin Boolean             @default(false)
+  ordem               Int                 @default(0)
+  faq_item            faq_item[]
+  permissao_perfil    permissao_perfil[]
+  permissao_usuario   permissao_usuario[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model permissao_perfil {
+  id           Int     @id @default(autoincrement())
+  perfil       String  @db.VarChar(30)
+  modulo_id    Int
+  pode_acessar Boolean @default(false)
+  modulo       modulo  @relation(fields: [modulo_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([perfil, modulo_id])
+  @@index([perfil], map: "idx_permissao_perfil_perfil")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model permissao_usuario {
+  id                                                 Int      @id @default(autoincrement())
+  usuario_id                                         Int
+  modulo_id                                          Int
+  pode_acessar                                       Boolean  @default(false)
+  definido_por_id                                    Int?
+  usuario_permissao_usuario_definido_por_idTousuario usuario? @relation("permissao_usuario_definido_por_idTousuario", fields: [definido_por_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  modulo                                             modulo   @relation(fields: [modulo_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuario                                            usuario  @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([usuario_id, modulo_id])
+  @@index([usuario_id], map: "idx_permissao_usuario_usuario")
+  @@index([definido_por_id], map: "idx_permissao_usuario_definido_por")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model faq_item {
+  id             Int      @id @default(autoincrement())
+  titulo         String   @db.VarChar(200)
+  palavras_chave String?  @db.VarChar(500)
+  resposta       String
+  rota_destino   String   @db.VarChar(200)
+  modulo_chave   String?  @db.VarChar(40)
+  ordem          Int      @default(0)
+  ativo          Boolean  @default(true)
+  criado_em      DateTime @default(now()) @db.Timestamp(6)
+  atualizado_em  DateTime @default(now()) @db.Timestamp(6)
+  modulo         modulo?  @relation(fields: [modulo_chave], references: [chave], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([ativo, ordem], map: "idx_faq_item_ativo_ordem")
+  @@index([modulo_chave], map: "idx_faq_item_modulo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model etiqueta_impressao {
+  id                    Int             @id @default(autoincrement())
+  produto_id            Int
+  lote                  String          @db.VarChar(80)
+  quantidade_etiquetas  Int
+  data_fabricacao       DateTime        @db.Date
+  data_validade         DateTime?       @db.Date
+  usuario_id            Int
+  criado_em             DateTime        @default(now()) @db.Timestamp(6)
+  modelo_etiqueta_id    Int
+  data_acondicionamento DateTime        @db.Date
+  peso_kg               Decimal?        @db.Decimal(12, 3)
+  preco_calculado       Decimal?        @db.Decimal(12, 2)
+  modelo_etiqueta       modelo_etiqueta @relation(fields: [modelo_etiqueta_id], references: [id], onUpdate: NoAction)
+  produto               produto         @relation(fields: [produto_id], references: [id], onUpdate: NoAction)
+  usuario               usuario         @relation(fields: [usuario_id], references: [id], onUpdate: NoAction)
+
+  @@index([criado_em(sort: Desc)], map: "idx_etiqueta_impressao_criado")
+  @@index([lote], map: "idx_etiqueta_impressao_lote")
+  @@index([produto_id], map: "idx_etiqueta_impressao_produto")
+  @@index([modelo_etiqueta_id], map: "idx_etiqueta_impressao_modelo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model modelo_etiqueta {
+  id                   Int                  @id @default(autoincrement())
+  nome                 String               @unique(map: "idx_modelo_etiqueta_nome") @db.VarChar(120)
+  tipo                 String               @db.VarChar(20)
+  largura_mm           Decimal              @db.Decimal(8, 2)
+  altura_mm            Decimal              @db.Decimal(8, 2)
+  colunas_por_folha    Int                  @default(1)
+  linhas_por_folha     Int                  @default(1)
+  margem_superior_mm   Decimal              @default(0) @db.Decimal(8, 2)
+  margem_esquerda_mm   Decimal              @default(0) @db.Decimal(8, 2)
+  espaco_horizontal_mm Decimal              @default(0) @db.Decimal(8, 2)
+  espaco_vertical_mm   Decimal              @default(0) @db.Decimal(8, 2)
+  ativo                Boolean              @default(true)
+  ordem                Int                  @default(0)
+  criado_em            DateTime             @default(now()) @db.Timestamp(6)
+  etiqueta_impressao   etiqueta_impressao[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model empresa {
+  id            Int      @id @default(1)
+  razao_social  String   @db.VarChar(150)
+  nome_fantasia String?  @db.VarChar(150)
+  cnpj          String?  @db.Char(14)
+  endereco      String?  @db.VarChar(255)
+  telefone      String?  @db.VarChar(20)
+  email         String?  @db.VarChar(150)
+  logo_url      String?  @db.VarChar(255)
+  criado_em     DateTime @default(now()) @db.Timestamp(6)
+  atualizado_em DateTime @default(now()) @db.Timestamp(6)
+}

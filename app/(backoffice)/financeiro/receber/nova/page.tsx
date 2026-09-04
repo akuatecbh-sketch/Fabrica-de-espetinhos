@@ -1,0 +1,29 @@
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { ReceberForm } from "../../receber-form";
+
+export const dynamic = "force-dynamic";
+
+export default async function NovaContaReceberPage() {
+  const clientes = await prisma.cliente.findMany({
+    orderBy: { nome: "asc" },
+    select: { id: true, nome: true },
+  });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <Link
+          href="/financeiro?aba=receber"
+          className="text-sm text-zinc-600 hover:underline"
+        >
+          ← Voltar para financeiro
+        </Link>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+          Nova conta a receber
+        </h1>
+      </div>
+      <ReceberForm clientes={clientes} />
+    </div>
+  );
+}

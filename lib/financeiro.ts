@@ -1,0 +1,106 @@
+export const TIPOS_CATEGORIA_FINANCEIRA = [
+  "custo_fixo",
+  "custo_variavel",
+  "receita",
+] as const;
+
+export type TipoCategoriaFinanceira =
+  (typeof TIPOS_CATEGORIA_FINANCEIRA)[number];
+
+export const TIPOS_CATEGORIA_PAGAR = [
+  "custo_fixo",
+  "custo_variavel",
+] as const;
+
+export function ehTipoCategoriaFinanceira(
+  valor: string,
+): valor is TipoCategoriaFinanceira {
+  return (TIPOS_CATEGORIA_FINANCEIRA as readonly string[]).includes(valor);
+}
+
+export function ehTipoCategoriaPagar(valor: string) {
+  return (TIPOS_CATEGORIA_PAGAR as readonly string[]).includes(valor);
+}
+
+export type AbaFinanceiro = "pagar" | "receber";
+
+export function abaFinanceiroDaUrl(valor?: string): AbaFinanceiro {
+  return valor === "receber" ? "receber" : "pagar";
+}
+
+export const STATUS_PAGAR = [
+  "aberta",
+  "atrasada",
+  "paga",
+  "cancelada",
+] as const;
+
+export const STATUS_RECEBER = [
+  "aberta",
+  "atrasada",
+  "recebida",
+  "cancelada",
+] as const;
+
+export function rotuloStatusConta(status: string) {
+  const mapa: Record<string, string> = {
+    aberta: "Aberta",
+    atrasada: "Atrasada",
+    paga: "Paga",
+    recebida: "Recebida",
+    cancelada: "Cancelada",
+  };
+  return mapa[status] ?? status;
+}
+
+export function classesBadgeStatus(status: string, atrasada = false) {
+  if (atrasada || status === "atrasada" || status === "cancelada") {
+    return "rounded bg-vermelho-erro/10 px-2 py-0.5 text-xs font-medium text-vermelho-erro";
+  }
+  if (status === "paga" || status === "recebida") {
+    return "rounded bg-verde-sucesso/10 px-2 py-0.5 text-xs font-medium text-verde-sucesso";
+  }
+  return "rounded bg-ambar/10 px-2 py-0.5 text-xs font-medium text-ambar";
+}
+
+export function dataLocalISO(data = new Date()) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+export function dataUtcMeiaNoite(iso: string) {
+  return new Date(`${iso}T00:00:00.000Z`);
+}
+
+export function isoDaData(data: Date) {
+  return data.toISOString().slice(0, 10);
+}
+
+export function contaAtrasada(status: string, dataVencimento: Date, hojeIso: string) {
+  if (status === "atrasada") return true;
+  return status === "aberta" && isoDaData(dataVencimento) < hojeIso;
+}
+
+export function ocorrenciasMensais(inicio: Date, quantidade: number) {
+  const datas: Date[] = [];
+  const dia = inicio.getUTCDate();
+  const ano0 = inicio.getUTCFullYear();
+  const mes0 = inicio.getUTCMonth();
+
+  for (let i = 0; i < quantidade; i += 1) {
+    const base = new Date(Date.UTC(ano0, mes0 + i, 1));
+    const ultimoDia = new Date(
+      Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    base.setUTCDate(Math.min(dia, ultimoDia));
+    datas.push(base);
+  }
+
+  return datas;
+}
+
+export function ehIsoData(valor: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(valor);
+}

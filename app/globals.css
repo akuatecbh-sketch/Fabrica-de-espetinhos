@@ -1,0 +1,254 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fundo: #fafaf9;
+  --color-superficie: #ffffff;
+  --color-borda: #e5e7eb;
+  --color-fundo-hover: #f5f5f4;
+  --color-grafite: #fafaf9;
+  --color-carvao: #ffffff;
+  --color-carvao-claro: #e5e7eb;
+
+  --color-brasa-clara: #ff6b35;
+  --color-brasa: #e8432e;
+  --color-brasa-escura: #b91f1f;
+  --color-ambar: #f5a623;
+  --color-verde-sucesso: #34d399;
+  --color-vermelho-erro: #ff4d4d;
+  --color-texto-primario: #1a1d23;
+  --color-texto-secundario: #6b7280;
+
+  --color-laranja-bg: #fff1ea;
+  --color-laranja-texto: #e8432e;
+  --color-ambar-bg: #fff8e5;
+  --color-ambar-texto: #f5a623;
+  --color-coral-bg: #fdecec;
+  --color-coral-texto: #e5484d;
+  --color-verde-bg: #e9f9f0;
+  --color-verde-texto: #1fa971;
+  --color-azul-bg: #eaf2fe;
+  --color-azul-texto: #2b6ce0;
+
+  --font-sans: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-data: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --breakpoint-tv: 1920px;
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-fundo);
+    color: var(--color-texto-primario);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  button,
+  a,
+  [type="submit"] {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brasa-clara);
+    outline-offset: 2px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="submit"]):not([type="button"]),
+  select,
+  textarea {
+    background-color: var(--color-superficie);
+    color: var(--color-texto-primario);
+    border-color: var(--color-borda);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-texto-secundario);
+  }
+
+  .tabular-nums {
+    font-family: var(--font-data), ui-monospace, monospace;
+  }
+}
+
+@utility font-data {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility bg-gradiente-brasa {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brasa-clara) 0%,
+    var(--color-brasa) 50%,
+    var(--color-brasa-escura) 100%
+  );
+}
+
+@utility pulso-brasa {
+  animation: pulso-brasa 2.5s ease-in-out infinite;
+}
+
+@utility pulso-ambar {
+  animation: pulso-ambar 2.5s ease-in-out infinite;
+}
+
+@keyframes pulso-brasa {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(232 67 46 / 0.08);
+  }
+  50% {
+    box-shadow: 0 0 10px 3px rgb(232 67 46 / 0.18);
+  }
+}
+
+@keyframes pulso-ambar {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(245 166 35 / 0.08);
+  }
+  50% {
+    box-shadow: 0 0 10px 3px rgb(245 166 35 / 0.18);
+  }
+}
+
+html .bg-zinc-900 {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brasa-clara) 0%,
+    var(--color-brasa) 50%,
+    var(--color-brasa-escura) 100%
+  );
+  background-color: var(--color-brasa);
+}
+
+html .bg-zinc-900:hover,
+html .bg-gradiente-brasa:hover {
+  filter: brightness(0.9);
+}
+
+html .text-white {
+  color: #ffffff;
+}
+
+@media (min-width: 1920px) {
+  html {
+    font-size: 118.75%;
+  }
+
+  .conteudo-app {
+    max-width: 1600px;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@utility sheet-mobile {
+  animation: sheet-up 0.28s ease-out;
+}
+
+@media (min-width: 768px) {
+  .sheet-mobile {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulso-brasa,
+  .pulso-ambar {
+    animation: none;
+  }
+
+  .sheet-mobile {
+    animation: none;
+  }
+
+  aside {
+    transition: none;
+  }
+
+  html .bg-zinc-900:hover,
+  html .bg-gradiente-brasa:hover {
+    filter: none;
+  }
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    margin: 0;
+    padding: 0;
+    color: #000;
+  }
+
+  .print-ocultar {
+    display: none !important;
+  }
+
+  .etiquetas-rolo.etiquetas-grade {
+    display: block;
+    gap: 0;
+  }
+
+  .etiquetas-rolo .etiqueta-item {
+    margin: 0;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .etiquetas-rolo .etiqueta-item:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .etiquetas-a4-pagina {
+    break-after: page;
+    page-break-after: always;
+    overflow: hidden;
+    box-shadow: none !important;
+  }
+
+  .etiquetas-a4-pagina:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .etiquetas-a4-pagina .etiqueta-item {
+    margin: 0;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .cupom-nao-fiscal {
+    width: 72mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
