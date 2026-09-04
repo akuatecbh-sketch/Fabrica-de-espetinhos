@@ -162,9 +162,66 @@ html .text-white {
   }
 }
 
+@keyframes pulso-kpi-azul {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 14px rgb(15 23 42 / 0.14),
+      0 0 0 0 rgb(59 130 246 / 0.35);
+  }
+  50% {
+    box-shadow:
+      0 4px 14px rgb(15 23 42 / 0.14),
+      0 0 18px 6px rgb(59 130 246 / 0.55);
+  }
+}
+
+@keyframes pulso-kpi-laranja {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 14px rgb(15 23 42 / 0.14),
+      0 0 0 0 rgb(249 115 22 / 0.35);
+  }
+  50% {
+    box-shadow:
+      0 4px 14px rgb(15 23 42 / 0.14),
+      0 0 18px 6px rgb(249 115 22 / 0.55);
+  }
+}
+
+@keyframes pulso-kpi-verde {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 14px rgb(15 23 42 / 0.14),
+      0 0 0 0 rgb(22 163 74 / 0.35);
+  }
+  50% {
+    box-shadow:
+      0 4px 14px rgb(15 23 42 / 0.14),
+      0 0 18px 6px rgb(22 163 74 / 0.55);
+  }
+}
+
+@utility pulso-kpi-azul {
+  animation: pulso-kpi-azul 2.5s ease-in-out infinite;
+}
+
+@utility pulso-kpi-laranja {
+  animation: pulso-kpi-laranja 2.5s ease-in-out infinite;
+}
+
+@utility pulso-kpi-verde {
+  animation: pulso-kpi-verde 2.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pulso-brasa,
-  .pulso-ambar {
+  .pulso-ambar,
+  .pulso-kpi-azul,
+  .pulso-kpi-laranja,
+  .pulso-kpi-verde {
     animation: none;
   }
 

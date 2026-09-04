@@ -1,41 +1,89 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ContactRound, Landmark, Package, Store, Wallet } from "lucide-react";
-import { obterDadosDashboard, type ResumoContas } from "@/lib/dashboard";
-import { formatarDataHora, formatarPreco, formatarQuantidade } from "@/lib/format";
+import { obterDadosDashboard } from "@/lib/dashboard";
 import { temAcessoMultiplo } from "@/lib/permissoes";
 import { obterUsuarioSessao } from "@/lib/sessao";
 import { ContagemValor } from "./contagem-valor";
+import { DashboardGraficos } from "./dashboard-graficos";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const MODULOS = {
+const KPI = {
+  vendas: {
+    fundo: "bg-[#16A34A]",
+    pulso: "pulso-kpi-verde",
+    icone: Store,
+  },
   caixa: {
-    bg: "bg-ambar-bg",
-    texto: "text-ambar-texto",
+    fundo: "bg-[#3B82F6]",
+    pulso: "pulso-kpi-azul",
     icone: Wallet,
   },
-  estoque: {
-    bg: "bg-azul-bg",
-    texto: "text-azul-texto",
-    icone: Package,
-  },
   pagar: {
-    bg: "bg-coral-bg",
-    texto: "text-coral-texto",
+    fundo: "bg-[#EF4444]",
+    pulso: "",
     icone: Landmark,
   },
   receber: {
-    bg: "bg-verde-bg",
-    texto: "text-verde-texto",
+    fundo: "bg-[#7C3AED]",
+    pulso: "",
     icone: Landmark,
   },
-  vendas: {
-    bg: "bg-laranja-bg",
-    texto: "text-laranja-texto",
-    icone: Store,
+  estoque: {
+    fundo: "bg-[#F97316]",
+    pulso: "pulso-kpi-laranja",
+    icone: Package,
   },
+} as const;
+
+type KpiModulo = keyof typeof KPI;
+
+function KpiCard({
+  href,
+  modulo,
+  valor,
+  rotulo,
+  tipo = "moeda",
+  vivo = false,
+}: {
+  href: string;
+  modulo: KpiModulo;
+  valor: number;
+  rotulo: string;
+  tipo?: "moeda" | "inteiro";
+  vivo?: boolean;
+}) {
+  const tema = KPI[modulo];
+  const Icone = tema.icone;
+  const pulso = vivo && tema.pulso ? tema.pulso : "";
+  return (
+    <Link
+      href={href}
+      className={`flex h-full flex-col gap-3 rounded-xl p-4 text-white shadow-[0_4px_14px_rgb(15_23_42_/_0.14)] hover:brightness-105 ${tema.fundo} ${pulso}`}
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+        <Icone className="h-4 w-4 text-white" aria-hidden />
+      </span>
+      <div className="flex min-w-0 flex-col items-start">
+        <ContagemValor
+          valor={valor}
+          tipo={tipo}
+          className="text-2xl font-bold leading-none text-white"
+        />
+        <span className="mt-1.5 text-sm font-normal leading-snug text-white/90">
+          {rotulo}
+        </span>
+      </div>
+      <span className="mt-auto pt-1 text-sm font-medium text-white">
+        Ver detalhes →
+      </span>
+    </Link>
+  );
+}
+
+const MODULOS = {
   rh: {
     bg: "bg-azul-bg",
     texto: "text-azul-texto",
@@ -111,62 +159,6 @@ function Linha({
   );
 }
 
-function CardContas({
-  titulo,
-  href,
-  modulo,
-  dados,
-}: {
-  titulo: string;
-  href: string;
-  modulo: "pagar" | "receber";
-  dados: ResumoContas;
-}) {
-  const tema = MODULOS[modulo];
-
-  if (!dados.temRegistro) {
-    return (
-      <Card titulo={titulo} href={href} modulo={modulo}>
-        <p className="text-sm text-texto-secundario">Nenhum registro</p>
-      </Card>
-    );
-  }
-
-  const atrasadas = dados.qtdAtrasadas > 0;
-
-  return (
-    <Card titulo={titulo} href={href} modulo={modulo}>
-      <Linha
-        rotulo="Em aberto"
-        valorClassName={tema.texto}
-        valor={
-          <ContagemValor
-            valor={Number(dados.totalAberto)}
-            className={`text-2xl font-semibold ${tema.texto}`}
-          />
-        }
-      />
-      <Linha
-        rotulo="Vencem em 7 dias"
-        valor={
-          <span className="font-data text-texto-secundario">
-            {dados.qtdProximos7} · {formatarPreco(dados.totalProximos7)}
-          </span>
-        }
-      />
-      <Linha
-        rotulo="Atrasadas"
-        valor={
-          <span className="font-data">
-            {dados.qtdAtrasadas} · {formatarPreco(dados.totalAtrasadas)}
-          </span>
-        }
-        alerta={atrasadas}
-      />
-    </Card>
-  );
-}
-
 export default async function DashboardPage() {
   const [usuario, dados] = await Promise.all([
     obterUsuarioSessao(),
@@ -174,10 +166,8 @@ export default async function DashboardPage() {
   ]);
   const acessos = await temAcessoMultiplo(usuario.id);
   const caixaAberto = dados.caixa != null;
-  const estoqueBaixo = dados.estoqueBaixo.quantidade > 0;
   const verCaixa = Boolean(acessos.caixa);
   const verCadastro = Boolean(acessos.produtos);
-  const verEstoque = Boolean(acessos.estoque);
   const verFinanceiro = Boolean(acessos.financeiro);
   const verRh = Boolean(acessos.funcionarios);
   const verVendas = Boolean(acessos.vendas);
@@ -193,107 +183,48 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {verCaixa ? (
-        <Card titulo="Caixa" href="/caixa" modulo="caixa">
-          {caixaAberto && dados.caixa ? (
-            <>
-              <span className="inline-flex w-fit rounded-full bg-gradiente-brasa px-2 py-0.5 text-xs font-medium text-white pulso-brasa">
-                Caixa aberto
-              </span>
-              <Linha
-                rotulo="Abertura"
-                valor={formatarDataHora(dados.caixa.data_abertura)}
-              />
-              <Linha
-                rotulo="Valor de abertura"
-                valorClassName="text-ambar-texto"
-                valor={
-                  <span className="font-data text-2xl font-semibold text-ambar-texto">
-                    {formatarPreco(dados.caixa.valor_abertura)}
-                  </span>
-                }
-              />
-              <span className="mt-1 text-sm text-texto-secundario">
-                Ir para o caixa
-              </span>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-texto-secundario">
-                Nenhum caixa aberto no momento
-              </p>
-              <span className="mt-1 text-sm font-medium text-ambar-texto">
-                Abrir um novo caixa
-              </span>
-            </>
-          )}
-        </Card>
+          <KpiCard
+            href="/caixa"
+            modulo="caixa"
+            valor={
+              caixaAberto && dados.caixa
+                ? Number(dados.caixa.valor_abertura)
+                : 0
+            }
+            rotulo="Valor de abertura"
+            vivo={caixaAberto}
+          />
         ) : null}
 
         {verCadastro ? (
-        <Card titulo="Estoque baixo" modulo="estoque">
-          {estoqueBaixo ? (
-            <>
-              <p className="text-sm text-texto-secundario">
-                <span className="font-data text-2xl font-semibold text-azul-texto">
-                  {dados.estoqueBaixo.quantidade}
-                </span>{" "}
-                {dados.estoqueBaixo.quantidade === 1
-                  ? "produto abaixo do mínimo"
-                  : "produtos abaixo do mínimo"}
-              </p>
-              <ul className="flex flex-col gap-2">
-                {dados.estoqueBaixo.criticos.map((produto) => (
-                  <li
-                    key={produto.id}
-                    className="flex items-baseline justify-between gap-3 text-sm"
-                  >
-                    <span className="min-w-0 break-words text-texto-secundario">
-                      {produto.nome}
-                    </span>
-                    <span className="font-data shrink-0 text-texto-secundario">
-                      {formatarQuantidade(produto.estoque_atual)} /{" "}
-                      {formatarQuantidade(produto.estoque_minimo)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="text-sm text-texto-secundario">Nenhum registro</p>
-          )}
-          <div className="mt-1 flex flex-wrap gap-3 text-sm">
-            <Link
-              href="/produtos?filtro=estoque-baixo"
-              className="font-medium text-azul-texto underline-offset-2 hover:underline"
-            >
-              Ver todos
-            </Link>
-            {verEstoque ? (
-              <Link
-                href="/estoque?aba=movimentacoes"
-                className="text-texto-secundario underline-offset-2 hover:underline"
-              >
-                Ver movimentações
-              </Link>
-            ) : null}
-          </div>
-        </Card>
+          <KpiCard
+            href="/produtos?filtro=estoque-baixo"
+            modulo="estoque"
+            valor={dados.estoqueBaixo.quantidade}
+            tipo="inteiro"
+            rotulo={
+              dados.estoqueBaixo.quantidade === 1
+                ? "Produto abaixo do mínimo"
+                : "Produtos abaixo do mínimo"
+            }
+            vivo={dados.estoqueBaixo.quantidade > 0}
+          />
         ) : null}
 
         {verFinanceiro ? (
           <>
-        <CardContas
-          titulo="Contas a pagar"
-          href="/financeiro?aba=pagar&filtro=pendentes"
-          modulo="pagar"
-          dados={dados.contasPagar}
-        />
-        <CardContas
-          titulo="Contas a receber"
-          href="/financeiro?aba=receber&filtro=pendentes"
-          modulo="receber"
-          dados={dados.contasReceber}
-        />
+            <KpiCard
+              href="/financeiro?aba=pagar&filtro=pendentes"
+              modulo="pagar"
+              valor={Number(dados.contasPagar.totalAberto)}
+              rotulo="Contas a pagar"
+            />
+            <KpiCard
+              href="/financeiro?aba=receber&filtro=pendentes"
+              modulo="receber"
+              valor={Number(dados.contasReceber.totalAberto)}
+              rotulo="Contas a receber"
+            />
           </>
         ) : null}
 
@@ -328,38 +259,19 @@ export default async function DashboardPage() {
         ) : null}
 
         {verVendas ? (
-        <Card titulo="Vendas de hoje" href="/vendas/hoje" modulo="vendas" className="md:col-span-2 lg:col-span-3 xl:col-span-1">
-          <Linha
-            rotulo="Vendas finalizadas"
-            valor={
-              <ContagemValor
-                valor={dados.vendasHoje.quantidade}
-                tipo="inteiro"
-                className="text-2xl font-semibold text-laranja-texto"
-              />
-            }
-          />
-          <Linha
+          <KpiCard
+            href="/vendas/hoje"
+            modulo="vendas"
+            valor={Number(dados.vendasHoje.faturamentoBruto)}
             rotulo="Faturamento bruto"
-            valor={
-              <ContagemValor
-                valor={Number(dados.vendasHoje.faturamentoBruto)}
-                className="text-2xl font-semibold text-laranja-texto"
-              />
-            }
           />
-          <Linha
-            rotulo="Faturamento líquido"
-            valor={
-              <ContagemValor
-                valor={Number(dados.vendasHoje.faturamentoLiquido)}
-                className="text-2xl font-semibold text-laranja-texto"
-              />
-            }
-          />
-        </Card>
         ) : null}
       </div>
+
+      <DashboardGraficos
+        faturamento7Dias={dados.faturamento7Dias}
+        vendasPorForma={dados.vendasPorForma}
+      />
     </div>
   );
 }

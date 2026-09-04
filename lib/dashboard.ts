@@ -19,6 +19,17 @@ export type ProdutoEstoqueBaixo = {
   estoque_minimo: number;
 };
 
+export type PontoFaturamentoDia = {
+  rotulo: string;
+  bruto: number;
+  liquido: number;
+};
+
+export type PontoFormaPagamento = {
+  nome: string;
+  valor: number;
+};
+
 export type DadosDashboard = {
   vendasHoje: {
     quantidade: number;
@@ -36,6 +47,8 @@ export type DadosDashboard = {
     aniversariantesMes: number;
     feriasPrazo: number;
   };
+  faturamento7Dias: PontoFaturamentoDia[];
+  vendasPorForma: PontoFormaPagamento[];
 };
 
 function numero(valor: unknown) {
@@ -113,6 +126,89 @@ async function resumoContasReceber(hoje: Date, em7dias: Date): Promise<ResumoCon
   return montarResumoContas({ abertas, proximos7, atrasadas });
 }
 
+function inicioLocalMaisDias(dias: number, agora = new Date()) {
+  const data = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  data.setDate(data.getDate() + dias);
+  return data;
+}
+
+const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function rotuloDiaCurto(data: Date) {
+  return `${DIAS_SEMANA[data.getDay()]} ${String(data.getDate()).padStart(2, "0")}`;
+}
+
+async function faturamentoUltimos7Dias(): Promise<PontoFaturamentoDia[]> {
+  const inicio = inicioLocalMaisDias(-6);
+  const fim = inicioLocalMaisDias(1);
+  const linhas = await prisma.venda_pagamento.findMany({
+    where: {
+      status: "confirmado",
+      venda: {
+        status: "finalizada",
+        finalizado_em: { gte: inicio, lt: fim },
+      },
+    },
+    select: {
+      valor: true,
+      valor_liquido: true,
+      venda: { select: { finalizado_em: true } },
+    },
+  });
+
+  const porDia = new Map<string, { bruto: number; liquido: number }>();
+  for (const linha of linhas) {
+    const quando = linha.venda.finalizado_em;
+    if (!quando) continue;
+    const chave = dataLocalISO(quando);
+    const atual = porDia.get(chave) ?? { bruto: 0, liquido: 0 };
+    atual.bruto += numero(linha.valor);
+    atual.liquido += numero(linha.valor_liquido);
+    porDia.set(chave, atual);
+  }
+
+  const pontos: PontoFaturamentoDia[] = [];
+  for (let i = -6; i <= 0; i++) {
+    const dia = inicioLocalMaisDias(i);
+    const valores = porDia.get(dataLocalISO(dia)) ?? { bruto: 0, liquido: 0 };
+    pontos.push({
+      rotulo: rotuloDiaCurto(dia),
+      bruto: valores.bruto,
+      liquido: valores.liquido,
+    });
+  }
+  return pontos;
+}
+
+async function vendasPorForma30Dias(): Promise<PontoFormaPagamento[]> {
+  const inicio = inicioLocalMaisDias(-29);
+  const fim = inicioLocalMaisDias(1);
+  const linhas = await prisma.venda_pagamento.findMany({
+    where: {
+      status: "confirmado",
+      venda: {
+        status: "finalizada",
+        finalizado_em: { gte: inicio, lt: fim },
+      },
+    },
+    select: {
+      valor: true,
+      forma_pagamento: { select: { nome: true } },
+    },
+  });
+
+  const porForma = new Map<string, number>();
+  for (const linha of linhas) {
+    const nome = linha.forma_pagamento.nome;
+    porForma.set(nome, (porForma.get(nome) ?? 0) + numero(linha.valor));
+  }
+
+  return [...porForma.entries()]
+    .map(([nome, valor]) => ({ nome, valor }))
+    .filter((ponto) => ponto.valor > 0)
+    .sort((a, b) => b.valor - a.valor);
+}
+
 export async function obterDadosDashboard(): Promise<DadosDashboard> {
   const hoje = new Date();
   const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
@@ -130,50 +226,54 @@ export async function obterDadosDashboard(): Promise<DadosDashboard> {
     estoqueCriticos,
     aniversariantes,
     feriasPrazo,
+    faturamento7Dias,
+    vendasPorForma,
   ] = await Promise.all([
-      obterResumoVendasHoje(),
-      obterCaixaAberto(),
-      resumoContasPagar(hojeUtc, em7Utc),
-      resumoContasReceber(hojeUtc, em7Utc),
-      prisma.$queryRaw<{ quantidade: unknown }[]>`
-        SELECT COUNT(*)::int AS quantidade
-        FROM produto
-        WHERE ativo = true
-          AND estoque_atual < COALESCE(estoque_minimo, 0)
-      `,
-      prisma.$queryRaw<
-        {
-          id: number;
-          nome: string;
-          estoque_atual: unknown;
-          estoque_minimo: unknown;
-        }[]
-      >`
-        SELECT
-          id,
-          nome,
-          estoque_atual,
-          COALESCE(estoque_minimo, 0) AS estoque_minimo
-        FROM produto
-        WHERE ativo = true
-          AND estoque_atual < COALESCE(estoque_minimo, 0)
-        ORDER BY (COALESCE(estoque_minimo, 0) - estoque_atual) DESC, nome
-        LIMIT 5
-      `,
-      prisma.$queryRaw<{ quantidade: unknown }[]>`
-        SELECT COUNT(*)::int AS quantidade
-        FROM funcionario
-        WHERE ativo = true
-          AND EXTRACT(MONTH FROM data_nascimento) = ${inicioHoje.getMonth() + 1}
-      `,
-      prisma.ferias.count({
-        where: {
-          status: "pendente",
-          periodo_aquisitivo_fim: { lte: limiteAlertaFerias(hojeUtc) },
-          funcionario: { ativo: true },
-        },
-      }),
-    ]);
+    obterResumoVendasHoje(),
+    obterCaixaAberto(),
+    resumoContasPagar(hojeUtc, em7Utc),
+    resumoContasReceber(hojeUtc, em7Utc),
+    prisma.$queryRaw<{ quantidade: unknown }[]>`
+      SELECT COUNT(*)::int AS quantidade
+      FROM produto
+      WHERE ativo = true
+        AND estoque_atual < COALESCE(estoque_minimo, 0)
+    `,
+    prisma.$queryRaw<
+      {
+        id: number;
+        nome: string;
+        estoque_atual: unknown;
+        estoque_minimo: unknown;
+      }[]
+    >`
+      SELECT
+        id,
+        nome,
+        estoque_atual,
+        COALESCE(estoque_minimo, 0) AS estoque_minimo
+      FROM produto
+      WHERE ativo = true
+        AND estoque_atual < COALESCE(estoque_minimo, 0)
+      ORDER BY (COALESCE(estoque_minimo, 0) - estoque_atual) DESC, nome
+      LIMIT 5
+    `,
+    prisma.$queryRaw<{ quantidade: unknown }[]>`
+      SELECT COUNT(*)::int AS quantidade
+      FROM funcionario
+      WHERE ativo = true
+        AND EXTRACT(MONTH FROM data_nascimento) = ${inicioHoje.getMonth() + 1}
+    `,
+    prisma.ferias.count({
+      where: {
+        status: "pendente",
+        periodo_aquisitivo_fim: { lte: limiteAlertaFerias(hojeUtc) },
+        funcionario: { ativo: true },
+      },
+    }),
+    faturamentoUltimos7Dias(),
+    vendasPorForma30Dias(),
+  ]);
 
   const criticos = estoqueCriticos.map((linha) => ({
     id: linha.id,
@@ -197,5 +297,7 @@ export async function obterDadosDashboard(): Promise<DadosDashboard> {
       aniversariantesMes: numero(aniversariantes[0]?.quantidade),
       feriasPrazo,
     },
+    faturamento7Dias,
+    vendasPorForma,
   };
 }
