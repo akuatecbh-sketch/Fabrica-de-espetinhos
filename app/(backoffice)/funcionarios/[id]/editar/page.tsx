@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { exigirRh } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { atualizarFuncionario, listarUsuariosDisponiveis } from "../../actions";
 import { FuncionarioForm } from "../../funcionario-form";
 
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default async function EditarFuncionarioPage({ params }: Props) {
-  const logado = await exigirRh();
+  const logado = await exigirAcesso("funcionarios");
   const { id } = await params;
   const funcionarioId = Number(id);
   if (!Number.isInteger(funcionarioId)) notFound();

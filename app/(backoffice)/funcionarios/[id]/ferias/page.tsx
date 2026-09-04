@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { dataUtcMeiaNoite, dataLocalISO } from "@/lib/financeiro";
-import { exigirRh } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { ListaFerias } from "./lista-ferias";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default async function FeriasFuncionarioPage({ params }: Props) {
-  await exigirRh();
+  await exigirAcesso("funcionarios");
   const { id } = await params;
   const funcionarioId = Number(id);
   if (!Number.isInteger(funcionarioId)) notFound();

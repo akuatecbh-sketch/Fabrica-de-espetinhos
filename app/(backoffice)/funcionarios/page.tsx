@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { soDigitos } from "@/lib/documento";
 import { aniversarioNoMes } from "@/lib/rh";
-import { exigirRh } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { ListaFuncionarios } from "./lista-funcionarios";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default async function FuncionariosPage({ searchParams }: Props) {
-  await exigirRh();
+  await exigirAcesso("funcionarios");
   const { q: buscaBruta } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
   const digitos = soDigitos(busca);

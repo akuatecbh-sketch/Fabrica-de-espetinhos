@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { soDigitos } from "@/lib/documento";
+import { exigirAcesso } from "@/lib/permissoes";
 import { ListaClientes } from "./lista-clientes";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default async function ClientesPage({ searchParams }: Props) {
+  await exigirAcesso("clientes");
   const { q: buscaBruta } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
   const digitos = soDigitos(busca);

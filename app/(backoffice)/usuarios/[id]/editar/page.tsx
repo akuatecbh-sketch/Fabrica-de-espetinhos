@@ -6,7 +6,7 @@ import {
   podeGerenciarUsuario,
   perfisQuePodeAtribuir,
 } from "@/lib/acesso";
-import { exigirModuloUsuarios } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { superAdminOcultoPara } from "@/lib/visibilidade";
 import { atualizarUsuario } from "../../actions";
 import { UsuarioForm } from "../../usuario-form";
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default async function EditarUsuarioPage({ params }: Props) {
-  const logado = await exigirModuloUsuarios();
+  const logado = await exigirAcesso("usuarios");
   const { id } = await params;
   const usuarioId = Number(id);
   if (!Number.isInteger(usuarioId)) notFound();

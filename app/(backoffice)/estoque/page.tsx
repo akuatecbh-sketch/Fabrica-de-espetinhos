@@ -11,9 +11,9 @@ import {
   limitesDoDiaIso,
   paginaDaUrl,
 } from "@/lib/estoque";
-import { exigirEstoque, obterUsuarioSessao } from "@/lib/sessao";
+import { obterUsuarioSessao } from "@/lib/sessao";
+import { exigirAcesso, temAcesso } from "@/lib/permissoes";
 import { limitesDoDiaLocal } from "@/lib/vendas-hoje";
-import { temAcesso } from "@/lib/permissoes";
 import {
   SELECT_USUARIO_RELACAO,
   nomeExibicao,
@@ -38,7 +38,7 @@ type Props = {
 };
 
 export default async function EstoquePage({ searchParams }: Props) {
-  await exigirEstoque();
+  await exigirAcesso("estoque");
   const params = await searchParams;
   const aba = abaEstoqueDaUrl(params.aba);
 

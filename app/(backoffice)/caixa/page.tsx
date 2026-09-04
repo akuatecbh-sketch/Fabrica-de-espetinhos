@@ -3,7 +3,7 @@ import { obterCaixaAberto } from "@/lib/caixa";
 import { formatarDataHora, formatarPreco } from "@/lib/format";
 import { obterResumoCaixa } from "@/lib/resumo-caixa";
 import { prisma } from "@/lib/prisma";
-import { obterUsuarioSessao } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import {
   SELECT_USUARIO_RELACAO,
   nomeExibicao,
@@ -14,10 +14,8 @@ import { FecharCaixaForm } from "./fechar-form";
 export const dynamic = "force-dynamic";
 
 export default async function CaixaPage() {
-  const [caixaAberto, logado] = await Promise.all([
-    obterCaixaAberto(),
-    obterUsuarioSessao(),
-  ]);
+  const logado = await exigirAcesso("caixa");
+  const caixaAberto = await obterCaixaAberto();
 
   if (!caixaAberto) {
     return (

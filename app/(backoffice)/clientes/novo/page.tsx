@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { exigirAcesso } from "@/lib/permissoes";
 import { criarCliente } from "../actions";
 import { ClienteForm } from "../cliente-form";
 
 export const dynamic = "force-dynamic";
 
-export default function NovoClientePage() {
+export default async function NovoClientePage() {
+  await exigirAcesso("clientes");
   return (
     <div className="flex flex-col gap-6">
       <div>

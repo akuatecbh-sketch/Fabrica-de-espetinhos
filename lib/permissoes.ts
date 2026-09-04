@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { MapaAcessos } from "@/lib/permissoes-rotas";
 
@@ -95,4 +97,14 @@ export async function temAcessoMultiplo(usuarioId: number): Promise<MapaAcessos>
     });
   }
   return mapa;
+}
+
+export async function exigirAcesso(moduloChave: string) {
+  const sessao = await auth();
+  const usuario = sessao?.usuario;
+  if (!usuario?.id) redirect("/login");
+  if (!(await temAcesso(usuario.id, moduloChave))) {
+    redirect("/acesso-negado");
+  }
+  return usuario;
 }

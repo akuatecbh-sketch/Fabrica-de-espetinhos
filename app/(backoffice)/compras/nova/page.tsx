@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { exigirCompras } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { CompraForm } from "../compra-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NovaCompraPage() {
-  await exigirCompras();
+  await exigirAcesso("compras");
 
   const fornecedores = await prisma.fornecedor.findMany({
     where: { ativo: true },

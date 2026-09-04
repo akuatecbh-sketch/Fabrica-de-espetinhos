@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { perfisQuePodeAtribuir } from "@/lib/acesso";
-import { exigirModuloUsuarios } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { criarUsuario } from "../actions";
 import { UsuarioForm } from "../usuario-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NovoUsuarioPage() {
-  const logado = await exigirModuloUsuarios();
+  const logado = await exigirAcesso("usuarios");
   const perfis = perfisQuePodeAtribuir(logado.perfil);
 
   return (

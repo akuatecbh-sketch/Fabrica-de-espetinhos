@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { temAcesso } from "@/lib/permissoes";
+import { exigirAcesso, temAcesso } from "@/lib/permissoes";
 
 export async function obterUsuarioSessao() {
   const sessao = await auth();
@@ -38,11 +38,7 @@ export async function exigirPdvOuVendas() {
 }
 
 export async function exigirModulo(moduloChave: string) {
-  const usuario = await obterUsuarioSessao();
-  if (!(await temAcesso(usuario.id, moduloChave))) {
-    redirect("/acesso-negado");
-  }
-  return usuario;
+  return exigirAcesso(moduloChave);
 }
 
 export async function exigirCompras() {

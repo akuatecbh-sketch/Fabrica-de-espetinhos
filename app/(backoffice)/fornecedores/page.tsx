@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { soDigitos } from "@/lib/documento";
+import { exigirAcesso } from "@/lib/permissoes";
 import { ListaFornecedores } from "./lista-fornecedores";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default async function FornecedoresPage({ searchParams }: Props) {
+  await exigirAcesso("fornecedores");
   const { q: buscaBruta } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
   const digitos = soDigitos(busca);

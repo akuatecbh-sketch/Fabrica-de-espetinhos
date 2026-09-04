@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatarPreco } from "@/lib/format";
+import { exigirAcesso } from "@/lib/permissoes";
 import {
   abaFinanceiroDaUrl,
   dataLocalISO,
@@ -88,6 +89,7 @@ function whereReceber(
 }
 
 export default async function FinanceiroPage({ searchParams }: Props) {
+  await exigirAcesso("financeiro");
   const params = await searchParams;
   const aba = abaFinanceiroDaUrl(params.aba);
   const status =

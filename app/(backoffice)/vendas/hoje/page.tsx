@@ -9,7 +9,7 @@ import {
   formatarPreco,
   formatarQuantidade,
 } from "@/lib/format";
-import { obterUsuarioSessao } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
 import { nomeExibicao } from "@/lib/visibilidade";
 import { CupomVendaBadge } from "./cupom-venda-badge";
@@ -18,10 +18,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function VendasHojePage() {
-  const [resumo, vendas, logado] = await Promise.all([
+  const logado = await exigirAcesso("vendas");
+  const [resumo, vendas] = await Promise.all([
     obterResumoVendasHoje(),
     obterVendasHoje(),
-    obterUsuarioSessao(),
   ]);
 
   return (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { exigirAcesso } from "@/lib/permissoes";
 import { atualizarFornecedor } from "../../actions";
 import { FornecedorForm } from "../../fornecedor-form";
 
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default async function EditarFornecedorPage({ params }: Props) {
+  await exigirAcesso("fornecedores");
   const { id } = await params;
   const fornecedorId = Number(id);
   if (!Number.isInteger(fornecedorId)) notFound();

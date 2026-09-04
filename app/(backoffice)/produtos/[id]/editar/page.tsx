@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { exigirAcesso } from "@/lib/permissoes";
 import { abaPorTipo, TIPOS_INSUMO } from "@/lib/produto-tipo";
 import { atualizarProduto } from "../../actions";
 import { FichaTecnicaSecao } from "../../ficha-tecnica-secao";
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default async function EditarProdutoPage({ params }: Props) {
+  await exigirAcesso("produtos");
   const { id } = await params;
   const produtoId = Number(id);
   if (!Number.isInteger(produtoId)) notFound();

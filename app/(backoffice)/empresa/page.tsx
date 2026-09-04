@@ -1,12 +1,12 @@
 import { LOGO_PUBLICA, existeLogoBlob } from "@/lib/empresa-logo";
 import { prisma } from "@/lib/prisma";
-import { exigirModulo } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { EmpresaForm } from "./empresa-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmpresaPage() {
-  await exigirModulo("empresa");
+  await exigirAcesso("empresa");
   const [empresa, temLogo] = await Promise.all([
     prisma.empresa.findUnique({
       where: { id: 1 },

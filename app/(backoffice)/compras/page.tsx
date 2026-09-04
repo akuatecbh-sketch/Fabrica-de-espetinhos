@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ehIsoData, dataUtcMeiaNoite } from "@/lib/financeiro";
 import { STATUS_NOTA } from "@/lib/compras";
-import { exigirCompras } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import {
   SELECT_USUARIO_RELACAO,
   nomeExibicao,
@@ -22,7 +22,7 @@ type Props = {
 };
 
 export default async function ComprasPage({ searchParams }: Props) {
-  const logado = await exigirCompras();
+  const logado = await exigirAcesso("compras");
   const { q: buscaBruta, status: statusBruto, de, ate } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
   const status =

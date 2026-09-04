@@ -14,10 +14,12 @@ import { PagamentoModal } from "./pagamento-modal";
 import { PdvBuscaProduto } from "./busca-produto";
 import { RemoverItemButton } from "./remover-item-button";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
+import { exigirAcesso } from "@/lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
 export default async function PdvPage() {
+  await exigirAcesso("pdv");
   const caixa = await obterCaixaAberto();
   if (!caixa) redirect("/caixa");
 

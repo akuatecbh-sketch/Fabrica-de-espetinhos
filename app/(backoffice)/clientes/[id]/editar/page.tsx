@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { exigirAcesso } from "@/lib/permissoes";
 import { atualizarCliente } from "../../actions";
 import { ClienteForm } from "../../cliente-form";
 
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default async function EditarClientePage({ params }: Props) {
+  await exigirAcesso("clientes");
   const { id } = await params;
   const clienteId = Number(id);
   if (!Number.isInteger(clienteId)) notFound();

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { podeGerenciarUsuario } from "@/lib/acesso";
-import { exigirModuloUsuarios } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import {
   SELECT_USUARIO_RELACAO,
   filtroOcultarSuperAdmin,
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export default async function UsuariosPage({ searchParams }: Props) {
-  const logado = await exigirModuloUsuarios();
+  const logado = await exigirAcesso("usuarios");
   const { q: buscaBruta } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
 

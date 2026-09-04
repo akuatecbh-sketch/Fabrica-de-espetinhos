@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { exigirAcesso } from "@/lib/permissoes";
 import { abaDaUrl, tiposDaAba } from "@/lib/produto-tipo";
 import { ListaProdutos } from "./lista-produtos";
 
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default async function ProdutosPage({ searchParams }: Props) {
+  await exigirAcesso("produtos");
   const { aba: abaParam, filtro } = await searchParams;
   const aba = abaDaUrl(abaParam);
   const filtroEstoque = filtro === "estoque-baixo";

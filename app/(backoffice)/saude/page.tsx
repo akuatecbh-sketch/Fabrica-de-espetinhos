@@ -7,7 +7,7 @@ import {
   rotuloCategoriaSaude,
   rotuloStatusSaude,
 } from "@/lib/saude";
-import { exigirModulo } from "@/lib/sessao";
+import { exigirSuperAdmin } from "@/lib/sessao";
 import { ListaExecucoesSaude } from "./lista-execucoes";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ const LIMITE_ATENCAO = 7;
 const HORAS_ATRASO_AGENDADOR = 26;
 
 export default async function SaudePage() {
-  await exigirModulo("saude");
+  await exigirSuperAdmin();
 
   const execucoes = await prisma.verificacao_saude_execucao.findMany({
     orderBy: { iniciado_em: "desc" },

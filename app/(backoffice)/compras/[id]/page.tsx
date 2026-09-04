@@ -2,13 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatarData, formatarPreco, formatarQuantidade } from "@/lib/format";
-import { temAcesso } from "@/lib/permissoes";
+import { exigirAcesso, temAcesso } from "@/lib/permissoes";
 import {
   classesStatusNota,
   rotuloStatusNota,
 } from "@/lib/compras";
 import { rotuloStatusConta } from "@/lib/financeiro";
-import { exigirCompras } from "@/lib/sessao";
 import {
   SELECT_USUARIO_RELACAO,
   nomeExibicao,
@@ -24,7 +23,7 @@ type Props = {
 };
 
 export default async function CompraDetalhePage({ params }: Props) {
-  const usuario = await exigirCompras();
+  const usuario = await exigirAcesso("compras");
   const { id } = await params;
   const notaId = Number(id);
   if (!Number.isInteger(notaId)) notFound();

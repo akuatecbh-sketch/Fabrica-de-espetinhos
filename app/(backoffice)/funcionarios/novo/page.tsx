@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { exigirRh } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { criarFuncionario, listarUsuariosDisponiveis } from "../actions";
 import { FuncionarioForm } from "../funcionario-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NovoFuncionarioPage() {
-  const logado = await exigirRh();
+  const logado = await exigirAcesso("funcionarios");
   const usuarios = await listarUsuariosDisponiveis();
 
   return (

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { exigirAcesso } from "@/lib/permissoes";
 import { PagarForm } from "../../pagar-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NovaContaPagarPage() {
+  await exigirAcesso("financeiro");
   const [categorias, fornecedores] = await Promise.all([
     prisma.categoria_financeira.findMany({
       where: { tipo: { in: ["custo_fixo", "custo_variavel"] } },

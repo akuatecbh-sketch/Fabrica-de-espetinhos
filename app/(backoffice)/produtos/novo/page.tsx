@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { exigirAcesso } from "@/lib/permissoes";
 import { criarProduto } from "../actions";
 import { ProdutoForm } from "../produto-form";
 
 export default async function NovoProdutoPage() {
+  await exigirAcesso("produtos");
   const [categorias, unidades] = await Promise.all([
     prisma.categoria_produto.findMany({ orderBy: { nome: "asc" } }),
     prisma.unidade_medida.findMany({ orderBy: { sigla: "asc" } }),

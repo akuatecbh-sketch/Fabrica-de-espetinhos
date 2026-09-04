@@ -1,7 +1,7 @@
 import { LOGO_PUBLICA, existeLogoBlob } from "@/lib/empresa-logo";
 import { previewDeRegistro, serializarModelo } from "@/lib/etiquetas";
 import { prisma } from "@/lib/prisma";
-import { exigirModulo } from "@/lib/sessao";
+import { exigirAcesso } from "@/lib/permissoes";
 import { SELECT_USUARIO_RELACAO } from "@/lib/visibilidade";
 import { EtiquetasForm } from "./formulario";
 import { EtiquetasHistorico } from "./historico";
@@ -14,7 +14,7 @@ type Props = {
 };
 
 export default async function EtiquetasPage({ searchParams }: Props) {
-  const usuario = await exigirModulo("etiquetas");
+  const usuario = await exigirAcesso("etiquetas");
   const { q: buscaBruta, impressao: impressaoBruta } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
   const impressaoId = Number(impressaoBruta);
