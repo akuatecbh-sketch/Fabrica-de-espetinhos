@@ -1,3 +1,10 @@
+/**
+ * middleware.ts (Edge Runtime) em vez de proxy.ts (Node.js runtime no Next.js 16).
+ * O adaptador opennextjs-netlify ainda não processa proxy.ts em Node.js
+ * corretamente (issue #3171, repositório opennextjs-netlify). O middleware.ts
+ * continua suportado no Next.js 16 (descontinuado, não removido) e o Netlify
+ * executa Edge Runtime normalmente.
+ */
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/auth.config";
@@ -6,7 +13,7 @@ import { moduloChaveDaRota } from "@/lib/permissoes-rotas";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth(async (req) => {
+const middleware = auth(async (req) => {
   const pathname = req.nextUrl.pathname;
   const usuarioId = req.auth?.usuario?.id;
   const perfil = req.auth?.usuario?.perfil;
@@ -46,6 +53,8 @@ export default auth(async (req) => {
     return NextResponse.redirect(new URL("/acesso-negado", req.nextUrl));
   }
 });
+
+export default middleware;
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
