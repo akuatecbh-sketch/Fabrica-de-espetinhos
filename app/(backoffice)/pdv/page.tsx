@@ -11,6 +11,7 @@ import { BarraAbas } from "./barra-abas";
 import { CancelarVendaButton } from "./cancelar-venda-button";
 import { ClienteVenda } from "./cliente-venda";
 import { PagamentoModal } from "./pagamento-modal";
+import { ehPessoaJuridica } from "@/lib/cliente";
 import { PdvBuscaProduto } from "./busca-produto";
 import { RemoverItemButton } from "./remover-item-button";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
@@ -39,7 +40,7 @@ export default async function PdvPage() {
     ? await prisma.venda.findUnique({
         where: { id: focoId },
         include: {
-          cliente: { select: { id: true, nome: true } },
+          cliente: { select: { id: true, nome: true, tipo_pessoa: true } },
           venda_item: {
             include: { produto: true },
             orderBy: { id: "asc" },
@@ -62,6 +63,7 @@ export default async function PdvPage() {
   }));
 
   const clienteFoco = venda?.cliente ?? null;
+  const clientePessoaJuridica = ehPessoaJuridica(clienteFoco?.tipo_pessoa);
   let historicoCliente: {
     quantidade: number;
     ultimaCompra: string | null;
@@ -131,6 +133,7 @@ export default async function PdvPage() {
                   total={Number(venda.total)}
                   formas={formasModal}
                   taxas={taxas}
+                  clientePessoaJuridica={clientePessoaJuridica}
                 />
               ) : null}
               <CancelarVendaButton id={venda.id} />
@@ -250,6 +253,7 @@ export default async function PdvPage() {
                     total={Number(venda.total)}
                     formas={formasModal}
                     taxas={taxas}
+                    clientePessoaJuridica={clientePessoaJuridica}
                   />
                 ) : null}
               </div>

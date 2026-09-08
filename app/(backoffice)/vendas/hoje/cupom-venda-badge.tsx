@@ -26,6 +26,22 @@ export function CupomVendaBadge({
     );
   }
 
+  if (tipoCupom === "nfe") {
+    return (
+      <div className="mt-1 flex flex-col items-start gap-1">
+        <span className="inline-flex items-center rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+          NF-e
+        </span>
+        <Link
+          href="/notas-fiscais"
+          className="text-[11px] font-medium text-zinc-600 underline-offset-2 hover:underline"
+        >
+          Ver notas fiscais
+        </Link>
+      </div>
+    );
+  }
+
   if (tipoCupom === "nenhum") {
     return (
       <div className="mt-1">

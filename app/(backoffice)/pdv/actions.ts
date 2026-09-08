@@ -5,6 +5,11 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { emitirNfce } from "@/lib/nfce";
+import { emitirNfe } from "@/lib/nfe";
+import {
+  classificacaoFiscalCompleta,
+  mensagemProdutosSemClassificacaoFiscal,
+} from "@/lib/classificacao-fiscal";
 import { filtroBuscaProduto } from "@/lib/busca-produto";
 import { TIPOS_VENDA } from "@/lib/produto-tipo";
 import { obterCaixaAberto } from "@/lib/caixa";
@@ -16,7 +21,7 @@ import {
 import { exigirModulo } from "@/lib/sessao";
 import { resolverTaxa } from "@/lib/taxa";
 import { soDigitos, validarCpf } from "@/lib/documento";
-import { nomeExibicaoCliente } from "@/lib/cliente";
+import { ehPessoaJuridica, nomeExibicaoCliente } from "@/lib/cliente";
 import { ehTipoCupom, type TipoCupom } from "@/lib/tipo-cupom";
 
 export type PdvFormState = {
@@ -478,7 +483,28 @@ export async function finalizarVenda(
 
   const venda = await prisma.venda.findUnique({
     where: { id: vendaId },
-    include: { venda_item: true },
+    include: {
+      cliente: {
+        select: { id: true, tipo_pessoa: true, cnpj: true },
+      },
+      venda_item: {
+        include: {
+          produto: {
+            select: {
+              nome: true,
+              ncm: true,
+              cfop_padrao: true,
+              origem_mercadoria: true,
+              cst_csosn: true,
+              aliquota_icms: true,
+              aliquota_ipi: true,
+              aliquota_pis: true,
+              aliquota_cofins: true,
+            },
+          },
+        },
+      },
+    },
   });
   if (!venda) return { error: "Venda não encontrada." };
   if (venda.venda_item.length === 0) {
@@ -489,6 +515,30 @@ export async function finalizarVenda(
   }
   if (!ehTipoCupom(tipoCupom)) {
     return { error: "Tipo de cupom inválido." };
+  }
+  if (tipoCupom === "nfe") {
+    if (!ehPessoaJuridica(venda.cliente?.tipo_pessoa)) {
+      return {
+        error:
+          "NF-e modelo 55 só pode ser emitida para cliente pessoa jurídica.",
+      };
+    }
+    if (soDigitos(venda.cliente?.cnpj ?? "").length !== 14) {
+      return {
+        error:
+          "O cliente pessoa jurídica precisa ter CNPJ cadastrado para emitir NF-e.",
+      };
+    }
+    const semFiscal = [
+      ...new Set(
+        venda.venda_item
+          .filter((item) => !classificacaoFiscalCompleta(item.produto))
+          .map((item) => item.produto.nome),
+      ),
+    ];
+    if (semFiscal.length > 0) {
+      return { error: mensagemProdutosSemClassificacaoFiscal(semFiscal) };
+    }
   }
 
   const formas = await garantirFormasPagamento();
@@ -618,6 +668,11 @@ export async function finalizarVenda(
       void emitirNfce(venda.id);
     });
   }
+  if (tipoCupom === "nfe") {
+    after(() => {
+      void emitirNfe(venda.id);
+    });
+  }
 
   const proxima = await prisma.venda.findFirst({
     where: { status: "em_espera" },
@@ -629,5 +684,6 @@ export async function finalizarVenda(
 
   revalidatePath("/pdv");
   revalidatePath("/vendas/hoje");
+  revalidatePath("/notas-fiscais");
   return { tipo_cupom: tipoCupom, vendaId: venda.id };
 }

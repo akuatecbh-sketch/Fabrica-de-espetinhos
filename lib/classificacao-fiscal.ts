@@ -13,3 +13,41 @@ export const ORIGENS_MERCADORIA = [
 export function produtoSemDadosFiscais(produto: { ncm?: string | null }) {
   return !produto.ncm?.trim();
 }
+
+function textoFiscal(valor?: string | null) {
+  return Boolean(valor?.trim());
+}
+
+function aliquotaInformada(valor: unknown) {
+  if (valor == null || valor === "") return false;
+  return Number.isFinite(Number(valor));
+}
+
+export type CamposClassificacaoFiscal = {
+  ncm?: string | null;
+  cfop_padrao?: string | null;
+  origem_mercadoria?: string | null;
+  cst_csosn?: string | null;
+  aliquota_icms?: unknown;
+  aliquota_ipi?: unknown;
+  aliquota_pis?: unknown;
+  aliquota_cofins?: unknown;
+};
+
+export function classificacaoFiscalCompleta(produto: CamposClassificacaoFiscal) {
+  return (
+    textoFiscal(produto.ncm) &&
+    textoFiscal(produto.cfop_padrao) &&
+    textoFiscal(produto.origem_mercadoria) &&
+    textoFiscal(produto.cst_csosn) &&
+    aliquotaInformada(produto.aliquota_icms) &&
+    aliquotaInformada(produto.aliquota_ipi) &&
+    aliquotaInformada(produto.aliquota_pis) &&
+    aliquotaInformada(produto.aliquota_cofins)
+  );
+}
+
+export function mensagemProdutosSemClassificacaoFiscal(nomes: string[]) {
+  const lista = nomes.join(", ");
+  return `Não é possível emitir a NF-e. Preencha a classificação fiscal (NCM, CFOP, origem, CST/CSOSN e alíquotas) destes produtos: ${lista}.`;
+}

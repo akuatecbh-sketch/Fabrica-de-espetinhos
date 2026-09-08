@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  FileText,
   ShieldAlert,
   Store,
   Truck,
@@ -48,6 +49,7 @@ const PRINCIPAIS = [
   { href: "/pdv", label: "PDV", icone: Store },
   { href: "/caixa", label: "Caixa", icone: Wallet },
   { href: "/vendas/hoje", label: "Vendas", icone: Receipt },
+  { href: "/notas-fiscais", label: "Notas fiscais", icone: FileText },
   { href: "/financeiro", label: "Financeiro", icone: Landmark },
   { href: "/saude", label: "Saúde do sistema", icone: ShieldAlert },
 ] as const;

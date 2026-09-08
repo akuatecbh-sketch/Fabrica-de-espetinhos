@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, useEffect } from "react";
 import { formatarPreco } from "@/lib/format";
 import { arredondarDinheiro } from "@/lib/dinheiro";
 import { resolverTaxa } from "@/lib/taxa";
@@ -42,11 +42,13 @@ export function PagamentoModal({
   total,
   formas,
   taxas,
+  clientePessoaJuridica = false,
 }: {
   vendaId: number;
   total: number;
   formas: Forma[];
   taxas: Taxa[];
+  clientePessoaJuridica?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const [pagamentos, setPagamentos] = useState<PagamentoRascunho[]>([]);
@@ -57,6 +59,12 @@ export function PagamentoModal({
   const [cupomNaoFiscalId, setCupomNaoFiscalId] = useState<number | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!clientePessoaJuridica && tipoCupom === "nfe") {
+      setTipoCupom("fiscal");
+    }
+  }, [clientePessoaJuridica, tipoCupom]);
 
   const forma = formas.find((item) => item.id === formaId) ?? formas[0];
   const restante = useMemo(
@@ -355,6 +363,18 @@ export function PagamentoModal({
                 />
                 Nenhum
               </label>
+              {clientePessoaJuridica ? (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="tipo_cupom"
+                    value="nfe"
+                    checked={tipoCupom === "nfe"}
+                    onChange={() => setTipoCupom("nfe")}
+                  />
+                  NF-e (Nota Fiscal Eletrônica)
+                </label>
+              ) : null}
             </fieldset>
 
             <div className="mt-4 flex justify-end gap-2">

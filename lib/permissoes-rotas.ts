@@ -1,6 +1,7 @@
 export type MapaAcessos = Record<string, boolean>;
 
 const PREFIXOS_MODULO: [string, string][] = [
+  ["/notas-fiscais", "vendas"],
   ["/vendas", "vendas"],
   ["/empresa", "empresa"],
   ["/produtos", "produtos"],
@@ -31,6 +32,7 @@ export const CHAVE_POR_HREF: Record<string, string> = {
   "/pdv": "pdv",
   "/caixa": "caixa",
   "/vendas/hoje": "vendas",
+  "/notas-fiscais": "vendas",
   "/financeiro": "financeiro",
   "/saude": "saude",
 };

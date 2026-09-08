@@ -62,6 +62,7 @@ model cliente {
   contato_cargo       String?         @db.VarChar(80)
   contato_telefone    String?         @db.VarChar(20)
   conta_receber       conta_receber[]
+  nfe                 nfe[]
   venda               venda[]
 
   @@index([tipo_pessoa], map: "idx_cliente_tipo_pessoa")
@@ -305,6 +306,7 @@ model produto {
   ficha_tecnica_ficha_tecnica_insumo_idToproduto        ficha_tecnica[]            @relation("ficha_tecnica_insumo_idToproduto")
   ficha_tecnica_ficha_tecnica_produto_final_idToproduto ficha_tecnica[]            @relation("ficha_tecnica_produto_final_idToproduto")
   movimentacao_estoque                                  movimentacao_estoque[]
+  nfe_item                                              nfe_item[]
   nota_fiscal_entrada_item                              nota_fiscal_entrada_item[]
   categoria_produto                                     categoria_produto          @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   unidade_medida                                        unidade_medida             @relation(fields: [unidade_medida_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -393,6 +395,7 @@ model venda {
   tipo_cupom      String            @default("fiscal") @db.VarChar(20)
   conta_receber   conta_receber[]
   nfce            nfce?
+  nfe             nfe?
   caixa           caixa?            @relation(fields: [caixa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cliente         cliente?          @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usuario         usuario           @relation(fields: [operador_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -588,4 +591,61 @@ model empresa {
   logo_url      String?  @db.VarChar(255)
   criado_em     DateTime @default(now()) @db.Timestamp(6)
   atualizado_em DateTime @default(now()) @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
+model nfe {
+  id                    Int        @id @default(autoincrement())
+  venda_id              Int        @unique
+  cliente_id            Int?
+  chave_acesso          String?    @unique @db.Char(44)
+  numero                Int?
+  serie                 Int?
+  protocolo_autorizacao String?    @db.VarChar(50)
+  status                String     @default("pendente") @db.VarChar(20)
+  xml_url               String?    @db.VarChar(255)
+  danfe_url             String?    @db.VarChar(255)
+  data_emissao          DateTime?  @db.Timestamp(6)
+  mensagem_sefaz        String?
+  valor_total           Decimal    @default(0) @db.Decimal(12, 2)
+  valor_icms            Decimal    @default(0) @db.Decimal(12, 2)
+  valor_ipi             Decimal    @default(0) @db.Decimal(12, 2)
+  valor_pis             Decimal    @default(0) @db.Decimal(12, 2)
+  valor_cofins          Decimal    @default(0) @db.Decimal(12, 2)
+  criado_em             DateTime   @default(now()) @db.Timestamp(6)
+  cliente               cliente?   @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda                 venda      @relation(fields: [venda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nfe_item              nfe_item[]
+
+  @@index([cliente_id], map: "idx_nfe_cliente")
+  @@index([data_emissao(sort: Desc), id(sort: Desc)], map: "idx_nfe_data_emissao")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model nfe_item {
+  id                Int     @id @default(autoincrement())
+  nfe_id            Int
+  produto_id        Int
+  descricao         String  @db.VarChar(120)
+  quantidade        Decimal @db.Decimal(12, 3)
+  valor_unitario    Decimal @db.Decimal(12, 2)
+  valor_total       Decimal @db.Decimal(12, 2)
+  ncm               String  @db.Char(8)
+  cfop              String  @db.Char(4)
+  origem_mercadoria String? @db.Char(1)
+  cst_csosn         String  @db.VarChar(4)
+  aliquota_icms     Decimal @default(0) @db.Decimal(5, 2)
+  valor_icms        Decimal @default(0) @db.Decimal(12, 2)
+  aliquota_ipi      Decimal @default(0) @db.Decimal(5, 2)
+  valor_ipi         Decimal @default(0) @db.Decimal(12, 2)
+  aliquota_pis      Decimal @default(0) @db.Decimal(5, 2)
+  valor_pis         Decimal @default(0) @db.Decimal(12, 2)
+  aliquota_cofins   Decimal @default(0) @db.Decimal(5, 2)
+  valor_cofins      Decimal @default(0) @db.Decimal(12, 2)
+  nfe               nfe     @relation(fields: [nfe_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  produto           produto @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([nfe_id], map: "idx_nfe_item_nfe")
 }

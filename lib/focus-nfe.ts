@@ -226,6 +226,178 @@ export async function consultarNfceFocus(params: {
   });
 }
 
+export function referenciaNfe(vendaId: number) {
+  return `nfe-venda-${vendaId}`;
+}
+
+export type ItemParaNfe = ItemParaNfce & {
+  ncm: string;
+  cfop: string;
+  origem_mercadoria: string;
+  cst_csosn: string;
+  aliquota_icms: number;
+  valor_icms: number;
+  aliquota_ipi: number;
+  valor_ipi: number;
+  aliquota_pis: number;
+  valor_pis: number;
+  aliquota_cofins: number;
+  valor_cofins: number;
+};
+
+export type DestinatarioNfe = {
+  razao_social: string | null;
+  nome: string;
+  cnpj: string | null;
+  inscricao_estadual: string | null;
+  endereco: string | null;
+};
+
+function situacaoPisCofins(aliquota: number) {
+  return aliquota > 0 ? "01" : "07";
+}
+
+function situacaoIpi(aliquota: number) {
+  return aliquota > 0 ? "50" : "99";
+}
+
+export function montarPayloadNfe(params: {
+  emitente: EmitenteNfce;
+  destinatario: DestinatarioNfe;
+  itens: ItemParaNfe[];
+  pagamentos: PagamentoParaNfce[];
+  totais: {
+    valor_produtos: number;
+    valor_icms: number;
+    valor_ipi: number;
+    valor_pis: number;
+    valor_cofins: number;
+    valor_total: number;
+  };
+  dataEmissao?: Date;
+}) {
+  const items = params.itens.map((item, indice) => {
+    const quantidade = Number(item.quantidade);
+    const unitario = Number(item.preco_unitario);
+    const desconto = arredondarDinheiro(Number(item.desconto) || 0);
+    const valorBruto = arredondarDinheiro(
+      Number(item.subtotal) + desconto || quantidade * unitario,
+    );
+    const unidade = item.unidade.trim() || "UN";
+    const cst = item.cst_csosn.trim();
+    const corpo: Record<string, string | number> = {
+      numero_item: String(indice + 1),
+      codigo_ncm: item.ncm,
+      codigo_produto: item.codigo.slice(0, 60) || String(indice + 1),
+      descricao: item.descricao.slice(0, 120),
+      quantidade_comercial: quantidade,
+      quantidade_tributavel: quantidade,
+      cfop: item.cfop,
+      valor_unitario_comercial: unitario,
+      valor_unitario_tributavel: unitario,
+      valor_bruto: valorBruto,
+      unidade_comercial: unidade,
+      unidade_tributavel: unidade,
+      inclui_no_total: "1",
+      icms_origem: item.origem_mercadoria,
+      icms_situacao_tributaria: cst,
+      icms_aliquota: item.aliquota_icms,
+      icms_base_calculo: item.subtotal,
+      icms_valor: item.valor_icms,
+      ipi_situacao_tributaria: situacaoIpi(item.aliquota_ipi),
+      ipi_aliquota: item.aliquota_ipi,
+      ipi_valor: item.valor_ipi,
+      pis_situacao_tributaria: situacaoPisCofins(item.aliquota_pis),
+      pis_aliquota_porcentual: item.aliquota_pis,
+      pis_valor: item.valor_pis,
+      cofins_situacao_tributaria: situacaoPisCofins(item.aliquota_cofins),
+      cofins_aliquota_porcentual: item.aliquota_cofins,
+      cofins_valor: item.valor_cofins,
+    };
+    if (desconto > 0) corpo.valor_desconto = desconto;
+    if (item.aliquota_ipi > 0) {
+      corpo.ipi_codigo_enquadramento_legal = "999";
+    }
+    return corpo;
+  });
+
+  const formas_pagamento = params.pagamentos.map((pagamento) => {
+    const valor = arredondarDinheiro(
+      Number(pagamento.valor) - Number(pagamento.troco || 0),
+    );
+    const corpo: Record<string, string | number> = {
+      forma_pagamento: codigoFormaPagamentoNfce(pagamento.tipo),
+      valor_pagamento: valor > 0 ? valor : 0,
+    };
+    if (pagamento.tipo === "credito" || pagamento.tipo === "debito") {
+      corpo.tipo_integracao = "2";
+    }
+    return corpo;
+  });
+
+  const cnpjDest = soDigitos(params.destinatario.cnpj ?? "");
+  const ie = (params.destinatario.inscricao_estadual ?? "").trim();
+  const endereco = (params.destinatario.endereco ?? "").trim();
+  const payload: Record<string, unknown> = {
+    cnpj_emitente: soDigitos(params.emitente.cnpj),
+    nome_emitente: params.emitente.razao_social,
+    data_emissao: formatarDataEmissaoIso(params.dataEmissao),
+    tipo_documento: "1",
+    local_destino: "1",
+    finalidade_emissao: "1",
+    consumidor_final: "0",
+    presenca_comprador: "1",
+    modalidade_frete: "9",
+    natureza_operacao: "VENDA",
+    cnpj_destinatario: cnpjDest,
+    nome_destinatario:
+      params.destinatario.razao_social?.trim() || params.destinatario.nome,
+    indicador_inscricao_estadual_destinatario: ie ? "1" : "9",
+    valor_produtos: params.totais.valor_produtos,
+    valor_ipi: params.totais.valor_ipi,
+    valor_pis: params.totais.valor_pis,
+    valor_cofins: params.totais.valor_cofins,
+    icms_valor_total: params.totais.valor_icms,
+    valor_total: params.totais.valor_total,
+    items,
+    formas_pagamento,
+  };
+  if (ie) payload.inscricao_estadual_destinatario = ie;
+  if (endereco) {
+    payload.logradouro_destinatario = endereco.slice(0, 60);
+    payload.numero_destinatario = "S/N";
+  }
+  return payload;
+}
+
+export async function postarNfeFocus(params: {
+  token: string;
+  ambiente: AmbienteFocus;
+  ref: string;
+  payload: Record<string, unknown>;
+}) {
+  const origem = origemFocusNfe(params.ambiente);
+  const url = `${origem}/v2/nfe?ref=${encodeURIComponent(params.ref)}&completa=1`;
+  return chamarFocus(url, {
+    method: "POST",
+    headers: cabecalhoAuthFocus(params.token),
+    body: JSON.stringify(params.payload),
+  });
+}
+
+export async function consultarNfeFocus(params: {
+  token: string;
+  ambiente: AmbienteFocus;
+  ref: string;
+}) {
+  const origem = origemFocusNfe(params.ambiente);
+  const url = `${origem}/v2/nfe/${encodeURIComponent(params.ref)}?completa=1`;
+  return chamarFocus(url, {
+    method: "GET",
+    headers: cabecalhoAuthFocus(params.token),
+  });
+}
+
 async function chamarFocus(url: string, init: RequestInit) {
   const resposta = await fetch(url, {
     ...init,
