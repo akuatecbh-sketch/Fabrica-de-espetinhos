@@ -12,15 +12,21 @@ type Props = {
   searchParams: Promise<{
     q?: string;
     status?: string;
+    filtro?: string;
   }>;
 };
 
 export default async function PedidosPage({ searchParams }: Props) {
   await exigirAcesso("pedidos");
-  const { q: buscaBruta, status: statusBruto } = await searchParams;
+  const {
+    q: buscaBruta,
+    status: statusBruto,
+    filtro,
+  } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
+  const statusParam = statusBruto || filtro;
   const status =
-    statusBruto && ehStatusPedido(statusBruto) ? statusBruto : "todos";
+    statusParam && ehStatusPedido(statusParam) ? statusParam : "todos";
 
   const where: Prisma.pedidoWhereInput = {};
   if (status !== "todos") {

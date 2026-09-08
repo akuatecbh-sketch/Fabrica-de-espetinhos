@@ -36,6 +36,7 @@ export type ProdutoPedidoBusca = {
 };
 
 function revalidarPedido(pedidoId: number) {
+  revalidatePath("/");
   revalidatePath("/pedidos");
   revalidatePath(`/pedidos/${pedidoId}`);
   revalidatePath("/pedidos/novo");

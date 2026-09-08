@@ -47,6 +47,7 @@ export type DadosDashboard = {
     aniversariantesMes: number;
     feriasPrazo: number;
   };
+  pedidosEnviados: number;
   faturamento7Dias: PontoFaturamentoDia[];
   vendasPorForma: PontoFormaPagamento[];
 };
@@ -226,6 +227,7 @@ export async function obterDadosDashboard(): Promise<DadosDashboard> {
     estoqueCriticos,
     aniversariantes,
     feriasPrazo,
+    pedidosEnviados,
     faturamento7Dias,
     vendasPorForma,
   ] = await Promise.all([
@@ -271,6 +273,7 @@ export async function obterDadosDashboard(): Promise<DadosDashboard> {
         funcionario: { ativo: true },
       },
     }),
+    prisma.pedido.count({ where: { status: "enviado" } }),
     faturamentoUltimos7Dias(),
     vendasPorForma30Dias(),
   ]);
@@ -297,6 +300,7 @@ export async function obterDadosDashboard(): Promise<DadosDashboard> {
       aniversariantesMes: numero(aniversariantes[0]?.quantidade),
       feriasPrazo,
     },
+    pedidosEnviados,
     faturamento7Dias,
     vendasPorForma,
   };

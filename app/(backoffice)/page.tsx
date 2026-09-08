@@ -1,6 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ContactRound, Landmark, Package, Store, Wallet } from "lucide-react";
+import {
+  ContactRound,
+  Landmark,
+  Package,
+  ShoppingBag,
+  Store,
+  Wallet,
+} from "lucide-react";
 import { obterDadosDashboard } from "@/lib/dashboard";
 import { temAcessoMultiplo } from "@/lib/permissoes";
 import { obterUsuarioSessao } from "@/lib/sessao";
@@ -35,6 +42,11 @@ const KPI = {
     fundo: "bg-[#F97316]",
     pulso: "pulso-kpi-laranja",
     icone: Package,
+  },
+  pedidos: {
+    fundo: "bg-[#D97706]",
+    pulso: "pulso-kpi-laranja",
+    icone: ShoppingBag,
   },
 } as const;
 
@@ -171,6 +183,7 @@ export default async function DashboardPage() {
   const verFinanceiro = Boolean(acessos.financeiro);
   const verRh = Boolean(acessos.funcionarios);
   const verVendas = Boolean(acessos.vendas);
+  const verPedidos = Boolean(acessos.pedidos);
 
   return (
     <div className="flex flex-col gap-6">
@@ -208,6 +221,21 @@ export default async function DashboardPage() {
                 : "Produtos abaixo do mínimo"
             }
             vivo={dados.estoqueBaixo.quantidade > 0}
+          />
+        ) : null}
+
+        {verPedidos ? (
+          <KpiCard
+            href="/pedidos?filtro=enviado"
+            modulo="pedidos"
+            valor={dados.pedidosEnviados}
+            tipo="inteiro"
+            rotulo={
+              dados.pedidosEnviados === 1
+                ? "Pedido aguardando resposta do cliente"
+                : "Pedidos aguardando resposta do cliente"
+            }
+            vivo={dados.pedidosEnviados > 0}
           />
         ) : null}
 
