@@ -63,6 +63,7 @@ model cliente {
   contato_telefone    String?         @db.VarChar(20)
   conta_receber       conta_receber[]
   nfe                 nfe[]
+  pedido              pedido[]
   venda               venda[]
 
   @@index([tipo_pessoa], map: "idx_cliente_tipo_pessoa")
@@ -308,6 +309,7 @@ model produto {
   movimentacao_estoque                                  movimentacao_estoque[]
   nfe_item                                              nfe_item[]
   nota_fiscal_entrada_item                              nota_fiscal_entrada_item[]
+  pedido_item                                           pedido_item[]
   categoria_produto                                     categoria_produto          @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   unidade_medida                                        unidade_medida             @relation(fields: [unidade_medida_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   venda_item                                            venda_item[]
@@ -366,6 +368,7 @@ model usuario {
   movimentacao_caixa                                           movimentacao_caixa[]
   movimentacao_estoque                                         movimentacao_estoque[]
   nota_fiscal_entrada                                          nota_fiscal_entrada[]
+  pedido                                                       pedido[]
   permissao_usuario_permissao_usuario_definido_por_idTousuario permissao_usuario[]    @relation("permissao_usuario_definido_por_idTousuario")
   permissao_usuario                                            permissao_usuario[]
   taxa_cartao                                                  taxa_cartao[]
@@ -648,4 +651,50 @@ model nfe_item {
   produto           produto @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([nfe_id], map: "idx_nfe_item_nfe")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pedido {
+  id            Int           @id @default(autoincrement())
+  numero        Int           @unique @default(autoincrement())
+  cliente_id    Int?
+  usuario_id    Int
+  status        String        @default("aberto") @db.VarChar(20)
+  observacao    String?
+  subtotal      Decimal       @default(0) @db.Decimal(12, 2)
+  desconto      Decimal       @default(0) @db.Decimal(12, 2)
+  total         Decimal       @default(0) @db.Decimal(12, 2)
+  token_publico String?       @unique @db.VarChar(36)
+  criado_em     DateTime      @default(now()) @db.Timestamp(6)
+  atualizado_em DateTime      @default(now()) @db.Timestamp(6)
+  enviado_em    DateTime?     @db.Timestamp(6)
+  cancelado_em  DateTime?     @db.Timestamp(6)
+  cliente       cliente?      @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario       usuario       @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pedido_item   pedido_item[]
+
+  @@index([cliente_id], map: "idx_pedido_cliente")
+  @@index([criado_em(sort: Desc)], map: "idx_pedido_criado_em")
+  @@index([status], map: "idx_pedido_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pedido_item {
+  id                    Int      @id @default(autoincrement())
+  pedido_id             Int
+  produto_id            Int
+  quantidade            Decimal  @db.Decimal(12, 3)
+  preco_unitario        Decimal  @db.Decimal(12, 2)
+  desconto              Decimal  @default(0) @db.Decimal(12, 2)
+  subtotal              Decimal  @db.Decimal(12, 2)
+  observacao            String?  @db.VarChar(200)
+  vendido_em_pacote     Boolean  @default(false)
+  quantidade_pacotes    Int?
+  preco_pacote_aplicado Decimal? @db.Decimal(12, 2)
+  pedido                pedido   @relation(fields: [pedido_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  produto               produto  @relation(fields: [produto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([pedido_id], map: "idx_pedido_item_pedido")
 }
