@@ -42,17 +42,29 @@ model categoria_produto {
   produto produto[]
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model cliente {
-  id              Int             @id @default(autoincrement())
-  nome            String          @db.VarChar(150)
-  cpf             String?         @unique @db.Char(11)
-  telefone        String?         @db.VarChar(20)
-  email           String?         @db.VarChar(150)
-  endereco        String?         @db.VarChar(255)
-  data_nascimento DateTime?       @db.Date
-  criado_em       DateTime        @default(now()) @db.Timestamp(6)
-  conta_receber   conta_receber[]
-  venda           venda[]
+  id                  Int             @id @default(autoincrement())
+  nome                String          @db.VarChar(150)
+  cpf                 String?         @unique @db.Char(11)
+  telefone            String?         @db.VarChar(20)
+  email               String?         @db.VarChar(150)
+  endereco            String?         @db.VarChar(255)
+  data_nascimento     DateTime?       @db.Date
+  criado_em           DateTime        @default(now()) @db.Timestamp(6)
+  tipo_pessoa         String          @default("fisica") @db.VarChar(10)
+  razao_social        String?         @db.VarChar(150)
+  nome_fantasia       String?         @db.VarChar(150)
+  cnpj                String?         @unique @db.Char(14)
+  inscricao_estadual  String?         @db.VarChar(20)
+  inscricao_municipal String?         @db.VarChar(20)
+  contato_nome        String?         @db.VarChar(100)
+  contato_cargo       String?         @db.VarChar(80)
+  contato_telefone    String?         @db.VarChar(20)
+  conta_receber       conta_receber[]
+  venda               venda[]
+
+  @@index([tipo_pessoa], map: "idx_cliente_tipo_pessoa")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

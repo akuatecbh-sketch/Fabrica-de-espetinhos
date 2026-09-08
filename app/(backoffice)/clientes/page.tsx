@@ -21,7 +21,14 @@ export default async function ClientesPage({ searchParams }: Props) {
       ? {
           OR: [
             { nome: { contains: busca, mode: "insensitive" } },
-            ...(digitos ? [{ cpf: { contains: digitos } }] : []),
+            { razao_social: { contains: busca, mode: "insensitive" } },
+            { nome_fantasia: { contains: busca, mode: "insensitive" } },
+            ...(digitos
+              ? [
+                  { cpf: { contains: digitos } },
+                  { cnpj: { contains: digitos } },
+                ]
+              : []),
           ],
         }
       : undefined,
@@ -42,11 +49,11 @@ export default async function ClientesPage({ searchParams }: Props) {
 
       <form method="get" className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-0 w-full flex-1 flex-col gap-1 text-sm sm:min-w-64">
-          Buscar por nome ou CPF
+          Buscar por nome, CPF, razão social ou CNPJ
           <input
             name="q"
             defaultValue={busca}
-            placeholder="Nome ou CPF"
+            placeholder="Nome, CPF, razão social ou CNPJ"
             className="rounded border border-zinc-300 px-3 py-2"
           />
         </label>

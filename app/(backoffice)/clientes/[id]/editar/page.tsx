@@ -38,12 +38,21 @@ export default async function EditarClientePage({ params }: Props) {
         action={atualizar}
         submitLabel="Salvar"
         cliente={{
+          tipo_pessoa: cliente.tipo_pessoa,
           nome: cliente.nome,
           cpf: cliente.cpf,
           telefone: cliente.telefone,
           email: cliente.email,
           endereco: cliente.endereco,
           data_nascimento: cliente.data_nascimento,
+          razao_social: cliente.razao_social,
+          nome_fantasia: cliente.nome_fantasia,
+          cnpj: cliente.cnpj,
+          inscricao_estadual: cliente.inscricao_estadual,
+          inscricao_municipal: cliente.inscricao_municipal,
+          contato_nome: cliente.contato_nome,
+          contato_cargo: cliente.contato_cargo,
+          contato_telefone: cliente.contato_telefone,
         }}
       />
     </div>

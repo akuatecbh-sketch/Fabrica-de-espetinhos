@@ -1,12 +1,20 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   mascaraCpf,
+  mascaraCnpj,
   mascaraTelefone,
   formatarCpf,
+  formatarCnpjCpf,
   formatarTelefone,
 } from "@/lib/documento";
+import {
+  TIPO_PESSOA_FISICA,
+  TIPO_PESSOA_JURIDICA,
+  ehPessoaJuridica,
+  type TipoPessoaCliente,
+} from "@/lib/cliente";
 import { isoDaData } from "@/lib/financeiro";
 import { CampoMascarado } from "../campo-mascarado";
 import type { ClienteFormState } from "./actions";
@@ -14,13 +22,28 @@ import type { ClienteFormState } from "./actions";
 const estadoInicial: ClienteFormState = {};
 
 type ClienteInicial = {
+  tipo_pessoa?: string | null;
   nome: string;
   cpf: string | null;
   telefone: string | null;
   email: string | null;
   endereco: string | null;
   data_nascimento: Date | null;
+  razao_social?: string | null;
+  nome_fantasia?: string | null;
+  cnpj?: string | null;
+  inscricao_estadual?: string | null;
+  inscricao_municipal?: string | null;
+  contato_nome?: string | null;
+  contato_cargo?: string | null;
+  contato_telefone?: string | null;
 };
+
+function tipoInicial(cliente?: ClienteInicial): TipoPessoaCliente {
+  return ehPessoaJuridica(cliente?.tipo_pessoa)
+    ? TIPO_PESSOA_JURIDICA
+    : TIPO_PESSOA_FISICA;
+}
 
 export function ClienteForm({
   action,
@@ -35,6 +58,15 @@ export function ClienteForm({
   submitLabel: string;
 }) {
   const [estado, formAction, pendente] = useActionState(action, estadoInicial);
+  const [tipoPessoa, setTipoPessoa] = useState<TipoPessoaCliente>(
+    tipoInicial(cliente),
+  );
+
+  useEffect(() => {
+    if (estado.tipo_pessoa) setTipoPessoa(estado.tipo_pessoa);
+  }, [estado.tipo_pessoa]);
+
+  const juridica = tipoPessoa === TIPO_PESSOA_JURIDICA;
 
   return (
     <form action={formAction} className="flex w-full max-w-xl flex-col gap-4">
@@ -44,26 +76,112 @@ export function ClienteForm({
         </p>
       ) : null}
 
-      <label className="flex flex-col gap-1 text-sm">
-        Nome
-        <input
-          name="nome"
-          required
-          maxLength={150}
-          defaultValue={cliente?.nome ?? ""}
-          className="rounded border border-zinc-300 px-3 py-2"
-        />
-      </label>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium">Tipo de cliente</legend>
+        <div className="flex flex-wrap gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="tipo_pessoa"
+              value={TIPO_PESSOA_FISICA}
+              checked={!juridica}
+              onChange={() => setTipoPessoa(TIPO_PESSOA_FISICA)}
+            />
+            Pessoa Física
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="tipo_pessoa"
+              value={TIPO_PESSOA_JURIDICA}
+              checked={juridica}
+              onChange={() => setTipoPessoa(TIPO_PESSOA_JURIDICA)}
+            />
+            Pessoa Jurídica
+          </label>
+        </div>
+      </fieldset>
 
-      <CampoMascarado
-        name="cpf"
-        label="CPF"
-        valorInicial={
-          cliente?.cpf ? formatarCpf(cliente.cpf).replace("—", "") : ""
-        }
-        mascarar={mascaraCpf}
-        placeholder="000.000.000-00"
-      />
+      {juridica ? (
+        <>
+          <label className="flex flex-col gap-1 text-sm">
+            Razão social
+            <input
+              name="razao_social"
+              required
+              maxLength={150}
+              defaultValue={cliente?.razao_social ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Nome fantasia
+            <input
+              name="nome_fantasia"
+              maxLength={150}
+              defaultValue={cliente?.nome_fantasia ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+
+          <CampoMascarado
+            name="cnpj"
+            label="CNPJ"
+            valorInicial={
+              cliente?.cnpj
+                ? formatarCnpjCpf(cliente.cnpj).replace("—", "")
+                : ""
+            }
+            mascarar={mascaraCnpj}
+            required
+            placeholder="00.000.000/0000-00"
+          />
+
+          <label className="flex flex-col gap-1 text-sm">
+            Inscrição estadual
+            <input
+              name="inscricao_estadual"
+              maxLength={20}
+              defaultValue={cliente?.inscricao_estadual ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Inscrição municipal
+            <input
+              name="inscricao_municipal"
+              maxLength={20}
+              defaultValue={cliente?.inscricao_municipal ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+        </>
+      ) : (
+        <>
+          <label className="flex flex-col gap-1 text-sm">
+            Nome
+            <input
+              name="nome"
+              required
+              maxLength={150}
+              defaultValue={cliente?.nome ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+
+          <CampoMascarado
+            name="cpf"
+            label="CPF"
+            valorInicial={
+              cliente?.cpf ? formatarCpf(cliente.cpf).replace("—", "") : ""
+            }
+            mascarar={mascaraCpf}
+            placeholder="000.000.000-00"
+          />
+        </>
+      )}
 
       <CampoMascarado
         name="telefone"
@@ -98,17 +216,59 @@ export function ClienteForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Data de nascimento
-        <input
-          name="data_nascimento"
-          type="date"
-          defaultValue={
-            cliente?.data_nascimento ? isoDaData(cliente.data_nascimento) : ""
-          }
-          className="rounded border border-zinc-300 px-3 py-2"
-        />
-      </label>
+      {juridica ? (
+        <fieldset className="flex flex-col gap-4 rounded border border-zinc-200 p-4">
+          <legend className="px-1 text-sm font-medium">
+            Contato responsável pela compra
+          </legend>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Nome do contato
+            <input
+              name="contato_nome"
+              maxLength={100}
+              defaultValue={cliente?.contato_nome ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Cargo do contato
+            <input
+              name="contato_cargo"
+              maxLength={80}
+              defaultValue={cliente?.contato_cargo ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+
+          <CampoMascarado
+            name="contato_telefone"
+            label="Telefone do contato"
+            valorInicial={
+              cliente?.contato_telefone
+                ? formatarTelefone(cliente.contato_telefone).replace("—", "")
+                : ""
+            }
+            mascarar={mascaraTelefone}
+            placeholder="(00) 00000-0000"
+          />
+        </fieldset>
+      ) : (
+        <label className="flex flex-col gap-1 text-sm">
+          Data de nascimento
+          <input
+            name="data_nascimento"
+            type="date"
+            defaultValue={
+              cliente?.data_nascimento
+                ? isoDaData(cliente.data_nascimento)
+                : ""
+            }
+            className="rounded border border-zinc-300 px-3 py-2"
+          />
+        </label>
+      )}
 
       <button
         type="submit"

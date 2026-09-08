@@ -16,6 +16,7 @@ import {
 import { exigirModulo } from "@/lib/sessao";
 import { resolverTaxa } from "@/lib/taxa";
 import { soDigitos, validarCpf } from "@/lib/documento";
+import { nomeExibicaoCliente } from "@/lib/cliente";
 import { ehTipoCupom, type TipoCupom } from "@/lib/tipo-cupom";
 
 export type PdvFormState = {
@@ -151,6 +152,7 @@ export type ClienteBusca = {
   id: number;
   nome: string;
   cpf: string | null;
+  cnpj: string | null;
 };
 
 export type ProdutoPdvBusca = {
@@ -200,18 +202,42 @@ export async function buscarClientesPdv(termo: string): Promise<ClienteBusca[]> 
 
   const filtros = [
     ...(busca.length >= 2
-      ? [{ nome: { contains: busca, mode: "insensitive" as const } }]
+      ? [
+          { nome: { contains: busca, mode: "insensitive" as const } },
+          { razao_social: { contains: busca, mode: "insensitive" as const } },
+          { nome_fantasia: { contains: busca, mode: "insensitive" as const } },
+        ]
       : []),
-    ...(digitos.length >= 3 ? [{ cpf: { contains: digitos } }] : []),
+    ...(digitos.length >= 3
+      ? [
+          { cpf: { contains: digitos } },
+          { cnpj: { contains: digitos } },
+        ]
+      : []),
   ];
   if (filtros.length === 0) return [];
 
-  return prisma.cliente.findMany({
+  const encontrados = await prisma.cliente.findMany({
     where: { OR: filtros },
     orderBy: { nome: "asc" },
     take: 8,
-    select: { id: true, nome: true, cpf: true },
+    select: {
+      id: true,
+      nome: true,
+      cpf: true,
+      cnpj: true,
+      tipo_pessoa: true,
+      razao_social: true,
+      nome_fantasia: true,
+    },
   });
+
+  return encontrados.map((cliente) => ({
+    id: cliente.id,
+    nome: nomeExibicaoCliente(cliente),
+    cpf: cliente.cpf,
+    cnpj: cliente.cnpj,
+  }));
 }
 
 export async function vincularClienteVenda(
@@ -291,7 +317,7 @@ export async function cadastrarClienteNaVenda(
 
   try {
     const cliente = await prisma.cliente.create({
-      data: { nome, cpf, telefone },
+      data: { tipo_pessoa: "fisica", nome, cpf, telefone },
     });
     await prisma.venda.update({
       where: { id: vendaId },

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { BuscaAutocomplete } from "@/components/busca-autocomplete";
-import { formatarCpf, mascaraCpf, mascaraTelefone } from "@/lib/documento";
+import { formatarCnpjCpf, mascaraCpf, mascaraTelefone } from "@/lib/documento";
 import {
   buscarClientesPdv,
   cadastrarClienteNaVenda,
@@ -151,10 +151,12 @@ export function ClienteVenda({ vendaId, cliente, historico }: Props) {
           <BuscaAutocomplete
             buscar={buscarClientesPdv}
             label="Buscar cliente"
-            placeholder="Nome ou CPF"
+            placeholder="Nome, CPF ou CNPJ"
             chave={(item) => item.id}
             rotulo={(item) => item.nome}
-            descricao={(item) => formatarCpf(item.cpf)}
+            descricao={(item) =>
+              formatarCnpjCpf(item.cnpj || item.cpf)
+            }
             aoSelecionar={(item) => vincular(item.id)}
             limparAoSelecionar
             inputRef={buscaRef}
