@@ -111,6 +111,8 @@ export function podeConfigurarPermissoesIndividuais(
 export function rotaPublica(pathname: string) {
   return (
     pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname.startsWith("/pedidos/publico") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"

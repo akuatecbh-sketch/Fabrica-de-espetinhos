@@ -6,6 +6,7 @@ import {
 } from "@/lib/pedido";
 import { AcoesPedido } from "./acoes-pedido";
 import { ClientePedido } from "./cliente-pedido";
+import { CopiarLinkRevisao } from "./copiar-link-revisao";
 import { ItensPedido, type ItemPedidoExibicao } from "./itens-pedido";
 import { ObservacaoPedido } from "./observacao-pedido";
 import { PedidoBuscaProduto } from "./busca-produto";
@@ -15,6 +16,7 @@ export type PedidoTelaDados = {
   numero: number;
   status: string;
   observacao: string | null;
+  tokenPublico: string | null;
   total: { toString(): string };
   cliente: { id: number; nome: string } | null;
   itens: ItemPedidoExibicao[];
@@ -42,7 +44,11 @@ export function PedidoTela({ pedido }: { pedido: PedidoTelaDados | null }) {
             </span>
           </div>
           {pedido ? (
-            <AcoesPedido pedidoId={pedido.id} status={pedido.status} />
+            <AcoesPedido
+              pedidoId={pedido.id}
+              status={pedido.status}
+              temItens={pedido.itens.length > 0}
+            />
           ) : null}
         </div>
         {somenteLeitura ? (
@@ -57,6 +63,10 @@ export function PedidoTela({ pedido }: { pedido: PedidoTelaDados | null }) {
         cliente={pedido?.cliente ?? null}
         somenteLeitura={somenteLeitura}
       />
+
+      {pedido?.tokenPublico ? (
+        <CopiarLinkRevisao token={pedido.tokenPublico} />
+      ) : null}
 
       <div
         className={

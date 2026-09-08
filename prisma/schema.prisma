@@ -399,6 +399,7 @@ model venda {
   conta_receber   conta_receber[]
   nfce            nfce?
   nfe             nfe?
+  pedido          pedido?
   caixa           caixa?            @relation(fields: [caixa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   cliente         cliente?          @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usuario         usuario           @relation(fields: [operador_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -670,13 +671,16 @@ model pedido {
   atualizado_em DateTime      @default(now()) @db.Timestamp(6)
   enviado_em    DateTime?     @db.Timestamp(6)
   cancelado_em  DateTime?     @db.Timestamp(6)
+  venda_id      Int?          @unique
   cliente       cliente?      @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usuario       usuario       @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda         venda?        @relation(fields: [venda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   pedido_item   pedido_item[]
 
   @@index([cliente_id], map: "idx_pedido_cliente")
   @@index([criado_em(sort: Desc)], map: "idx_pedido_criado_em")
   @@index([status], map: "idx_pedido_status")
+  @@index([venda_id], map: "idx_pedido_venda")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

@@ -13,14 +13,24 @@ import { FecharCaixaForm } from "./fechar-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function CaixaPage() {
+type Props = {
+  searchParams: Promise<{ aviso?: string }>;
+};
+
+export default async function CaixaPage({ searchParams }: Props) {
   const logado = await exigirAcesso("caixa");
+  const { aviso } = await searchParams;
   const caixaAberto = await obterCaixaAberto();
 
   if (!caixaAberto) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-2xl font-semibold tracking-tight">Abrir caixa</h1>
+        {aviso === "converter-pedido" ? (
+          <p className="rounded border border-ambar/40 bg-ambar/10 px-3 py-2 text-sm text-texto-primario">
+            Abra o caixa antes de converter o pedido em venda.
+          </p>
+        ) : null}
         <p className="text-sm text-zinc-600">
           Não há caixa aberto. Informe o fundo de troco para iniciar o PDV.
         </p>

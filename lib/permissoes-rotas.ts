@@ -53,6 +53,7 @@ function rotaLivre(pathname: string) {
     pathname.startsWith("/permissoes/") ||
     pathname === "/ajuda" ||
     pathname.startsWith("/ajuda/") ||
+    pathname.startsWith("/pedidos/publico") ||
     pathname.startsWith("/api/")
   );
 }

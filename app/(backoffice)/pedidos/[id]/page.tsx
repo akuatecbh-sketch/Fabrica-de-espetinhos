@@ -43,6 +43,7 @@ export default async function PedidoPage({ params }: Props) {
         numero: pedido.numero,
         status: pedido.status,
         observacao: pedido.observacao,
+        tokenPublico: pedido.token_publico,
         total: pedido.total,
         cliente: pedido.cliente
           ? { id: pedido.cliente.id, nome: nomeExibicaoCliente(pedido.cliente) }

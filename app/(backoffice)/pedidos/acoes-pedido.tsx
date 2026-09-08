@@ -1,17 +1,25 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { cancelarPedido, marcarPedidoEnviado } from "./actions";
+import {
+  cancelarPedido,
+  converterPedidoEmVenda,
+  marcarPedidoEnviado,
+} from "./actions";
 
 export function AcoesPedido({
   pedidoId,
   status,
+  temItens,
 }: {
   pedidoId: number;
   status: string;
+  temItens: boolean;
 }) {
   const [erro, setErro] = useState<string | null>(null);
-  const [acao, setAcao] = useState<"enviar" | "cancelar" | null>(null);
+  const [acao, setAcao] = useState<"enviar" | "cancelar" | "vender" | null>(
+    null,
+  );
   const [pendente, startTransition] = useTransition();
 
   function enviar() {
@@ -35,19 +43,41 @@ export function AcoesPedido({
     });
   }
 
+  function vender() {
+    setErro(null);
+    setAcao("vender");
+    startTransition(async () => {
+      const resultado = await converterPedidoEmVenda(pedidoId);
+      if (resultado?.error) setErro(resultado.error);
+      setAcao(null);
+    });
+  }
+
   const podeEnviar = status === "aberto";
   const podeCancelar = status === "aberto" || status === "enviado";
-  if (!podeEnviar && !podeCancelar) return null;
+  const podeVender =
+    (status === "aberto" || status === "enviado") && temItens;
+  if (!podeEnviar && !podeCancelar && !podeVender) return null;
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
+        {podeVender ? (
+          <button
+            type="button"
+            disabled={pendente}
+            onClick={vender}
+            className="min-h-11 rounded bg-gradiente-brasa px-4 py-2 text-sm font-medium text-white disabled:opacity-60 lg:min-h-0"
+          >
+            {acao === "vender" && pendente ? "Convertendo..." : "Vender"}
+          </button>
+        ) : null}
         {podeEnviar ? (
           <button
             type="button"
             disabled={pendente}
             onClick={enviar}
-            className="min-h-11 rounded bg-gradiente-brasa px-4 py-2 text-sm font-medium text-white disabled:opacity-60 lg:min-h-0"
+            className="min-h-11 rounded border border-borda bg-superficie px-4 py-2 text-sm font-medium text-texto-primario hover:bg-fundo-hover disabled:opacity-60 lg:min-h-0"
           >
             {acao === "enviar" && pendente
               ? "Enviando..."

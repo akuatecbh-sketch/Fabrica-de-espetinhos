@@ -7,6 +7,7 @@ import { filtroBuscaProduto } from "@/lib/busca-produto";
 import { TIPOS_VENDA } from "@/lib/produto-tipo";
 import { arredondarDinheiro, arredondarQuantidade } from "@/lib/dinheiro";
 import { exigirModulo } from "@/lib/sessao";
+import { obterCaixaAberto } from "@/lib/caixa";
 import { soDigitos, validarCpf } from "@/lib/documento";
 import { nomeExibicaoCliente } from "@/lib/cliente";
 import { pedidoEditavel } from "@/lib/pedido";
@@ -542,4 +543,104 @@ export async function cancelarPedido(
   });
   revalidarPedido(pedido.id);
   return {};
+}
+
+const STATUS_VENDAS_PENDENTES = ["aberta", "em_espera"] as const;
+
+export async function converterPedidoEmVenda(pedidoId: number) {
+  const usuario = await exigirModulo("pedidos");
+  if (!Number.isInteger(pedidoId)) {
+    return { error: "Pedido inválido." };
+  }
+
+  const caixa = await obterCaixaAberto();
+  if (!caixa) {
+    redirect("/caixa?aviso=converter-pedido");
+  }
+
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: pedidoId },
+    include: {
+      cliente: {
+        select: {
+          nome: true,
+          tipo_pessoa: true,
+          razao_social: true,
+          nome_fantasia: true,
+        },
+      },
+      pedido_item: { orderBy: { id: "asc" } },
+    },
+  });
+  if (!pedido) return { error: "Pedido não encontrado." };
+  if (pedido.status === "convertido") {
+    return { error: "Este pedido já foi convertido em venda." };
+  }
+  if (!pedidoEditavel(pedido.status)) {
+    return { error: "Este pedido não pode ser convertido em venda." };
+  }
+  if (pedido.pedido_item.length === 0) {
+    return { error: "Adicione pelo menos um item antes de vender." };
+  }
+
+  const nomeCliente = pedido.cliente
+    ? nomeExibicaoCliente(pedido.cliente)
+    : null;
+  const abaRotulo = nomeCliente ? nomeCliente.slice(0, 30) : null;
+  const agora = new Date();
+  const subtotal = arredondarDinheiro(
+    pedido.pedido_item.reduce((acc, item) => acc + Number(item.subtotal), 0),
+  );
+
+  await prisma.$transaction(async (tx) => {
+    await tx.venda.updateMany({
+      where: { status: { in: [...STATUS_VENDAS_PENDENTES] } },
+      data: { status: "em_espera", atualizado_em: agora },
+    });
+
+    const venda = await tx.venda.create({
+      data: {
+        caixa_id: caixa.id,
+        cliente_id: pedido.cliente_id,
+        operador_id: usuario.id,
+        status: "aberta",
+        aba_rotulo: abaRotulo,
+        subtotal,
+        desconto: 0,
+        total: subtotal,
+        venda_item: {
+          create: pedido.pedido_item.map((item) => ({
+            produto_id: item.produto_id,
+            quantidade: item.quantidade,
+            preco_unitario: item.preco_unitario,
+            desconto: item.desconto,
+            subtotal: item.subtotal,
+            observacao: item.observacao,
+            vendido_em_pacote: item.vendido_em_pacote,
+            quantidade_pacotes: item.quantidade_pacotes,
+            preco_pacote_aplicado: item.preco_pacote_aplicado,
+          })),
+        },
+      },
+    });
+
+    const marcado = await tx.pedido.updateMany({
+      where: {
+        id: pedido.id,
+        status: { in: ["aberto", "enviado"] },
+      },
+      data: {
+        status: "convertido",
+        venda_id: venda.id,
+        atualizado_em: agora,
+      },
+    });
+    if (marcado.count !== 1) {
+      throw new Error("Pedido não está mais disponível para conversão.");
+    }
+  });
+
+  revalidarPedido(pedido.id);
+  revalidatePath("/pdv");
+  redirect("/pdv");
 }

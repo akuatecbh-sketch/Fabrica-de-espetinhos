@@ -8,13 +8,24 @@
  * Aqui só entra autenticação via cookie JWT (login e senha provisória).
  * Autorização por módulo fica nas páginas com exigirAcesso(), porque Prisma
  * não roda em Edge Runtime.
+ *
+ * Rotas públicas (lib/acesso.ts → rotaPublica): /login, /pedidos/publico/*,
+ * /api/auth, /_next e favicon. O header x-pathname permite ao layout do
+ * backoffice não exigir sessão nem Sidebar na revisão pública do pedido.
  */
 import NextAuth from "next-auth";
+import { NextResponse } from "next/server";
 import { authConfig } from "@/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth;
+export default auth((req) => {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", req.nextUrl.pathname);
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],

@@ -31,6 +31,7 @@ export default async function PdvPage() {
       id: true,
       total: true,
       status: true,
+      aba_rotulo: true,
       cliente: { select: { nome: true } },
     },
   });
@@ -93,7 +94,7 @@ export default async function PdvPage() {
     id: aba.id,
     total: aba.total,
     status: aba.status,
-    clienteNome: aba.cliente?.nome ?? null,
+    clienteNome: aba.aba_rotulo?.trim() || aba.cliente?.nome || null,
   }));
 
 

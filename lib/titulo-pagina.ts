@@ -14,6 +14,7 @@ export function tituloDaRota(pathname: string) {
   if (pathname.startsWith("/estoque")) return "Estoque";
   if (pathname.startsWith("/etiquetas")) return "Etiquetas";
   if (pathname.startsWith("/pdv")) return "PDV";
+  if (pathname.startsWith("/pedidos")) return "Pedidos";
   if (pathname.startsWith("/caixa")) return "Caixa";
   if (pathname.startsWith("/financeiro")) return "Financeiro";
   if (pathname.startsWith("/permissoes")) return "Permissões";
