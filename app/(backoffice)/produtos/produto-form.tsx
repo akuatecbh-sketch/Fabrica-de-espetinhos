@@ -2,6 +2,7 @@
 
 import { useActionState, useState, type FormEvent } from "react";
 import { rotuloDescontoAtacado } from "@/lib/desconto-atacado";
+import { ORIGENS_MERCADORIA } from "@/lib/classificacao-fiscal";
 import type { ProdutoFormState } from "./actions";
 import { CampoEstoque } from "./campo-estoque";
 import { CategoriaCampo } from "./categoria-campo";
@@ -30,6 +31,14 @@ type ProdutoInicial = {
   permite_venda_pacote: boolean;
   quantidade_por_pacote: string | null;
   preco_pacote: string | null;
+  ncm: string | null;
+  cfop_padrao: string | null;
+  origem_mercadoria: string | null;
+  cst_csosn: string | null;
+  aliquota_icms: string | null;
+  aliquota_ipi: string | null;
+  aliquota_pis: string | null;
+  aliquota_cofins: string | null;
 };
 
 const estadoInicial: ProdutoFormState = {};
@@ -382,6 +391,111 @@ export function ProdutoForm({
           ) : null}
         </div>
       ) : null}
+
+      <fieldset className="flex flex-col gap-3 rounded border border-zinc-200 bg-zinc-50 p-4">
+        <legend className="px-1 text-sm font-medium">
+          Classificação fiscal (NF-e)
+        </legend>
+        <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Esses dados devem ser fornecidos pelo contador da empresa.
+          Preencher incorretamente pode gerar uma nota fiscal inválida
+          ou fiscalmente incorreta.
+        </p>
+
+        <label className="flex flex-col gap-1 text-sm">
+          NCM
+          <input
+            name="ncm"
+            inputMode="numeric"
+            maxLength={10}
+            placeholder="00000000"
+            defaultValue={produto?.ncm ?? ""}
+            className="rounded border border-zinc-300 bg-white px-3 py-2 font-mono"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          CFOP padrão
+          <input
+            name="cfop_padrao"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="5102"
+            defaultValue={produto?.cfop_padrao ?? ""}
+            className="rounded border border-zinc-300 bg-white px-3 py-2 font-mono"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          Origem da mercadoria
+          <select
+            name="origem_mercadoria"
+            defaultValue={produto?.origem_mercadoria ?? ""}
+            className="rounded border border-zinc-300 bg-white px-3 py-2"
+          >
+            <option value="">Não informado</option>
+            {ORIGENS_MERCADORIA.map((origem) => (
+              <option key={origem.valor} value={origem.valor}>
+                {origem.rotulo}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          CST/CSOSN
+          <input
+            name="cst_csosn"
+            maxLength={4}
+            placeholder="102"
+            defaultValue={produto?.cst_csosn ?? ""}
+            className="rounded border border-zinc-300 bg-white px-3 py-2 font-mono"
+          />
+        </label>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm">
+            Alíquota ICMS (%)
+            <input
+              name="aliquota_icms"
+              inputMode="decimal"
+              placeholder="0"
+              defaultValue={produto?.aliquota_icms ?? ""}
+              className="rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Alíquota IPI (%)
+            <input
+              name="aliquota_ipi"
+              inputMode="decimal"
+              placeholder="0"
+              defaultValue={produto?.aliquota_ipi ?? ""}
+              className="rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Alíquota PIS (%)
+            <input
+              name="aliquota_pis"
+              inputMode="decimal"
+              placeholder="0"
+              defaultValue={produto?.aliquota_pis ?? ""}
+              className="rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Alíquota COFINS (%)
+            <input
+              name="aliquota_cofins"
+              inputMode="decimal"
+              placeholder="0"
+              defaultValue={produto?.aliquota_cofins ?? ""}
+              className="rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+        </div>
+      </fieldset>
 
       <button
         type="submit"

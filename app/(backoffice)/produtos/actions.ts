@@ -9,6 +9,8 @@ import {
   montarEan13,
   validarCodigoBarrasInformado,
 } from "@/lib/ean13";
+import { soDigitos } from "@/lib/documento";
+import { ORIGENS_MERCADORIA } from "@/lib/classificacao-fiscal";
 
 export type ProdutoFormState = {
   error?: string;
@@ -204,6 +206,61 @@ async function lerDadosProduto(
     } as const;
   }
 
+  const ncmBruto = soDigitos(texto(formData, "ncm"));
+  let ncm: string | null = null;
+  if (ncmBruto) {
+    if (ncmBruto.length !== 8) {
+      return { error: "O NCM deve ter 8 dígitos." } as const;
+    }
+    ncm = ncmBruto;
+  }
+
+  const cfopBruto = soDigitos(texto(formData, "cfop_padrao"));
+  let cfop_padrao: string | null = null;
+  if (cfopBruto) {
+    if (cfopBruto.length !== 4) {
+      return { error: "O CFOP padrão deve ter 4 dígitos." } as const;
+    }
+    cfop_padrao = cfopBruto;
+  }
+
+  const origemBruta = texto(formData, "origem_mercadoria");
+  let origem_mercadoria: string | null = null;
+  if (origemBruta) {
+    if (!ORIGENS_MERCADORIA.some((origem) => origem.valor === origemBruta)) {
+      return { error: "Origem da mercadoria inválida." } as const;
+    }
+    origem_mercadoria = origemBruta;
+  }
+
+  const cstBruto = soDigitos(texto(formData, "cst_csosn"));
+  let cst_csosn: string | null = null;
+  if (cstBruto) {
+    if (cstBruto.length < 2 || cstBruto.length > 4) {
+      return { error: "O CST/CSOSN deve ter entre 2 e 4 dígitos." } as const;
+    }
+    cst_csosn = cstBruto;
+  }
+
+  const aliquota_icms = decimal(formData, "aliquota_icms");
+  const aliquota_ipi = decimal(formData, "aliquota_ipi");
+  const aliquota_pis = decimal(formData, "aliquota_pis");
+  const aliquota_cofins = decimal(formData, "aliquota_cofins");
+  const aliquotas = [
+    ["ICMS", aliquota_icms],
+    ["IPI", aliquota_ipi],
+    ["PIS", aliquota_pis],
+    ["COFINS", aliquota_cofins],
+  ] as const;
+  for (const [nomeAliquota, valor] of aliquotas) {
+    if (valor == null) continue;
+    if (Number.isNaN(valor) || valor < 0 || valor > 100) {
+      return {
+        error: `A alíquota de ${nomeAliquota} deve estar entre 0 e 100.`,
+      } as const;
+    }
+  }
+
   const codigoBarras = await resolverCodigoBarras(
     codigoBarrasInformado,
     codigoBarrasAtual,
@@ -241,6 +298,14 @@ async function lerDadosProduto(
       permite_venda_pacote,
       quantidade_por_pacote: quantidadePacote,
       preco_pacote: precoPacote,
+      ncm,
+      cfop_padrao,
+      origem_mercadoria,
+      cst_csosn,
+      aliquota_icms,
+      aliquota_ipi,
+      aliquota_pis,
+      aliquota_cofins,
     },
     automatico: codigoBarras.automatico,
     sequencial: "sequencial" in codigoBarras ? codigoBarras.sequencial : undefined,

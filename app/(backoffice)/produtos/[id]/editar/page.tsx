@@ -95,6 +95,14 @@ export default async function EditarProdutoPage({ params }: Props) {
           quantidade_por_pacote:
             produto.quantidade_por_pacote?.toString() ?? null,
           preco_pacote: produto.preco_pacote?.toString() ?? null,
+          ncm: produto.ncm?.trim() || null,
+          cfop_padrao: produto.cfop_padrao?.trim() || null,
+          origem_mercadoria: produto.origem_mercadoria?.trim() || null,
+          cst_csosn: produto.cst_csosn,
+          aliquota_icms: produto.aliquota_icms?.toString() ?? null,
+          aliquota_ipi: produto.aliquota_ipi?.toString() ?? null,
+          aliquota_pis: produto.aliquota_pis?.toString() ?? null,
+          aliquota_cofins: produto.aliquota_cofins?.toString() ?? null,
         }}
       />
       {produto.tipo === "produto_final" ? (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatarPreco, formatarQuantidade } from "@/lib/format";
 import { estoqueCritico } from "@/lib/estoque-critico";
+import { produtoSemDadosFiscais } from "@/lib/classificacao-fiscal";
 import { CardRegistro } from "../card-registro";
 import { InativarButton } from "./inativar-button";
 
@@ -14,9 +15,19 @@ type ProdutoLista = {
   preco_venda: { toString(): string } | null;
   ativo: boolean;
   permite_venda_pacote: boolean;
+  ncm: string | null;
   categoria_produto: { nome: string };
   unidade_medida: { sigla: string };
 };
+
+function BadgeFiscal({ produto }: { produto: ProdutoLista }) {
+  if (!produtoSemDadosFiscais(produto)) return null;
+  return (
+    <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+      Sem dados fiscais
+    </span>
+  );
+}
 
 function BadgeEstoque({ produto }: { produto: ProdutoLista }) {
   if (Number(produto.estoque_atual) >= Number(produto.estoque_minimo ?? 0)) {
@@ -80,6 +91,7 @@ export function ListaProdutos({
               </p>
               <div className="mt-1 flex flex-wrap gap-1">
                 <BadgeEstoque produto={produto} />
+                <BadgeFiscal produto={produto} />
                 {produto.ativo ? (
                   <span className="rounded bg-verde-sucesso/10 px-2 py-0.5 text-xs font-medium text-verde-sucesso">
                     Ativo
@@ -128,11 +140,14 @@ export function ListaProdutos({
                 <td className="px-3 py-2">
                   <div className="flex flex-col items-start gap-1">
                     <span>{produto.nome}</span>
-                    {produto.permite_venda_pacote ? (
-                      <span className="rounded bg-verde-sucesso/10 px-2 py-0.5 text-xs font-medium text-verde-sucesso">
-                        Vende em pacote
-                      </span>
-                    ) : null}
+                    <div className="flex flex-wrap gap-1">
+                      {produto.permite_venda_pacote ? (
+                        <span className="rounded bg-verde-sucesso/10 px-2 py-0.5 text-xs font-medium text-verde-sucesso">
+                          Vende em pacote
+                        </span>
+                      ) : null}
+                      <BadgeFiscal produto={produto} />
+                    </div>
                   </div>
                 </td>
                 <td className="px-3 py-2">{produto.codigo || "—"}</td>
