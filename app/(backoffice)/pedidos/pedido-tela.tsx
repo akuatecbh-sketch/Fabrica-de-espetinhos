@@ -22,8 +22,15 @@ export type PedidoTelaDados = {
   itens: ItemPedidoExibicao[];
 };
 
-export function PedidoTela({ pedido }: { pedido: PedidoTelaDados | null }) {
-  const editavel = pedido == null || pedidoEditavel(pedido.status);
+export function PedidoTela({
+  pedido,
+  forcarLeitura = false,
+}: {
+  pedido: PedidoTelaDados | null;
+  forcarLeitura?: boolean;
+}) {
+  const editavelPorStatus = pedido == null || pedidoEditavel(pedido.status);
+  const editavel = editavelPorStatus && !forcarLeitura;
   const somenteLeitura = !editavel;
 
   return (
@@ -32,26 +39,26 @@ export function PedidoTela({ pedido }: { pedido: PedidoTelaDados | null }) {
         <Link href="/pedidos" className="text-sm text-zinc-600 hover:underline">
           ← Voltar para pedidos
         </Link>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {pedido ? `Pedido #${pedido.numero}` : "Novo pedido"}
-            </h1>
-            <span
-              className={classesStatusPedido(pedido?.status ?? "aberto")}
-            >
-              {rotuloStatusPedido(pedido?.status ?? "aberto")}
-            </span>
-          </div>
-          {pedido ? (
-            <AcoesPedido
-              pedidoId={pedido.id}
-              status={pedido.status}
-              temItens={pedido.itens.length > 0}
-            />
-          ) : null}
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {pedido ? `Pedido #${pedido.numero}` : "Novo pedido"}
+          </h1>
+          <span className={classesStatusPedido(pedido?.status ?? "aberto")}>
+            {rotuloStatusPedido(pedido?.status ?? "aberto")}
+          </span>
         </div>
-        {somenteLeitura ? (
+        {forcarLeitura && pedido && editavelPorStatus ? (
+          <p className="mt-2 text-sm text-texto-secundario">
+            Somente leitura.{" "}
+            <Link
+              href={`/pedidos/${pedido.id}`}
+              className="font-medium text-texto-primario underline-offset-2 hover:underline"
+            >
+              Editar este pedido
+            </Link>
+          </p>
+        ) : null}
+        {!editavelPorStatus ? (
           <p className="mt-2 text-sm text-texto-secundario">
             Este pedido não pode mais ser alterado.
           </p>
@@ -63,10 +70,6 @@ export function PedidoTela({ pedido }: { pedido: PedidoTelaDados | null }) {
         cliente={pedido?.cliente ?? null}
         somenteLeitura={somenteLeitura}
       />
-
-      {pedido?.tokenPublico ? (
-        <CopiarLinkRevisao token={pedido.tokenPublico} />
-      ) : null}
 
       <div
         className={
@@ -89,6 +92,21 @@ export function PedidoTela({ pedido }: { pedido: PedidoTelaDados | null }) {
         observacao={pedido?.observacao ?? ""}
         somenteLeitura={somenteLeitura}
       />
+
+      {pedido?.tokenPublico || (pedido && editavel) ? (
+        <div className="flex flex-col gap-4 border-t border-borda pt-4">
+          {pedido.tokenPublico ? (
+            <CopiarLinkRevisao token={pedido.tokenPublico} />
+          ) : null}
+          {editavel ? (
+            <AcoesPedido
+              pedidoId={pedido.id}
+              status={pedido.status}
+              temItens={pedido.itens.length > 0}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

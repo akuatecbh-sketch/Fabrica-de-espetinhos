@@ -12,14 +12,28 @@ type PedidoLista = {
   clienteNome: string | null;
 };
 
-function AcoesPedido({ pedido }: { pedido: PedidoLista }) {
+const classeLink =
+  "inline-flex min-h-11 items-center text-texto-primario underline-offset-2 hover:underline md:min-h-0";
+
+function AcoesListaPedido({ pedido }: { pedido: PedidoLista }) {
+  const hrefVisualizar = `/pedidos/${pedido.id}?modo=visualizar`;
+  if (!pedidoEditavel(pedido.status)) {
+    return (
+      <Link href={hrefVisualizar} className={classeLink}>
+        Visualizar
+      </Link>
+    );
+  }
+
   return (
-    <Link
-      href={`/pedidos/${pedido.id}`}
-      className="inline-flex min-h-11 items-center text-texto-primario underline-offset-2 hover:underline md:min-h-0"
-    >
-      {pedidoEditavel(pedido.status) ? "Editar" : "Visualizar"}
-    </Link>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <Link href={`/pedidos/${pedido.id}`} className={classeLink}>
+        Editar
+      </Link>
+      <Link href={hrefVisualizar} className={classeLink}>
+        Visualizar
+      </Link>
+    </div>
   );
 }
 
@@ -39,7 +53,7 @@ export function ListaPedidos({
       <ul className="flex flex-col gap-3 md:hidden">
         {pedidos.map((pedido) => (
           <li key={pedido.id}>
-            <CardRegistro acoes={<AcoesPedido pedido={pedido} />}>
+            <CardRegistro acoes={<AcoesListaPedido pedido={pedido} />}>
               <p className="font-data font-medium text-texto-primario">
                 Pedido #{pedido.numero}
               </p>
@@ -94,7 +108,7 @@ export function ListaPedidos({
                   {formatarDataHora(pedido.criado_em)}
                 </td>
                 <td className="px-3 py-2">
-                  <AcoesPedido pedido={pedido} />
+                  <AcoesListaPedido pedido={pedido} />
                 </td>
               </tr>
             ))}

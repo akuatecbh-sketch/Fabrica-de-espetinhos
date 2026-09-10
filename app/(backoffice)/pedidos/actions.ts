@@ -505,15 +505,15 @@ export async function marcarPedidoEnviado(
 
   const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
   if (!pedido) return { error: "Pedido não encontrado." };
-  if (pedido.status !== "aberto") {
-    return { error: "Só é possível enviar um pedido em aberto." };
+  if (!pedidoEditavel(pedido.status)) {
+    return { error: "Este pedido não pode ser finalizado." };
   }
 
   await prisma.pedido.update({
     where: { id: pedido.id },
     data: {
       status: "enviado",
-      enviado_em: new Date(),
+      enviado_em: pedido.enviado_em ?? new Date(),
       atualizado_em: new Date(),
       token_publico: pedido.token_publico ?? crypto.randomUUID(),
     },

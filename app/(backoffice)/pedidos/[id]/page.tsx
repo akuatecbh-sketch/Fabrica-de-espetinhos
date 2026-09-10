@@ -8,11 +8,13 @@ export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ modo?: string }>;
 };
 
-export default async function PedidoPage({ params }: Props) {
+export default async function PedidoPage({ params, searchParams }: Props) {
   await exigirAcesso("pedidos");
   const { id: idBruto } = await params;
+  const { modo } = await searchParams;
   const id = Number(idBruto);
   if (!Number.isInteger(id) || id <= 0) notFound();
 
@@ -38,6 +40,7 @@ export default async function PedidoPage({ params }: Props) {
 
   return (
     <PedidoTela
+      forcarLeitura={modo === "visualizar"}
       pedido={{
         id: pedido.id,
         numero: pedido.numero,

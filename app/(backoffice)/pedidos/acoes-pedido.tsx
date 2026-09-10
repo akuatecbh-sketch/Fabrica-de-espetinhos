@@ -22,7 +22,7 @@ export function AcoesPedido({
   );
   const [pendente, startTransition] = useTransition();
 
-  function enviar() {
+  function finalizar() {
     setErro(null);
     setAcao("enviar");
     startTransition(async () => {
@@ -53,16 +53,25 @@ export function AcoesPedido({
     });
   }
 
-  const podeEnviar = status === "aberto";
-  const podeCancelar = status === "aberto" || status === "enviado";
-  const podeVender =
-    (status === "aberto" || status === "enviado") && temItens;
-  if (!podeEnviar && !podeCancelar && !podeVender) return null;
+  const emEdicao = status === "aberto" || status === "enviado";
+  const podeFinalizarOuVender = emEdicao && temItens;
+  const podeCancelar = emEdicao;
+  if (!podeFinalizarOuVender && !podeCancelar) return null;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
-        {podeVender ? (
+    <div className="flex flex-col gap-3">
+      {podeFinalizarOuVender ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={pendente}
+            onClick={finalizar}
+            className="min-h-11 rounded border border-borda bg-superficie px-4 py-2 text-sm font-medium text-texto-primario hover:bg-fundo-hover disabled:opacity-60 lg:min-h-0"
+          >
+            {acao === "enviar" && pendente
+              ? "Finalizando..."
+              : "Finalizar pedido"}
+          </button>
           <button
             type="button"
             disabled={pendente}
@@ -71,35 +80,21 @@ export function AcoesPedido({
           >
             {acao === "vender" && pendente ? "Convertendo..." : "Vender"}
           </button>
-        ) : null}
-        {podeEnviar ? (
-          <button
-            type="button"
-            disabled={pendente}
-            onClick={enviar}
-            className="min-h-11 rounded border border-borda bg-superficie px-4 py-2 text-sm font-medium text-texto-primario hover:bg-fundo-hover disabled:opacity-60 lg:min-h-0"
-          >
-            {acao === "enviar" && pendente
-              ? "Enviando..."
-              : "Marcar como enviado"}
-          </button>
-        ) : null}
-        {podeCancelar ? (
-          <button
-            type="button"
-            disabled={pendente}
-            onClick={cancelar}
-            className="min-h-11 rounded border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60 lg:min-h-0"
-          >
-            {acao === "cancelar" && pendente
-              ? "Cancelando..."
-              : "Cancelar pedido"}
-          </button>
-        ) : null}
-      </div>
-      {erro ? (
-        <p className="text-sm text-vermelho-erro">{erro}</p>
+        </div>
       ) : null}
+      {podeCancelar ? (
+        <button
+          type="button"
+          disabled={pendente}
+          onClick={cancelar}
+          className="min-h-11 w-fit rounded border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60 lg:min-h-0"
+        >
+          {acao === "cancelar" && pendente
+            ? "Cancelando..."
+            : "Cancelar pedido"}
+        </button>
+      ) : null}
+      {erro ? <p className="text-sm text-vermelho-erro">{erro}</p> : null}
     </div>
   );
 }
