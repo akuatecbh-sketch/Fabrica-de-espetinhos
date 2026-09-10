@@ -6,11 +6,15 @@ import {
   dataLocalISO,
   dataUtcMeiaNoite,
   ehIsoData,
+  ehTipoCategoriaPagar,
   mesFinanceiroDaUrl,
 } from "@/lib/financeiro";
+import { obterFaturamentoMes } from "@/lib/faturamento";
 import { obterResumoDreMes } from "@/lib/resumo-financeiro";
 import type { Prisma } from "@/generated/prisma/client";
 import { AbasFinanceiro } from "./abas";
+import { DespesasResumo } from "./despesas-resumo";
+import { FaturamentoPainel } from "./faturamento-painel";
 import { FiltrosContas } from "./filtros";
 import { ListaPagar } from "./lista-pagar";
 import { ListaReceber } from "./lista-receber";
@@ -26,6 +30,7 @@ type Props = {
     de?: string;
     ate?: string;
     mes?: string;
+    tipo?: string;
   }>;
 };
 
@@ -40,10 +45,14 @@ function wherePagar(
   status: string,
   hoje: Date,
   periodo?: { gte?: Date; lte?: Date },
+  tipo?: string,
 ): Prisma.conta_pagarWhereInput {
-  const base: Prisma.conta_pagarWhereInput = periodo
-    ? { data_vencimento: periodo }
-    : {};
+  const base: Prisma.conta_pagarWhereInput = {
+    ...(periodo ? { data_vencimento: periodo } : {}),
+    ...(tipo && ehTipoCategoriaPagar(tipo)
+      ? { categoria_financeira: { tipo } }
+      : {}),
+  };
 
   if (status === "todas") return base;
   if (status === "pendentes") {
@@ -92,29 +101,67 @@ function whereReceber(
   return { ...base, status: "aberta" };
 }
 
+const FILTRO_ABERTO = { status: { in: ["aberta", "atrasada"] } };
+
 async function AbaDespesas({
   status,
   de,
   ate,
+  tipo,
 }: {
   status: string;
   de: string;
   ate: string;
+  tipo: string;
 }) {
   const hoje = dataUtcMeiaNoite(dataLocalISO());
   const periodo = filtroPeriodo(de, ate);
-  const contas = await prisma.conta_pagar.findMany({
-    where: wherePagar(status, hoje, periodo),
-    include: {
-      fornecedor: true,
-      categoria_financeira: true,
-    },
-    orderBy: [{ data_vencimento: "asc" }, { id: "asc" }],
-  });
+  const [contas, fixas, variaveis] = await Promise.all([
+    prisma.conta_pagar.findMany({
+      where: wherePagar(status, hoje, periodo, tipo),
+      include: {
+        fornecedor: true,
+        categoria_financeira: true,
+      },
+      orderBy: [{ data_vencimento: "asc" }, { id: "asc" }],
+    }),
+    prisma.conta_pagar.aggregate({
+      where: {
+        ...FILTRO_ABERTO,
+        categoria_financeira: { tipo: "custo_fixo" },
+      },
+      _sum: { valor: true },
+      _count: { _all: true },
+    }),
+    prisma.conta_pagar.aggregate({
+      where: {
+        ...FILTRO_ABERTO,
+        categoria_financeira: { tipo: "custo_variavel" },
+      },
+      _sum: { valor: true },
+      _count: { _all: true },
+    }),
+  ]);
 
   return (
     <>
-      <FiltrosContas aba="despesas" status={status} de={de} ate={ate} />
+      <DespesasResumo
+        fixas={{
+          total: Number(fixas._sum.valor ?? 0),
+          quantidade: fixas._count._all,
+        }}
+        variaveis={{
+          total: Number(variaveis._sum.valor ?? 0),
+          quantidade: variaveis._count._all,
+        }}
+      />
+      <FiltrosContas
+        aba="despesas"
+        status={status}
+        de={de}
+        ate={ate}
+        tipo={tipo}
+      />
       <ListaPagar contas={contas} />
     </>
   );
@@ -160,8 +207,12 @@ export default async function FinanceiroPage({ searchParams }: Props) {
       : params.status?.trim() || "aberta";
   const de = params.de && ehIsoData(params.de) ? params.de : "";
   const ate = params.ate && ehIsoData(params.ate) ? params.ate : "";
+  const tipo =
+    params.tipo && ehTipoCategoriaPagar(params.tipo) ? params.tipo : "todos";
 
   const resumo = aba === "resumo" ? await obterResumoDreMes(mes) : null;
+  const faturamento =
+    aba === "faturamento" ? await obterFaturamentoMes(mes) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -188,11 +239,11 @@ export default async function FinanceiroPage({ searchParams }: Props) {
       <AbasFinanceiro atual={aba} />
 
       {aba === "resumo" && resumo ? <ResumoDre dados={resumo} /> : null}
-      {aba === "faturamento" ? (
-        <AbaEmBreve texto="O detalhamento do faturamento será adicionado em seguida." />
+      {aba === "faturamento" && faturamento ? (
+        <FaturamentoPainel dados={faturamento} />
       ) : null}
       {aba === "despesas" ? (
-        <AbaDespesas status={status} de={de} ate={ate} />
+        <AbaDespesas status={status} de={de} ate={ate} tipo={tipo} />
       ) : null}
       {aba === "receber" ? (
         <AbaReceber status={status} de={de} ate={ate} />

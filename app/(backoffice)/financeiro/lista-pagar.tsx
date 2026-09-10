@@ -3,6 +3,7 @@ import {
   contaAtrasada,
   dataLocalISO,
   rotuloStatusConta,
+  rotuloTipoDespesa,
   classesBadgeStatus,
 } from "@/lib/financeiro";
 import { CardRegistro } from "../card-registro";
@@ -17,7 +18,7 @@ type Conta = {
   status: string;
   recorrente: boolean;
   fornecedor: { razao_social: string; nome_fantasia: string | null } | null;
-  categoria_financeira: { nome: string };
+  categoria_financeira: { nome: string; tipo: string };
 };
 
 function AcoesPagar({
@@ -75,6 +76,8 @@ export function ListaPagar({ contas }: { contas: Conta[] }) {
                   ) : null}
                 </div>
                 <p className="text-xs text-texto-secundario">
+                  {rotuloTipoDespesa(conta.categoria_financeira.tipo)}
+                  {" · "}
                   {conta.categoria_financeira.nome}
                   {" · "}
                   {conta.fornecedor
@@ -95,6 +98,7 @@ export function ListaPagar({ contas }: { contas: Conta[] }) {
               <th className="px-3 py-2 font-medium">Vencimento</th>
               <th className="px-3 py-2 font-medium">Descrição</th>
               <th className="px-3 py-2 font-medium">Categoria</th>
+              <th className="px-3 py-2 font-medium">Tipo</th>
               <th className="px-3 py-2 font-medium">Fornecedor</th>
               <th className="px-3 py-2 font-medium">Valor</th>
               <th className="px-3 py-2 font-medium">Status</th>
@@ -129,6 +133,9 @@ export function ListaPagar({ contas }: { contas: Conta[] }) {
                     </div>
                   </td>
                   <td className="px-3 py-2">{conta.categoria_financeira.nome}</td>
+                  <td className="px-3 py-2">
+                    {rotuloTipoDespesa(conta.categoria_financeira.tipo)}
+                  </td>
                   <td className="px-3 py-2">
                     {conta.fornecedor
                       ? conta.fornecedor.nome_fantasia ||

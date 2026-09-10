@@ -18,8 +18,16 @@ export function ehTipoCategoriaFinanceira(
   return (TIPOS_CATEGORIA_FINANCEIRA as readonly string[]).includes(valor);
 }
 
-export function ehTipoCategoriaPagar(valor: string) {
+export function ehTipoCategoriaPagar(
+  valor: string,
+): valor is (typeof TIPOS_CATEGORIA_PAGAR)[number] {
   return (TIPOS_CATEGORIA_PAGAR as readonly string[]).includes(valor);
+}
+
+export function rotuloTipoDespesa(tipo: string) {
+  if (tipo === "custo_fixo") return "Fixa";
+  if (tipo === "custo_variavel") return "Variável";
+  return tipo;
 }
 
 export const ABAS_FINANCEIRO = [

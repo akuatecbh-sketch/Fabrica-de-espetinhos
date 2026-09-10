@@ -1,7 +1,13 @@
-export function SeletorMes({ mes }: { mes: string }) {
+export function SeletorMes({
+  mes,
+  aba,
+}: {
+  mes: string;
+  aba: "resumo" | "faturamento";
+}) {
   return (
     <form method="get" className="flex flex-wrap items-end gap-3">
-      <input type="hidden" name="aba" value="resumo" />
+      <input type="hidden" name="aba" value={aba} />
       <label className="flex flex-col gap-1 text-sm">
         Mês
         <input

@@ -50,7 +50,7 @@ export function ResumoDre({ dados }: { dados: ResumoDreMes }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <SeletorMes key={dados.mes} mes={dados.mes} />
+      <SeletorMes key={dados.mes} mes={dados.mes} aba="resumo" />
 
       <section className="rounded border border-zinc-200 bg-white px-4 py-4 sm:px-5">
         <h2 className="text-sm font-medium text-texto-primario">

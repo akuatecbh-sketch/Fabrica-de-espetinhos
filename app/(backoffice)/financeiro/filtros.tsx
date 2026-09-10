@@ -5,11 +5,13 @@ export function FiltrosContas({
   status,
   de,
   ate,
+  tipo = "todos",
 }: {
   aba: AbaContasFinanceiro;
   status: string;
   de: string;
   ate: string;
+  tipo?: string;
 }) {
   return (
     <form method="get" className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -31,6 +33,20 @@ export function FiltrosContas({
           <option value="todas">Todas</option>
         </select>
       </label>
+      {aba === "despesas" ? (
+        <label className="flex flex-col gap-1 text-sm">
+          Tipo
+          <select
+            name="tipo"
+            defaultValue={tipo}
+            className="rounded border border-zinc-300 bg-white px-3 py-2"
+          >
+            <option value="todos">Todos</option>
+            <option value="custo_fixo">Fixa</option>
+            <option value="custo_variavel">Variável</option>
+          </select>
+        </label>
+      ) : null}
       <label className="flex flex-col gap-1 text-sm">
         Vencimento de
         <input
