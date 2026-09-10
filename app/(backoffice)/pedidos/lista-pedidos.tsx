@@ -18,7 +18,7 @@ function AcoesPedido({ pedido }: { pedido: PedidoLista }) {
       href={`/pedidos/${pedido.id}`}
       className="inline-flex min-h-11 items-center text-texto-primario underline-offset-2 hover:underline md:min-h-0"
     >
-      {pedidoEditavel(pedido.status) ? "Editar" : "Ver"}
+      {pedidoEditavel(pedido.status) ? "Editar" : "Visualizar"}
     </Link>
   );
 }
@@ -69,7 +69,7 @@ export function ListaPedidos({
               <th className="px-3 py-2 font-medium">Status</th>
               <th className="px-3 py-2 font-medium">Total</th>
               <th className="px-3 py-2 font-medium">Criado em</th>
-              <th className="px-3 py-2 font-medium">Ações</th>
+              <th className="px-3 py-2 font-medium">Ação</th>
             </tr>
           </thead>
           <tbody>

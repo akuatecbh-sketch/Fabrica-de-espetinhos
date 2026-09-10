@@ -15,15 +15,14 @@ import { ehPessoaJuridica } from "@/lib/cliente";
 import { PdvBuscaProduto } from "./busca-produto";
 import { RemoverItemButton } from "./remover-item-button";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
-import { exigirAcesso, temAcesso } from "@/lib/permissoes";
+import { exigirAcesso } from "@/lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
 export default async function PdvPage() {
-  const usuario = await exigirAcesso("pdv");
+  await exigirAcesso("pdv");
   const caixa = await obterCaixaAberto();
   if (!caixa) redirect("/caixa");
-  const podePedidos = await temAcesso(usuario.id, "pedidos");
 
   const abas = await prisma.venda.findMany({
     where: { status: { in: ["aberta", "em_espera"] } },
@@ -98,7 +97,6 @@ export default async function PdvPage() {
     clienteNome: aba.aba_rotulo?.trim() || aba.cliente?.nome || null,
   }));
 
-
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
       <div className="hidden lg:block">
@@ -109,11 +107,7 @@ export default async function PdvPage() {
         </p>
       </div>
 
-      <BarraAbas
-        abas={abasComRotulo}
-        focoId={focoId}
-        podePedidos={podePedidos}
-      />
+      <BarraAbas abas={abasComRotulo} focoId={focoId} />
 
       {!venda ? (
         <p className="text-sm text-texto-secundario">
