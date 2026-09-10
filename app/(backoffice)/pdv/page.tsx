@@ -69,8 +69,14 @@ export default async function PdvPage() {
     quantidade: number;
     ultimaCompra: string | null;
   } | null = null;
+  let pedidosPendentes: {
+    id: number;
+    numero: number;
+    total: number;
+    status: string;
+  }[] = [];
   if (clienteFoco) {
-    const [quantidade, ultima] = await Promise.all([
+    const [quantidade, ultima, pedidosDoCliente] = await Promise.all([
       prisma.venda.count({
         where: { cliente_id: clienteFoco.id, status: "finalizada" },
       }),
@@ -78,6 +84,14 @@ export default async function PdvPage() {
         where: { cliente_id: clienteFoco.id, status: "finalizada" },
         orderBy: { finalizado_em: "desc" },
         select: { finalizado_em: true },
+      }),
+      prisma.pedido.findMany({
+        where: {
+          cliente_id: clienteFoco.id,
+          status: { in: ["aberto", "enviado"] },
+        },
+        select: { id: true, numero: true, total: true, status: true },
+        orderBy: { numero: "desc" },
       }),
     ]);
     historicoCliente = {
@@ -88,6 +102,12 @@ export default async function PdvPage() {
           )
         : null,
     };
+    pedidosPendentes = pedidosDoCliente.map((pedido) => ({
+      id: pedido.id,
+      numero: pedido.numero,
+      total: Number(pedido.total),
+      status: pedido.status,
+    }));
   }
 
   const abasComRotulo = abas.map((aba) => ({
@@ -120,6 +140,7 @@ export default async function PdvPage() {
             vendaId={venda.id}
             cliente={venda.cliente}
             historico={historicoCliente}
+            pedidosPendentes={pedidosPendentes}
           />
 
           <div className="hidden items-center justify-between gap-3 lg:flex">

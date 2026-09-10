@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { BuscaAutocomplete } from "@/components/busca-autocomplete";
 import { formatarCnpjCpf, mascaraCpf, mascaraTelefone } from "@/lib/documento";
+import { formatarPreco } from "@/lib/format";
+import { rotuloStatusPedido } from "@/lib/pedido";
+import { converterPedidoEmVenda } from "../pedidos/actions";
 import {
   buscarClientesPdv,
   cadastrarClienteNaVenda,
@@ -15,13 +18,26 @@ type HistoricoCliente = {
   ultimaCompra: string | null;
 };
 
+type PedidoPendente = {
+  id: number;
+  numero: number;
+  total: number;
+  status: string;
+};
+
 type Props = {
   vendaId: number;
   cliente: { id: number; nome: string } | null;
   historico: HistoricoCliente | null;
+  pedidosPendentes: PedidoPendente[];
 };
 
-export function ClienteVenda({ vendaId, cliente, historico }: Props) {
+export function ClienteVenda({
+  vendaId,
+  cliente,
+  historico,
+  pedidosPendentes,
+}: Props) {
   const [modo, setModo] = useState<"resumo" | "busca" | "cadastro">(
     cliente ? "resumo" : "busca",
   );
@@ -31,6 +47,7 @@ export function ClienteVenda({ vendaId, cliente, historico }: Props) {
   const [cpfNovo, setCpfNovo] = useState("");
   const [telefoneNovo, setTelefoneNovo] = useState("");
   const [pendente, startTransition] = useTransition();
+  const [convertendoId, setConvertendoId] = useState<number | null>(null);
   const buscaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,6 +78,16 @@ export function ClienteVenda({ vendaId, cliente, historico }: Props) {
         setErro(resultado.error);
         return;
       }
+    });
+  }
+
+  function venderPedidoPendente(pedidoId: number) {
+    setErro(null);
+    setConvertendoId(pedidoId);
+    startTransition(async () => {
+      const resultado = await converterPedidoEmVenda(pedidoId);
+      if (resultado?.error) setErro(resultado.error);
+      setConvertendoId(null);
     });
   }
 
@@ -123,10 +150,42 @@ export function ClienteVenda({ vendaId, cliente, historico }: Props) {
                 onClick={remover}
                 className="min-h-11 rounded border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60 lg:min-h-0"
               >
-                {pendente ? "Removendo..." : "Remover"}
+                {pendente && !convertendoId ? "Removendo..." : "Remover"}
               </button>
             </div>
           </div>
+          {pedidosPendentes.length > 0 ? (
+            <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <p>
+                {`Este cliente tem ${pedidosPendentes.length} pedido${pedidosPendentes.length === 1 ? "" : "s"} pendente${pedidosPendentes.length === 1 ? "" : "s"}:`}
+              </p>
+              <ul className="mt-1.5 flex flex-col gap-1">
+                {pedidosPendentes.map((pedido) => (
+                  <li key={pedido.id}>
+                    <button
+                      type="button"
+                      disabled={pendente}
+                      onClick={() => venderPedidoPendente(pedido.id)}
+                      className="flex min-h-11 w-full flex-wrap items-center gap-x-2 rounded px-1 py-1 text-left hover:bg-amber-100 disabled:opacity-60 lg:min-h-0"
+                    >
+                      <span className="font-data font-medium underline-offset-2 hover:underline">
+                        Pedido #{pedido.numero}
+                      </span>
+                      <span className="font-data">
+                        {formatarPreco(pedido.total)}
+                      </span>
+                      <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium">
+                        {rotuloStatusPedido(pedido.status)}
+                      </span>
+                      {convertendoId === pedido.id ? (
+                        <span className="text-xs">Abrindo venda…</span>
+                      ) : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
