@@ -141,6 +141,12 @@ export function dataUtcMeiaNoite(iso: string) {
   return new Date(`${iso}T00:00:00.000Z`);
 }
 
+export function diaAnteriorISO(hojeIso = dataLocalISO()) {
+  const data = dataUtcMeiaNoite(hojeIso);
+  data.setUTCDate(data.getUTCDate() - 1);
+  return isoDaData(data);
+}
+
 export function isoDaData(data: Date) {
   return data.toISOString().slice(0, 10);
 }

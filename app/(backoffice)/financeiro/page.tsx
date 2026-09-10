@@ -19,6 +19,7 @@ import { FiltrosContas } from "./filtros";
 import { ListaPagar } from "./lista-pagar";
 import { ListaReceber } from "./lista-receber";
 import { ResumoDre } from "./resumo-dre";
+import { TaxasPainel } from "./taxas-painel";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ type Props = {
     ate?: string;
     mes?: string;
     tipo?: string;
+    nova?: string;
   }>;
 };
 
@@ -192,8 +194,38 @@ async function AbaReceber({
   );
 }
 
-function AbaEmBreve({ texto }: { texto: string }) {
-  return <p className="text-sm text-texto-secundario">{texto}</p>;
+const FORMAS_COM_TAXA = ["credito", "debito", "pix"];
+
+async function AbaTaxas({ nova }: { nova: boolean }) {
+  const [vigentes, historico, formas] = await Promise.all([
+    prisma.taxa_cartao.findMany({
+      where: { vigencia_fim: null },
+      include: { forma_pagamento: { select: { nome: true } } },
+      orderBy: [
+        { forma_pagamento_id: "asc" },
+        { numero_parcelas: "asc" },
+      ],
+    }),
+    prisma.taxa_cartao.findMany({
+      where: { vigencia_fim: { not: null } },
+      include: { forma_pagamento: { select: { nome: true } } },
+      orderBy: [{ vigencia_fim: "desc" }, { id: "desc" }],
+    }),
+    prisma.forma_pagamento.findMany({
+      where: { tipo: { in: FORMAS_COM_TAXA } },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true, tipo: true },
+    }),
+  ]);
+
+  return (
+    <TaxasPainel
+      vigentes={vigentes}
+      historico={historico}
+      formas={formas}
+      nova={nova}
+    />
+  );
 }
 
 export default async function FinanceiroPage({ searchParams }: Props) {
@@ -234,6 +266,14 @@ export default async function FinanceiroPage({ searchParams }: Props) {
             Nova conta a receber
           </Link>
         ) : null}
+        {aba === "taxas" && params.nova !== "1" ? (
+          <Link
+            href="/financeiro?aba=taxas&nova=1"
+            className="rounded bg-gradiente-brasa px-4 py-2 text-sm font-medium text-white"
+          >
+            Nova taxa
+          </Link>
+        ) : null}
       </div>
 
       <AbasFinanceiro atual={aba} />
@@ -249,7 +289,7 @@ export default async function FinanceiroPage({ searchParams }: Props) {
         <AbaReceber status={status} de={de} ate={ate} />
       ) : null}
       {aba === "taxas" ? (
-        <AbaEmBreve texto="O detalhamento das taxas de cartão será adicionado em seguida." />
+        <AbaTaxas nova={params.nova === "1"} />
       ) : null}
     </div>
   );
