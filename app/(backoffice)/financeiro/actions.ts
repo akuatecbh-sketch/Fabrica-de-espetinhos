@@ -101,7 +101,7 @@ export async function criarContaPagar(
   });
 
   revalidarFinanceiro();
-  redirect("/financeiro?aba=pagar&status=aberta");
+  redirect("/financeiro?aba=despesas&status=aberta");
 }
 
 export async function criarContaReceber(
@@ -175,7 +175,7 @@ export async function marcarContaPaga(
   });
 
   revalidarFinanceiro();
-  redirect("/financeiro?aba=pagar&status=aberta");
+  redirect("/financeiro?aba=despesas&status=aberta");
 }
 
 export async function marcarContaRecebida(

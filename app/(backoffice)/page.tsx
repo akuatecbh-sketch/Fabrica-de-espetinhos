@@ -242,7 +242,7 @@ export default async function DashboardPage() {
         {verFinanceiro ? (
           <>
             <KpiCard
-              href="/financeiro?aba=pagar&filtro=pendentes"
+              href="/financeiro?aba=despesas&filtro=pendentes"
               modulo="pagar"
               valor={Number(dados.contasPagar.totalAberto)}
               rotulo="Contas a pagar"

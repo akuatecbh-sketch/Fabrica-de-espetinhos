@@ -1,4 +1,4 @@
-import type { AbaFinanceiro } from "@/lib/financeiro";
+import type { AbaContasFinanceiro } from "@/lib/financeiro";
 
 export function FiltrosContas({
   aba,
@@ -6,7 +6,7 @@ export function FiltrosContas({
   de,
   ate,
 }: {
-  aba: AbaFinanceiro;
+  aba: AbaContasFinanceiro;
   status: string;
   de: string;
   ate: string;
@@ -24,8 +24,8 @@ export function FiltrosContas({
           <option value="aberta">Aberta</option>
           <option value="atrasada">Atrasada</option>
           <option value="pendentes">Pendentes</option>
-          <option value={aba === "pagar" ? "paga" : "recebida"}>
-            {aba === "pagar" ? "Paga" : "Recebida"}
+          <option value={aba === "despesas" ? "paga" : "recebida"}>
+            {aba === "despesas" ? "Paga" : "Recebida"}
           </option>
           <option value="cancelada">Cancelada</option>
           <option value="todas">Todas</option>

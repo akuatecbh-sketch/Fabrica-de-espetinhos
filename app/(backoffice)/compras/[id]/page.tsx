@@ -184,8 +184,8 @@ export default async function CompraDetalhePage({ params }: Props) {
                   <Link
                     href={
                       conta.status === "cancelada"
-                        ? "/financeiro?aba=pagar&status=cancelada"
-                        : "/financeiro?aba=pagar"
+                        ? "/financeiro?aba=despesas&status=cancelada"
+                        : "/financeiro?aba=despesas"
                     }
                     className="text-texto-primario underline-offset-2 hover:underline"
                   >

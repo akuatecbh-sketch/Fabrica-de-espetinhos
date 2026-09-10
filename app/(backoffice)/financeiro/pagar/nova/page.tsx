@@ -24,7 +24,7 @@ export default async function NovaContaPagarPage() {
     <div className="flex flex-col gap-6">
       <div>
         <Link
-          href="/financeiro?aba=pagar"
+          href="/financeiro?aba=despesas"
           className="text-sm text-zinc-600 hover:underline"
         >
           ← Voltar para financeiro
