@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatarPreco } from "@/lib/format";
 import { criarVenda, focarVenda } from "./actions";
 
@@ -11,9 +12,11 @@ type Aba = {
 export function BarraAbas({
   abas,
   focoId,
+  podePedidos,
 }: {
   abas: Aba[];
   focoId: number | null;
+  podePedidos: boolean;
 }) {
   return (
     <div className="relative">
@@ -59,6 +62,14 @@ export function BarraAbas({
             Nova venda
           </button>
         </form>
+        {podePedidos ? (
+          <Link
+            href="/pedidos/novo"
+            className="mb-0.5 flex min-h-11 shrink-0 items-center rounded border border-borda bg-superficie px-3 py-2 text-sm font-medium text-texto-primario hover:bg-fundo-hover lg:min-h-0"
+          >
+            Novo pedido
+          </Link>
+        ) : null}
       </div>
       <div
         aria-hidden
