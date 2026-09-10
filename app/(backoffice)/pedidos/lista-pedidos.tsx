@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { formatarDataHora, formatarPreco } from "@/lib/format";
-import { classesStatusPedido, pedidoEditavel, rotuloStatusPedido } from "@/lib/pedido";
+import { pedidoEditavel } from "@/lib/pedido";
 import { CardRegistro } from "../card-registro";
+import { BadgeSituacaoPedido } from "./badge-situacao";
 
 type PedidoLista = {
   id: number;
@@ -66,9 +67,12 @@ export function ListaPedidos({
               <p className="font-data text-lg font-semibold">
                 {formatarPreco(pedido.total)}
               </p>
-              <span className={`mt-1 w-fit ${classesStatusPedido(pedido.status)}`}>
-                {rotuloStatusPedido(pedido.status)}
-              </span>
+              <div className="mt-1">
+                <BadgeSituacaoPedido
+                  pedidoId={pedido.id}
+                  status={pedido.status}
+                />
+              </div>
             </CardRegistro>
           </li>
         ))}
@@ -80,7 +84,7 @@ export function ListaPedidos({
             <tr>
               <th className="px-3 py-2 font-medium">Número</th>
               <th className="px-3 py-2 font-medium">Cliente</th>
-              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">Situação</th>
               <th className="px-3 py-2 font-medium">Total</th>
               <th className="px-3 py-2 font-medium">Criado em</th>
               <th className="px-3 py-2 font-medium">Ação</th>
@@ -97,9 +101,10 @@ export function ListaPedidos({
                   {pedido.clienteNome ?? "Sem cliente"}
                 </td>
                 <td className="px-3 py-2">
-                  <span className={classesStatusPedido(pedido.status)}>
-                    {rotuloStatusPedido(pedido.status)}
-                  </span>
+                  <BadgeSituacaoPedido
+                    pedidoId={pedido.id}
+                    status={pedido.status}
+                  />
                 </td>
                 <td className="px-3 py-2 font-data">
                   {formatarPreco(pedido.total)}

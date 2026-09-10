@@ -10,7 +10,7 @@ import { exigirModulo } from "@/lib/sessao";
 import { obterCaixaAberto } from "@/lib/caixa";
 import { soDigitos, validarCpf } from "@/lib/documento";
 import { nomeExibicaoCliente } from "@/lib/cliente";
-import { pedidoEditavel } from "@/lib/pedido";
+import { ehSituacaoManual, pedidoEditavel } from "@/lib/pedido";
 
 export type PedidoFormState = {
   error?: string;
@@ -546,6 +546,34 @@ export async function cancelarPedido(
   return {};
 }
 
+export async function alterarSituacaoPedido(
+  pedidoId: number,
+  status: string,
+): Promise<PedidoFormState> {
+  await exigirModulo("pedidos");
+  if (!Number.isInteger(pedidoId)) return { error: "Pedido inválido." };
+  if (!ehSituacaoManual(status)) {
+    return { error: "Situação inválida." };
+  }
+
+  const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+  if (!pedido) return { error: "Pedido não encontrado." };
+  if (!ehSituacaoManual(pedido.status)) {
+    return { error: "Esta situação só muda por Vender ou Cancelar pedido." };
+  }
+  if (pedido.status === status) return {};
+
+  await prisma.pedido.update({
+    where: { id: pedido.id },
+    data: {
+      status,
+      atualizado_em: new Date(),
+    },
+  });
+  revalidarPedido(pedido.id);
+  return {};
+}
+
 const STATUS_VENDAS_PENDENTES = ["aberta", "em_espera"] as const;
 
 export async function converterPedidoEmVenda(pedidoId: number) {
@@ -628,7 +656,7 @@ export async function converterPedidoEmVenda(pedidoId: number) {
     const marcado = await tx.pedido.updateMany({
       where: {
         id: pedido.id,
-        status: { in: ["aberto", "enviado"] },
+        status: { in: ["aberto", "enviado", "aprovado"] },
       },
       data: {
         status: "convertido",

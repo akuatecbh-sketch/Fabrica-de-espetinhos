@@ -5,6 +5,7 @@ import {
   rotuloStatusPedido,
 } from "@/lib/pedido";
 import { AcoesPedido } from "./acoes-pedido";
+import { BadgeSituacaoPedido } from "./badge-situacao";
 import { ClientePedido } from "./cliente-pedido";
 import { CopiarLinkRevisao } from "./copiar-link-revisao";
 import { ItensPedido, type ItemPedidoExibicao } from "./itens-pedido";
@@ -43,9 +44,13 @@ export function PedidoTela({
           <h1 className="text-2xl font-semibold tracking-tight">
             {pedido ? `Pedido #${pedido.numero}` : "Novo pedido"}
           </h1>
-          <span className={classesStatusPedido(pedido?.status ?? "aberto")}>
-            {rotuloStatusPedido(pedido?.status ?? "aberto")}
-          </span>
+          {pedido ? (
+            <BadgeSituacaoPedido pedidoId={pedido.id} status={pedido.status} />
+          ) : (
+            <span className={classesStatusPedido("aberto")}>
+              {rotuloStatusPedido("aberto")}
+            </span>
+          )}
         </div>
         {forcarLeitura && pedido && editavelPorStatus ? (
           <p className="mt-2 text-sm text-texto-secundario">

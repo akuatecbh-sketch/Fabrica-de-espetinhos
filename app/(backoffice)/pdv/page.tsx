@@ -88,7 +88,7 @@ export default async function PdvPage() {
       prisma.pedido.findMany({
         where: {
           cliente_id: clienteFoco.id,
-          status: { in: ["aberto", "enviado"] },
+          status: { in: ["aberto", "enviado", "aprovado"] },
         },
         select: { id: true, numero: true, total: true, status: true },
         orderBy: { numero: "desc" },

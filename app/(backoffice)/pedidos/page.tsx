@@ -83,7 +83,7 @@ export default async function PedidosPage({ searchParams }: Props) {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          Status
+          Situação
           <select
             name="status"
             defaultValue={status}

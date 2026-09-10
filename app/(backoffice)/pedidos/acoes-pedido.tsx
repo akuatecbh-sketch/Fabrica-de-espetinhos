@@ -53,7 +53,7 @@ export function AcoesPedido({
     });
   }
 
-  const emEdicao = status === "aberto" || status === "enviado";
+  const emEdicao = status === "aberto" || status === "enviado" || status === "aprovado";
   const podeFinalizarOuVender = emEdicao && temItens;
   const podeCancelar = emEdicao;
   if (!podeFinalizarOuVender && !podeCancelar) return null;
