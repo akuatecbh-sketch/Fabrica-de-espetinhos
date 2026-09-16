@@ -80,6 +80,8 @@ export default async function EditarProdutoPage({ params }: Props) {
           categoria_id: produto.categoria_id,
           unidade_medida_id: produto.unidade_medida_id,
           preco_venda: produto.preco_venda?.toString() ?? null,
+          preco_atacado: produto.preco_atacado?.toString() ?? null,
+          preco_repasse: produto.preco_repasse?.toString() ?? null,
           estoque_minimo: produto.estoque_minimo?.toString() ?? null,
           estoque_ideal: produto.estoque_ideal?.toString() ?? null,
           estoque_maximo: produto.estoque_maximo?.toString() ?? null,

@@ -17,6 +17,8 @@ type ProdutoInicial = {
   categoria_id: number;
   unidade_medida_id: number;
   preco_venda: string | null;
+  preco_atacado: string | null;
+  preco_repasse: string | null;
   estoque_minimo: string | null;
   estoque_ideal: string | null;
   estoque_maximo: string | null;
@@ -149,7 +151,7 @@ export function ProdutoForm({
     <form
       action={formAction}
       onSubmit={validarFormulario}
-      className="flex w-full max-w-xl flex-col gap-4"
+      className="flex w-full max-w-3xl flex-col gap-4"
     >
       {erro ? (
         <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -227,23 +229,53 @@ export function ProdutoForm({
         Vendido por peso (R$/kg)
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Preço de venda
-        <input
-          name="preco_venda"
-          inputMode="decimal"
-          placeholder="0"
-          value={precoVenda}
-          onChange={(evento) => setPrecoVenda(evento.target.value)}
-          className="rounded border border-zinc-300 px-3 py-2"
-        />
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <label className="flex flex-col gap-1 text-sm">
+            Preço Varejo
+            <input
+              name="preco_venda"
+              required
+              inputMode="decimal"
+              placeholder="0"
+              value={precoVenda}
+              onChange={(evento) => setPrecoVenda(evento.target.value)}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Preço Atacado
+            <input
+              name="preco_atacado"
+              inputMode="decimal"
+              placeholder="Opcional"
+              defaultValue={produto?.preco_atacado ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Preço Repasse
+            <input
+              name="preco_repasse"
+              inputMode="decimal"
+              placeholder="Opcional"
+              defaultValue={produto?.preco_repasse ?? ""}
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+        </div>
+        <span className="text-xs text-zinc-500">
+          O preço de varejo é obrigatório e é o preço padrão. Se atacado ou
+          repasse ficarem em branco, o sistema usa o preço de varejo.
+        </span>
         {vendidoPorPeso ? (
           <span className="text-xs text-zinc-500">
-            Este produto é vendido por peso: o valor acima é o preço por quilo
-            (R$/kg), usado para calcular o preço da mercadoria nas etiquetas.
+            Este produto é vendido por peso: os valores acima são o preço por
+            quilo (R$/kg), usado para calcular o preço da mercadoria nas
+            etiquetas.
           </span>
         ) : null}
-      </label>
+      </div>
 
       <CampoEstoque
         name="estoque_minimo"

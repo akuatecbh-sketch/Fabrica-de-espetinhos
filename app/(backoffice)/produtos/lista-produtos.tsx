@@ -13,6 +13,8 @@ type ProdutoLista = {
   estoque_atual: { toString(): string };
   estoque_minimo: { toString(): string } | null;
   preco_venda: { toString(): string } | null;
+  preco_atacado: { toString(): string } | null;
+  preco_repasse: { toString(): string } | null;
   ativo: boolean;
   permite_venda_pacote: boolean;
   ncm: string | null;
@@ -43,6 +45,16 @@ function BadgeEstoque({ produto }: { produto: ProdutoLista }) {
     >
       Repor estoque
     </span>
+  );
+}
+
+function PrecosProduto({ produto }: { produto: ProdutoLista }) {
+  return (
+    <div className="font-data text-xs leading-5 text-texto-primario">
+      <p>Varejo {formatarPreco(produto.preco_venda)}</p>
+      <p>Atacado {formatarPreco(produto.preco_atacado)}</p>
+      <p>Repasse {formatarPreco(produto.preco_repasse)}</p>
+    </div>
   );
 }
 
@@ -86,9 +98,8 @@ export function ListaProdutos({
               <p className="font-data text-sm text-texto-primario">
                 Estoque {formatarQuantidade(produto.estoque_atual)}{" "}
                 {produto.unidade_medida.sigla}
-                {" · "}
-                {formatarPreco(produto.preco_venda)}
               </p>
+              <PrecosProduto produto={produto} />
               <div className="mt-1 flex flex-wrap gap-1">
                 <BadgeEstoque produto={produto} />
                 <BadgeFiscal produto={produto} />
@@ -126,7 +137,7 @@ export function ListaProdutos({
               <th className="px-3 py-2 font-medium">Categoria</th>
               <th className="px-3 py-2 font-medium">Unidade</th>
               <th className="px-3 py-2 font-medium">Estoque</th>
-              <th className="px-3 py-2 font-medium">Preço de venda</th>
+              <th className="px-3 py-2 font-medium">Preços</th>
               <th className="px-3 py-2 font-medium">Status</th>
               <th className="px-3 py-2 font-medium">Ações</th>
             </tr>
@@ -164,8 +175,8 @@ export function ListaProdutos({
                     <BadgeEstoque produto={produto} />
                   </div>
                 </td>
-                <td className="px-3 py-2 font-data">
-                  {formatarPreco(produto.preco_venda)}
+                <td className="px-3 py-2">
+                  <PrecosProduto produto={produto} />
                 </td>
                 <td className="px-3 py-2">
                   {produto.ativo ? (

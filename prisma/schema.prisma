@@ -303,6 +303,8 @@ model produto {
   aliquota_ipi                                          Decimal?                   @db.Decimal(5, 2)
   aliquota_pis                                          Decimal?                   @db.Decimal(5, 2)
   aliquota_cofins                                       Decimal?                   @db.Decimal(5, 2)
+  preco_atacado                                         Decimal?                   @db.Decimal(12, 2)
+  preco_repasse                                         Decimal?                   @db.Decimal(12, 2)
   etiqueta_impressao                                    etiqueta_impressao[]
   ficha_tecnica_ficha_tecnica_insumo_idToproduto        ficha_tecnica[]            @relation("ficha_tecnica_insumo_idToproduto")
   ficha_tecnica_ficha_tecnica_produto_final_idToproduto ficha_tecnica[]            @relation("ficha_tecnica_produto_final_idToproduto")

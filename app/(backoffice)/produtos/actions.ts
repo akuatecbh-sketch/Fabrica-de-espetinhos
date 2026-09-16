@@ -115,6 +115,8 @@ async function lerDadosProduto(
   const categoria_id = inteiro(formData, "categoria_id");
   const unidade_medida_id = inteiro(formData, "unidade_medida_id");
   const preco_venda = decimal(formData, "preco_venda");
+  const preco_atacado = decimal(formData, "preco_atacado");
+  const preco_repasse = decimal(formData, "preco_repasse");
   const estoque_minimo = decimal(formData, "estoque_minimo") ?? 0;
   const estoque_ideal = decimal(formData, "estoque_ideal") ?? 0;
   const estoque_maximo = decimal(formData, "estoque_maximo") ?? 0;
@@ -146,8 +148,14 @@ async function lerDadosProduto(
   if (!unidade_medida_id) {
     return { error: "Selecione a unidade de medida." } as const;
   }
-  if (Number.isNaN(preco_venda)) {
-    return { error: "Preço de venda inválido." } as const;
+  if (preco_venda == null || Number.isNaN(preco_venda)) {
+    return { error: "Informe o preço de varejo." } as const;
+  }
+  if (Number.isNaN(preco_atacado)) {
+    return { error: "Preço de atacado inválido." } as const;
+  }
+  if (Number.isNaN(preco_repasse)) {
+    return { error: "Preço de repasse inválido." } as const;
   }
   if (
     Number.isNaN(estoque_minimo) ||
@@ -284,6 +292,8 @@ async function lerDadosProduto(
       tipo: categoria.tipo,
       unidade_medida_id,
       preco_venda,
+      preco_atacado,
+      preco_repasse,
       estoque_minimo,
       estoque_ideal,
       estoque_maximo,
