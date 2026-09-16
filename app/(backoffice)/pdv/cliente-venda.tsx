@@ -9,9 +9,11 @@ import { converterPedidoEmVenda } from "../pedidos/actions";
 import {
   buscarClientesPdv,
   cadastrarClienteNaVenda,
+  definirTipoPrecoVenda,
   removerClienteVenda,
   vincularClienteVenda,
 } from "./actions";
+import { SeletorCategoriaPreco } from "../seletor-categoria-preco";
 
 type HistoricoCliente = {
   quantidade: number;
@@ -27,6 +29,7 @@ type PedidoPendente = {
 
 type Props = {
   vendaId: number;
+  tipoPreco: string;
   cliente: { id: number; nome: string } | null;
   historico: HistoricoCliente | null;
   pedidosPendentes: PedidoPendente[];
@@ -34,6 +37,7 @@ type Props = {
 
 export function ClienteVenda({
   vendaId,
+  tipoPreco,
   cliente,
   historico,
   pedidosPendentes,
@@ -114,7 +118,13 @@ export function ClienteVenda({
 
   return (
     <section className="rounded border border-borda bg-superficie p-3">
-      <h2 className="text-lg font-medium">Cliente</h2>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <h2 className="text-lg font-medium">Cliente</h2>
+        <SeletorCategoriaPreco
+          valor={tipoPreco}
+          aoAlterar={(categoria) => definirTipoPrecoVenda(vendaId, categoria)}
+        />
+      </div>
 
       {erro ? (
         <p className="mt-2 rounded border border-vermelho-erro/40 bg-vermelho-erro/10 px-3 py-2 text-sm text-vermelho-erro">

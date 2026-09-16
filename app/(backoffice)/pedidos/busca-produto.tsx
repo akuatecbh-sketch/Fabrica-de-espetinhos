@@ -10,7 +10,13 @@ function detalheProduto(produto: ProdutoPedidoBusca) {
   return partes.length > 0 ? partes.join(" · ") : null;
 }
 
-export function PedidoBuscaProduto({ pedidoId }: { pedidoId: number | null }) {
+export function PedidoBuscaProduto({
+  pedidoId,
+  tipoPreco,
+}: {
+  pedidoId: number | null;
+  tipoPreco: string;
+}) {
   const [produto, setProduto] = useState<ProdutoPedidoBusca | null>(null);
 
   return (
@@ -29,13 +35,16 @@ export function PedidoBuscaProduto({ pedidoId }: { pedidoId: number | null }) {
       {produto ? (
         <div className="rounded border border-zinc-200 bg-white px-3 py-2">
           <AdicionarItemPedidoForm
-            key={produto.id}
+            key={`${produto.id}-${tipoPreco}`}
             pedidoId={pedidoId}
+            tipoPreco={tipoPreco}
             produto={{
               id: produto.id,
               nome: produto.nome,
               codigo: produto.codigo,
               preco_venda: produto.preco_venda,
+              preco_atacado: produto.preco_atacado,
+              preco_repasse: produto.preco_repasse,
               unidade: produto.unidade,
               permite_venda_pacote: produto.permite_venda_pacote,
               quantidade_por_pacote: produto.quantidade_por_pacote,

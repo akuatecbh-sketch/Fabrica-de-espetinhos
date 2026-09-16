@@ -21,7 +21,16 @@ import {
 import { exigirModulo } from "@/lib/sessao";
 import { resolverTaxa } from "@/lib/taxa";
 import { soDigitos, validarCpf } from "@/lib/documento";
-import { ehPessoaJuridica, nomeExibicaoCliente } from "@/lib/cliente";
+import {
+  CATEGORIA_PRECO_PADRAO,
+  ehPessoaJuridica,
+  nomeExibicaoCliente,
+  type CategoriaPreco,
+} from "@/lib/cliente";
+import {
+  normalizarCategoriaPreco,
+  resolverPrecoCategoria,
+} from "@/lib/preco-categoria";
 import { ehTipoCupom, type TipoCupom } from "@/lib/tipo-cupom";
 
 export type PdvFormState = {
@@ -166,6 +175,8 @@ export type ProdutoPdvBusca = {
   codigo: string | null;
   codigo_barras: string | null;
   preco_venda: string | null;
+  preco_atacado: string | null;
+  preco_repasse: string | null;
   unidade: string;
   permite_venda_pacote: boolean;
   quantidade_por_pacote: string;
@@ -192,6 +203,8 @@ export async function buscarProdutosPdv(
     codigo: produto.codigo,
     codigo_barras: produto.codigo_barras,
     preco_venda: produto.preco_venda?.toString() ?? null,
+    preco_atacado: produto.preco_atacado?.toString() ?? null,
+    preco_repasse: produto.preco_repasse?.toString() ?? null,
     unidade: produto.unidade_medida.sigla,
     permite_venda_pacote: produto.permite_venda_pacote,
     quantidade_por_pacote: produto.quantidade_por_pacote.toString(),
@@ -259,13 +272,17 @@ export async function vincularClienteVenda(
 
   const cliente = await prisma.cliente.findUnique({
     where: { id: clienteId },
-    select: { id: true },
+    select: { id: true, categoria_preco: true },
   });
   if (!cliente) return { error: "Cliente não encontrado." };
 
   await prisma.venda.update({
     where: { id: vendaId },
-    data: { cliente_id: cliente.id, atualizado_em: new Date() },
+    data: {
+      cliente_id: cliente.id,
+      tipo_preco: normalizarCategoriaPreco(cliente.categoria_preco),
+      atualizado_em: new Date(),
+    },
   });
   revalidatePath("/pdv");
   return {};
@@ -280,7 +297,31 @@ export async function removerClienteVenda(
 
   await prisma.venda.update({
     where: { id: vendaId },
-    data: { cliente_id: null, atualizado_em: new Date() },
+    data: {
+      cliente_id: null,
+      tipo_preco: CATEGORIA_PRECO_PADRAO,
+      atualizado_em: new Date(),
+    },
+  });
+  revalidatePath("/pdv");
+  return {};
+}
+
+export async function definirTipoPrecoVenda(
+  vendaId: number,
+  tipoPreco: CategoriaPreco,
+): Promise<PdvFormState> {
+  await exigirModulo("pdv");
+  if (!Number.isInteger(vendaId)) {
+    return { error: "Venda inválida." };
+  }
+  const categoria = normalizarCategoriaPreco(tipoPreco);
+  const contexto = await garantirVendaAberta(vendaId);
+  if ("error" in contexto) return { error: contexto.error };
+
+  await prisma.venda.update({
+    where: { id: vendaId },
+    data: { tipo_preco: categoria, atualizado_em: new Date() },
   });
   revalidatePath("/pdv");
   return {};
@@ -322,11 +363,21 @@ export async function cadastrarClienteNaVenda(
 
   try {
     const cliente = await prisma.cliente.create({
-      data: { tipo_pessoa: "fisica", nome, cpf, telefone },
+      data: {
+        tipo_pessoa: "fisica",
+        nome,
+        cpf,
+        telefone,
+        categoria_preco: CATEGORIA_PRECO_PADRAO,
+      },
     });
     await prisma.venda.update({
       where: { id: vendaId },
-      data: { cliente_id: cliente.id, atualizado_em: new Date() },
+      data: {
+        cliente_id: cliente.id,
+        tipo_preco: CATEGORIA_PRECO_PADRAO,
+        atualizado_em: new Date(),
+      },
     });
   } catch (erro) {
     if (
@@ -412,6 +463,7 @@ export async function adicionarItem(
         vendido_em_pacote: true,
         quantidade_pacotes: quantidadePacotes,
         preco_pacote_aplicado,
+        tipo_preco_aplicado: normalizarCategoriaPreco(contexto.venda.tipo_preco),
       },
     });
     await recalcularTotais(vendaId);
@@ -426,11 +478,15 @@ export async function adicionarItem(
   if (!Number.isFinite(quantidade) || quantidade <= 0) {
     return { error: "Informe uma quantidade maior que zero." };
   }
-  if (produto.preco_venda == null) {
+  const { preco, tipoAplicado } = resolverPrecoCategoria(
+    produto,
+    contexto.venda.tipo_preco,
+  );
+  if (preco == null) {
     return { error: "Produto sem preço de venda cadastrado." };
   }
 
-  const preco_unitario = arredondarDinheiro(Number(produto.preco_venda));
+  const preco_unitario = arredondarDinheiro(preco);
   const subtotal = arredondarDinheiro(quantidade * preco_unitario);
 
   await prisma.venda_item.create({
@@ -444,6 +500,7 @@ export async function adicionarItem(
       vendido_em_pacote: false,
       quantidade_pacotes: null,
       preco_pacote_aplicado: null,
+      tipo_preco_aplicado: tipoAplicado,
     },
   });
   await recalcularTotais(vendaId);

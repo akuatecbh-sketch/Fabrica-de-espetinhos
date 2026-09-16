@@ -9,7 +9,11 @@ import { arredondarDinheiro, arredondarQuantidade } from "@/lib/dinheiro";
 import { exigirModulo } from "@/lib/sessao";
 import { obterCaixaAberto } from "@/lib/caixa";
 import { soDigitos, validarCpf } from "@/lib/documento";
-import { nomeExibicaoCliente } from "@/lib/cliente";
+import { nomeExibicaoCliente, CATEGORIA_PRECO_PADRAO, type CategoriaPreco } from "@/lib/cliente";
+import {
+  normalizarCategoriaPreco,
+  resolverPrecoCategoria,
+} from "@/lib/preco-categoria";
 import { ehSituacaoManual, pedidoEditavel } from "@/lib/pedido";
 
 export type PedidoFormState = {
@@ -29,6 +33,8 @@ export type ProdutoPedidoBusca = {
   codigo: string | null;
   codigo_barras: string | null;
   preco_venda: string | null;
+  preco_atacado: string | null;
+  preco_repasse: string | null;
   unidade: string;
   permite_venda_pacote: boolean;
   quantidade_por_pacote: string;
@@ -170,6 +176,8 @@ export async function buscarProdutosPedido(
     codigo: produto.codigo,
     codigo_barras: produto.codigo_barras,
     preco_venda: produto.preco_venda?.toString() ?? null,
+    preco_atacado: produto.preco_atacado?.toString() ?? null,
+    preco_repasse: produto.preco_repasse?.toString() ?? null,
     unidade: produto.unidade_medida.sigla,
     permite_venda_pacote: produto.permite_venda_pacote,
     quantidade_por_pacote: produto.quantidade_por_pacote.toString(),
@@ -191,13 +199,17 @@ export async function vincularClientePedido(
 
   const cliente = await prisma.cliente.findUnique({
     where: { id: clienteId },
-    select: { id: true },
+    select: { id: true, categoria_preco: true },
   });
   if (!cliente) return { error: "Cliente não encontrado." };
 
   await prisma.pedido.update({
     where: { id: contexto.pedido.id },
-    data: { cliente_id: cliente.id, atualizado_em: new Date() },
+    data: {
+      cliente_id: cliente.id,
+      tipo_preco: normalizarCategoriaPreco(cliente.categoria_preco),
+      atualizado_em: new Date(),
+    },
   });
   concluir(contexto.pedido.id, contexto.criado);
   return {};
@@ -212,9 +224,30 @@ export async function removerClientePedido(
 
   await prisma.pedido.update({
     where: { id: contexto.pedido.id },
-    data: { cliente_id: null, atualizado_em: new Date() },
+    data: {
+      cliente_id: null,
+      tipo_preco: CATEGORIA_PRECO_PADRAO,
+      atualizado_em: new Date(),
+    },
   });
   revalidarPedido(contexto.pedido.id);
+  return {};
+}
+
+export async function definirTipoPrecoPedido(
+  pedidoId: number | null,
+  tipoPreco: CategoriaPreco,
+): Promise<PedidoFormState> {
+  const usuario = await exigirModulo("pedidos");
+  const categoria = normalizarCategoriaPreco(tipoPreco);
+  const contexto = await resolverPedido(pedidoId, usuario.id);
+  if ("error" in contexto) return { error: contexto.error };
+
+  await prisma.pedido.update({
+    where: { id: contexto.pedido.id },
+    data: { tipo_preco: categoria, atualizado_em: new Date() },
+  });
+  concluir(contexto.pedido.id, contexto.criado);
   return {};
 }
 
@@ -254,11 +287,21 @@ export async function cadastrarClienteNoPedido(
 
   try {
     const cliente = await prisma.cliente.create({
-      data: { tipo_pessoa: "fisica", nome, cpf, telefone },
+      data: {
+        tipo_pessoa: "fisica",
+        nome,
+        cpf,
+        telefone,
+        categoria_preco: CATEGORIA_PRECO_PADRAO,
+      },
     });
     await prisma.pedido.update({
       where: { id: contexto.pedido.id },
-      data: { cliente_id: cliente.id, atualizado_em: new Date() },
+      data: {
+        cliente_id: cliente.id,
+        tipo_preco: CATEGORIA_PRECO_PADRAO,
+        atualizado_em: new Date(),
+      },
     });
   } catch (erro) {
     if (
@@ -372,6 +415,7 @@ export async function adicionarItemPedido(
         vendido_em_pacote: true,
         quantidade_pacotes: quantidadePacotes,
         preco_pacote_aplicado,
+        tipo_preco_aplicado: normalizarCategoriaPreco(contexto.pedido.tipo_preco),
       },
     });
     await recalcularTotais(contexto.pedido.id);
@@ -386,11 +430,15 @@ export async function adicionarItemPedido(
   if (!Number.isFinite(quantidade) || quantidade <= 0) {
     return { error: "Informe uma quantidade maior que zero." };
   }
-  if (produto.preco_venda == null) {
+  const { preco, tipoAplicado } = resolverPrecoCategoria(
+    produto,
+    contexto.pedido.tipo_preco,
+  );
+  if (preco == null) {
     return { error: "Produto sem preço de venda cadastrado." };
   }
 
-  const preco_unitario = arredondarDinheiro(Number(produto.preco_venda));
+  const preco_unitario = arredondarDinheiro(preco);
   const subtotal = arredondarDinheiro(quantidade * preco_unitario);
 
   await prisma.pedido_item.create({
@@ -404,6 +452,7 @@ export async function adicionarItemPedido(
       vendido_em_pacote: false,
       quantidade_pacotes: null,
       preco_pacote_aplicado: null,
+      tipo_preco_aplicado: tipoAplicado,
     },
   });
   await recalcularTotais(contexto.pedido.id);
@@ -637,6 +686,7 @@ export async function converterPedidoEmVenda(pedidoId: number) {
         subtotal,
         desconto: 0,
         total: subtotal,
+        tipo_preco: normalizarCategoriaPreco(pedido.tipo_preco),
         venda_item: {
           create: pedido.pedido_item.map((item) => ({
             produto_id: item.produto_id,
@@ -648,6 +698,9 @@ export async function converterPedidoEmVenda(pedidoId: number) {
             vendido_em_pacote: item.vendido_em_pacote,
             quantidade_pacotes: item.quantidade_pacotes,
             preco_pacote_aplicado: item.preco_pacote_aplicado,
+            tipo_preco_aplicado: normalizarCategoriaPreco(
+              item.tipo_preco_aplicado,
+            ),
           })),
         },
       },

@@ -5,6 +5,27 @@ export type TipoPessoaCliente =
   | typeof TIPO_PESSOA_FISICA
   | typeof TIPO_PESSOA_JURIDICA;
 
+export const CATEGORIAS_PRECO = ["varejo", "atacado", "repasse"] as const;
+
+export type CategoriaPreco = (typeof CATEGORIAS_PRECO)[number];
+
+export const CATEGORIA_PRECO_PADRAO: CategoriaPreco = "varejo";
+
+const ROTULOS_CATEGORIA_PRECO: Record<CategoriaPreco, string> = {
+  varejo: "Varejo",
+  atacado: "Atacado",
+  repasse: "Repasse",
+};
+
+export function ehCategoriaPreco(valor: string): valor is CategoriaPreco {
+  return (CATEGORIAS_PRECO as readonly string[]).includes(valor);
+}
+
+export function rotuloCategoriaPreco(valor: string | null | undefined) {
+  if (valor && ehCategoriaPreco(valor)) return ROTULOS_CATEGORIA_PRECO[valor];
+  return ROTULOS_CATEGORIA_PRECO[CATEGORIA_PRECO_PADRAO];
+}
+
 export function ehPessoaJuridica(tipo: string | null | undefined) {
   return tipo === TIPO_PESSOA_JURIDICA;
 }

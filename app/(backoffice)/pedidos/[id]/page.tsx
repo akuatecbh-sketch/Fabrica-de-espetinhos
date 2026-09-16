@@ -47,6 +47,7 @@ export default async function PedidoPage({ params, searchParams }: Props) {
         status: pedido.status,
         observacao: pedido.observacao,
         tokenPublico: pedido.token_publico,
+        tipoPreco: pedido.tipo_preco,
         total: pedido.total,
         cliente: pedido.cliente
           ? { id: pedido.cliente.id, nome: nomeExibicaoCliente(pedido.cliente) }
@@ -58,6 +59,7 @@ export default async function PedidoPage({ params, searchParams }: Props) {
           subtotal: item.subtotal,
           vendido_em_pacote: item.vendido_em_pacote,
           quantidade_pacotes: item.quantidade_pacotes,
+          tipo_preco_aplicado: item.tipo_preco_aplicado,
           produtoNome: item.produto.nome,
         })),
       }}

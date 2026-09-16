@@ -15,6 +15,8 @@ import {
 } from "@/lib/focus-nfe";
 import { prisma } from "@/lib/prisma";
 import { soDigitos } from "@/lib/documento";
+import { rotuloCategoriaPreco } from "@/lib/cliente";
+import { textoCategoriaPrecoImpressao } from "@/lib/preco-categoria";
 
 const MENSAGEM_SIMULADA =
   "Emissão simulada — configure FOCUS_NFE_TOKEN no .env para emitir de verdade";
@@ -153,7 +155,10 @@ async function emitirNfceInterno(vendaId: number) {
     destinatario: venda.cliente,
     itens: venda.venda_item.map((item) => ({
       codigo: item.produto.codigo?.trim() || String(item.produto.id),
-      descricao: item.produto.nome,
+      descricao:
+        item.tipo_preco_aplicado && item.tipo_preco_aplicado !== "varejo"
+          ? `${item.produto.nome} (${rotuloCategoriaPreco(item.tipo_preco_aplicado)})`
+          : item.produto.nome,
       quantidade: Number(item.quantidade),
       preco_unitario: Number(item.preco_unitario),
       desconto: Number(item.desconto),
@@ -165,6 +170,10 @@ async function emitirNfceInterno(vendaId: number) {
       valor: Number(pagamento.valor),
       troco: Number(pagamento.troco ?? 0),
     })),
+    informacoesAdicionais: textoCategoriaPrecoImpressao(
+      venda.tipo_preco,
+      venda.venda_item,
+    ),
   });
 
   let http: number;

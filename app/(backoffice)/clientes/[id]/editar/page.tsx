@@ -53,6 +53,7 @@ export default async function EditarClientePage({ params }: Props) {
           contato_nome: cliente.contato_nome,
           contato_cargo: cliente.contato_cargo,
           contato_telefone: cliente.contato_telefone,
+          categoria_preco: cliente.categoria_preco,
         }}
       />
     </div>

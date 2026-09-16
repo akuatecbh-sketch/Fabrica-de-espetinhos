@@ -114,6 +114,7 @@ export function montarPayloadNfce(params: {
   itens: ItemParaNfce[];
   pagamentos: PagamentoParaNfce[];
   dataEmissao?: Date;
+  informacoesAdicionais?: string | null;
 }) {
   const items = params.itens.map((item, indice) => {
     const quantidade = Number(item.quantidade);
@@ -175,6 +176,11 @@ export function montarPayloadNfce(params: {
     if (params.destinatario?.nome) {
       payload.nome_destinatario = params.destinatario.nome;
     }
+  }
+
+  const adicionais = params.informacoesAdicionais?.trim();
+  if (adicionais) {
+    payload.informacoes_adicionais_contribuinte = adicionais.slice(0, 2000);
   }
 
   return payload;

@@ -6,17 +6,26 @@ import { formatarCnpjCpf, mascaraCpf, mascaraTelefone } from "@/lib/documento";
 import {
   buscarClientesPedido,
   cadastrarClienteNoPedido,
+  definirTipoPrecoPedido,
   removerClientePedido,
   vincularClientePedido,
 } from "./actions";
+import { SeletorCategoriaPreco } from "../seletor-categoria-preco";
+import { rotuloCategoriaPreco } from "@/lib/cliente";
 
 type Props = {
   pedidoId: number | null;
+  tipoPreco: string;
   cliente: { id: number; nome: string } | null;
   somenteLeitura: boolean;
 };
 
-export function ClientePedido({ pedidoId, cliente, somenteLeitura }: Props) {
+export function ClientePedido({
+  pedidoId,
+  tipoPreco,
+  cliente,
+  somenteLeitura,
+}: Props) {
   const [modo, setModo] = useState<"resumo" | "busca" | "cadastro">(
     cliente ? "resumo" : "busca",
   );
@@ -74,7 +83,20 @@ export function ClientePedido({ pedidoId, cliente, somenteLeitura }: Props) {
 
   return (
     <section className="rounded border border-borda bg-superficie p-3">
-      <h2 className="text-lg font-medium">Cliente</h2>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <h2 className="text-lg font-medium">Cliente</h2>
+        {somenteLeitura ? (
+          <p className="text-sm">
+            <span className="text-texto-secundario">Categoria de preço: </span>
+            <span className="font-medium">{rotuloCategoriaPreco(tipoPreco)}</span>
+          </p>
+        ) : (
+          <SeletorCategoriaPreco
+            valor={tipoPreco}
+            aoAlterar={(categoria) => definirTipoPrecoPedido(pedidoId, categoria)}
+          />
+        )}
+      </div>
 
       {erro ? (
         <p className="mt-2 rounded border border-vermelho-erro/40 bg-vermelho-erro/10 px-3 py-2 text-sm text-vermelho-erro">

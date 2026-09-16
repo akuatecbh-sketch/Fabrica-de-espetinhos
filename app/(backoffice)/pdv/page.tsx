@@ -16,6 +16,7 @@ import { PdvBuscaProduto } from "./busca-produto";
 import { RemoverItemButton } from "./remover-item-button";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
 import { exigirAcesso } from "@/lib/permissoes";
+import { BadgeCategoriaPreco } from "../badge-categoria-preco";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +139,7 @@ export default async function PdvPage() {
         <>
           <ClienteVenda
             vendaId={venda.id}
+            tipoPreco={venda.tipo_preco}
             cliente={venda.cliente}
             historico={historicoCliente}
             pedidosPendentes={pedidosPendentes}
@@ -162,7 +164,7 @@ export default async function PdvPage() {
           </div>
 
           <div className="flex flex-col gap-6 pb-28 lg:grid lg:grid-cols-2 lg:gap-6 lg:pb-0">
-            <PdvBuscaProduto vendaId={venda.id} />
+            <PdvBuscaProduto vendaId={venda.id} tipoPreco={venda.tipo_preco} />
 
             <section className="flex flex-col gap-3">
               <h2 className="text-lg font-medium">Itens da venda</h2>
@@ -183,10 +185,14 @@ export default async function PdvPage() {
                             />
                           }
                         >
-                          <p className="font-medium text-texto-primario">
+                          <p className="flex flex-wrap items-center gap-2 font-medium text-texto-primario">
                             {item.vendido_em_pacote
                               ? linhaItemVenda(item.produto.nome, item)
                               : item.produto.nome}
+                            <BadgeCategoriaPreco
+                              categoria={item.tipo_preco_aplicado}
+                              ocultarVarejo
+                            />
                           </p>
                           {item.vendido_em_pacote ? null : (
                             <>
@@ -221,9 +227,17 @@ export default async function PdvPage() {
                             className="border-b border-zinc-100 last:border-0"
                           >
                             <td className="px-3 py-2">
-                              {item.vendido_em_pacote
-                                ? linhaItemVenda(item.produto.nome, item)
-                                : item.produto.nome}
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span>
+                                  {item.vendido_em_pacote
+                                    ? linhaItemVenda(item.produto.nome, item)
+                                    : item.produto.nome}
+                                </span>
+                                <BadgeCategoriaPreco
+                                  categoria={item.tipo_preco_aplicado}
+                                  ocultarVarejo
+                                />
+                              </div>
                             </td>
                             <td className="px-3 py-2 font-data">
                               {rotuloQuantidadeItem(item)}

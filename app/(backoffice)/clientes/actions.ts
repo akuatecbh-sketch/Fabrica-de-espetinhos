@@ -18,6 +18,8 @@ import {
 import {
   TIPO_PESSOA_FISICA,
   TIPO_PESSOA_JURIDICA,
+  CATEGORIA_PRECO_PADRAO,
+  ehCategoriaPreco,
   nomeExibicaoCliente,
   type TipoPessoaCliente,
 } from "@/lib/cliente";
@@ -124,6 +126,13 @@ function lerDadosCliente(formData: FormData) {
     return { error: "O endereço deve ter no máximo 255 caracteres." } as const;
   }
 
+  const categoriaBruta =
+    texto(formData, "categoria_preco") || CATEGORIA_PRECO_PADRAO;
+  if (!ehCategoriaPreco(categoriaBruta)) {
+    return { error: "Selecione a categoria de preço." } as const;
+  }
+  const categoria_preco = categoriaBruta;
+
   if (tipo_pessoa === TIPO_PESSOA_FISICA) {
     const nome = texto(formData, "nome");
     const cpfBruto = texto(formData, "cpf");
@@ -170,6 +179,7 @@ function lerDadosCliente(formData: FormData) {
         contato_nome: null,
         contato_cargo: null,
         contato_telefone: null,
+        categoria_preco,
       },
     } as const;
   }
@@ -250,6 +260,7 @@ function lerDadosCliente(formData: FormData) {
       contato_nome: contato_nome || null,
       contato_cargo: contato_cargo || null,
       contato_telefone: telefoneContato.telefone,
+      categoria_preco,
     },
   } as const;
 }

@@ -6,6 +6,7 @@ import {
   nomeExibicaoCliente,
 } from "@/lib/cliente";
 import { CardRegistro } from "../card-registro";
+import { BadgeCategoriaPreco } from "../badge-categoria-preco";
 import { ExcluirClienteButton } from "./excluir-button";
 
 type ClienteLista = {
@@ -18,6 +19,7 @@ type ClienteLista = {
   nome_fantasia: string | null;
   telefone: string | null;
   email: string | null;
+  categoria_preco: string;
 };
 
 function BadgeTipo({ tipo }: { tipo: string }) {
@@ -79,6 +81,7 @@ export function ListaClientes({
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium text-texto-primario">{nome}</p>
                   <BadgeTipo tipo={cliente.tipo_pessoa} />
+                  <BadgeCategoriaPreco categoria={cliente.categoria_preco} />
                 </div>
                 <p className="font-data text-sm text-texto-primario">
                   {formatarCnpjCpf(documentoCliente(cliente))}
@@ -118,7 +121,12 @@ export function ListaClientes({
                   <td className="px-3 py-2">
                     <BadgeTipo tipo={cliente.tipo_pessoa} />
                   </td>
-                  <td className="px-3 py-2">{nome}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>{nome}</span>
+                      <BadgeCategoriaPreco categoria={cliente.categoria_preco} />
+                    </div>
+                  </td>
                   <td className="px-3 py-2 font-mono">
                     {formatarCnpjCpf(documentoCliente(cliente))}
                   </td>

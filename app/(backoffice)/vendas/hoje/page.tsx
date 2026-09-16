@@ -12,6 +12,7 @@ import {
 import { exigirAcesso } from "@/lib/permissoes";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
 import { nomeExibicao } from "@/lib/visibilidade";
+import { BadgeCategoriaPreco } from "../../badge-categoria-preco";
 import { CupomVendaBadge } from "./cupom-venda-badge";
 
 export const dynamic = "force-dynamic";
@@ -84,11 +85,12 @@ export default async function VendasHojePage() {
                             : "—"}
                         </span>
                       </p>
-                      <p className="text-sm text-zinc-600">
+                      <p className="flex flex-wrap items-center gap-2 text-sm text-zinc-600">
                         {venda.cliente?.nome ?? "Sem cliente"} ·{" "}
                         {nomeExibicao(venda.usuario, logado.perfil).nome} ·{" "}
                         {venda.venda_item.length}{" "}
                         {venda.venda_item.length === 1 ? "item" : "itens"}
+                        <BadgeCategoriaPreco categoria={venda.tipo_preco} />
                       </p>
                       <p className="text-sm text-zinc-600">
                         {formas.length > 0 ? formas.join(", ") : "—"}
@@ -133,7 +135,11 @@ export default async function VendasHojePage() {
                             <span className="min-w-0 break-words">
                               {item.vendido_em_pacote
                                 ? linhaItemVenda(item.produto.nome, item)
-                                : item.produto.nome}
+                                : item.produto.nome}{" "}
+                              <BadgeCategoriaPreco
+                                categoria={item.tipo_preco_aplicado}
+                                ocultarVarejo
+                              />
                             </span>
                             {item.vendido_em_pacote ? null : (
                               <span className="font-data shrink-0 text-texto-secundario">
@@ -157,9 +163,15 @@ export default async function VendasHojePage() {
                         {venda.venda_item.map((item) => (
                           <tr key={item.id} className="border-t border-zinc-100">
                             <td className="py-1.5 pr-3">
-                              {item.vendido_em_pacote
-                                ? linhaItemVenda(item.produto.nome, item)
-                                : item.produto.nome}
+                              <span className="inline-flex flex-wrap items-center gap-2">
+                                {item.vendido_em_pacote
+                                  ? linhaItemVenda(item.produto.nome, item)
+                                  : item.produto.nome}
+                                <BadgeCategoriaPreco
+                                  categoria={item.tipo_preco_aplicado}
+                                  ocultarVarejo
+                                />
+                              </span>
                             </td>
                             <td className="py-1.5 pr-3 font-data">
                               {rotuloQuantidadeItem(item)}

@@ -3,6 +3,8 @@ import { nomeExibicaoCliente } from "@/lib/cliente";
 import { obterLogoBlob } from "@/lib/empresa-logo";
 import { formatarPreco } from "@/lib/format";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
+import { rotuloCategoriaPreco } from "@/lib/cliente";
+import { textoCategoriaPrecoImpressao } from "@/lib/preco-categoria";
 import { ImprimirPedidoButton } from "./imprimir-button";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +68,10 @@ export default async function PedidoPublicoPage({ params }: Props) {
   const nomeCliente = pedido.cliente
     ? nomeExibicaoCliente(pedido.cliente)
     : "Cliente não informado";
+  const categoriaImpressa = textoCategoriaPrecoImpressao(
+    pedido.tipo_preco,
+    pedido.pedido_item,
+  );
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-xl flex-col gap-6 px-4 py-8">
@@ -97,6 +103,11 @@ export default async function PedidoPublicoPage({ params }: Props) {
           <p className="mt-1 text-base font-medium text-texto-primario">
             {nomeCliente}
           </p>
+          {categoriaImpressa ? (
+            <p className="mt-1 text-sm text-texto-secundario">
+              {categoriaImpressa}
+            </p>
+          ) : null}
         </section>
 
         <section className="mt-6">
@@ -118,6 +129,9 @@ export default async function PedidoPublicoPage({ params }: Props) {
                     {item.vendido_em_pacote
                       ? linhaItemVenda(item.produto.nome, item)
                       : item.produto.nome}
+                    {item.tipo_preco_aplicado !== "varejo"
+                      ? ` · ${rotuloCategoriaPreco(item.tipo_preco_aplicado)}`
+                      : ""}
                   </p>
                   <p className="font-data text-sm text-texto-secundario">
                     {rotuloQuantidadeItem(item)}

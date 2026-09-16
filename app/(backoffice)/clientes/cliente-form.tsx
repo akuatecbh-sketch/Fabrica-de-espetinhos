@@ -13,7 +13,11 @@ import {
 import {
   TIPO_PESSOA_FISICA,
   TIPO_PESSOA_JURIDICA,
+  CATEGORIAS_PRECO,
+  CATEGORIA_PRECO_PADRAO,
   ehPessoaJuridica,
+  ehCategoriaPreco,
+  rotuloCategoriaPreco,
   type TipoPessoaCliente,
 } from "@/lib/cliente";
 import { isoDaData } from "@/lib/financeiro";
@@ -38,6 +42,7 @@ type ClienteInicial = {
   contato_nome?: string | null;
   contato_cargo?: string | null;
   contato_telefone?: string | null;
+  categoria_preco?: string | null;
 };
 
 function tipoInicial(cliente?: ClienteInicial): TipoPessoaCliente {
@@ -163,6 +168,26 @@ export function ClienteForm({
           </label>
         </div>
       </fieldset>
+
+      <label className="flex flex-col gap-1 text-sm">
+        Categoria de preço
+        <select
+          name="categoria_preco"
+          required
+          defaultValue={
+            cliente?.categoria_preco && ehCategoriaPreco(cliente.categoria_preco)
+              ? cliente.categoria_preco
+              : CATEGORIA_PRECO_PADRAO
+          }
+          className="rounded border border-zinc-300 px-3 py-2"
+        >
+          {CATEGORIAS_PRECO.map((categoria) => (
+            <option key={categoria} value={categoria}>
+              {rotuloCategoriaPreco(categoria)}
+            </option>
+          ))}
+        </select>
+      </label>
 
       {juridica ? (
         <>

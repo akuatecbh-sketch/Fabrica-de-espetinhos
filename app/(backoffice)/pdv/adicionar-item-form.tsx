@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { adicionarItem, type PdvFormState } from "./actions";
 import { arredondarDinheiro, arredondarQuantidade } from "@/lib/dinheiro";
 import { formatarPreco, formatarQuantidade } from "@/lib/format";
+import { resolverPrecoCategoria } from "@/lib/preco-categoria";
 
 const estadoInicial: PdvFormState = {};
 
@@ -12,6 +13,8 @@ type ProdutoBusca = {
   nome: string;
   codigo: string | null;
   preco_venda: string | null;
+  preco_atacado: string | null;
+  preco_repasse: string | null;
   unidade: string;
   permite_venda_pacote: boolean;
   quantidade_por_pacote: string;
@@ -20,9 +23,11 @@ type ProdutoBusca = {
 
 export function AdicionarItemForm({
   vendaId,
+  tipoPreco,
   produto,
 }: {
   vendaId: number;
+  tipoPreco: string;
   produto: ProdutoBusca;
 }) {
   const [estado, formAction, pendente] = useActionState(
@@ -47,7 +52,7 @@ export function AdicionarItemForm({
     };
   }, [pacotesInformados, pacotesValidos, porPacote, precoPacote]);
 
-  const semPrecoUnidade = produto.preco_venda == null;
+  const semPrecoUnidade = resolverPrecoCategoria(produto, tipoPreco).preco == null;
   const semPrecoPacote = precoPacote == null || !Number.isFinite(precoPacote);
   const semPreco =
     modo === "pacote" ? semPrecoPacote : semPrecoUnidade;
@@ -67,7 +72,10 @@ export function AdicionarItemForm({
           ) : null}
         </span>
         <span className="font-data text-sm text-texto-secundario">
-          {formatarPreco(produto.preco_venda)} / {produto.unidade}
+          {formatarPreco(
+            resolverPrecoCategoria(produto, tipoPreco).preco,
+          )}{" "}
+          / {produto.unidade}
         </span>
       </div>
 

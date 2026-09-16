@@ -1,6 +1,7 @@
 import { formatarPreco, formatarQuantidade } from "@/lib/format";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
 import { CardRegistro } from "../card-registro";
+import { BadgeCategoriaPreco } from "../badge-categoria-preco";
 import { QuantidadeItemPedidoForm } from "./quantidade-item-form";
 import { RemoverItemPedidoButton } from "./remover-item-button";
 
@@ -11,6 +12,7 @@ export type ItemPedidoExibicao = {
   subtotal: { toString(): string };
   vendido_em_pacote: boolean;
   quantidade_pacotes: number | null;
+  tipo_preco_aplicado: string;
   produtoNome: string;
 };
 
@@ -53,10 +55,14 @@ export function ItensPedido({
                     ) : undefined
                   }
                 >
-                  <p className="font-medium text-texto-primario">
+                  <p className="flex flex-wrap items-center gap-2 font-medium text-texto-primario">
                     {item.vendido_em_pacote
                       ? linhaItemVenda(item.produtoNome, item)
                       : item.produtoNome}
+                    <BadgeCategoriaPreco
+                      categoria={item.tipo_preco_aplicado}
+                      ocultarVarejo
+                    />
                   </p>
                   {item.vendido_em_pacote ? null : (
                     <>
@@ -93,9 +99,17 @@ export function ItensPedido({
                     className="border-b border-zinc-100 last:border-0"
                   >
                     <td className="px-3 py-2">
-                      {item.vendido_em_pacote
-                        ? linhaItemVenda(item.produtoNome, item)
-                        : item.produtoNome}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>
+                          {item.vendido_em_pacote
+                            ? linhaItemVenda(item.produtoNome, item)
+                            : item.produtoNome}
+                        </span>
+                        <BadgeCategoriaPreco
+                          categoria={item.tipo_preco_aplicado}
+                          ocultarVarejo
+                        />
+                      </div>
                     </td>
                     <td className="px-3 py-2 font-data">
                       {editavel ? (

@@ -8,6 +8,8 @@ import {
 import { formatarCnpjCpf } from "@/lib/documento";
 import { exigirPdvOuVendas } from "@/lib/sessao";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
+import { textoCategoriaPrecoImpressao } from "@/lib/preco-categoria";
+import { rotuloCategoriaPreco } from "@/lib/cliente";
 import { ImprimirCupomButton } from "./imprimir-button";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +62,10 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
   const nomeEmpresa =
     empresa?.nome_fantasia?.trim() || empresa?.razao_social?.trim() || null;
   const data = venda.finalizado_em ?? venda.atualizado_em;
+  const categoriaImpressa = textoCategoriaPrecoImpressao(
+    venda.tipo_preco,
+    venda.venda_item,
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,6 +97,7 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
         {venda.cliente?.nome ? (
           <p className="mt-1">Cliente: {venda.cliente.nome}</p>
         ) : null}
+        {categoriaImpressa ? <p className="mt-1">{categoriaImpressa}</p> : null}
 
         <ul className="mt-3 border-t border-dashed border-zinc-400 pt-2">
           {venda.venda_item.map((item) => (
@@ -99,6 +106,10 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
                 {item.vendido_em_pacote
                   ? linhaItemVenda(item.produto.nome, item)
                   : item.produto.nome}
+                {item.tipo_preco_aplicado &&
+                item.tipo_preco_aplicado !== "varejo"
+                  ? ` · ${rotuloCategoriaPreco(item.tipo_preco_aplicado)}`
+                  : ""}
               </p>
               {item.vendido_em_pacote ? null : (
                 <p className="flex justify-between gap-2 font-data">

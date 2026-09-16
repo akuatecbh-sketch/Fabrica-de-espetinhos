@@ -18,6 +18,7 @@ export type PedidoTelaDados = {
   status: string;
   observacao: string | null;
   tokenPublico: string | null;
+  tipoPreco: string;
   total: { toString(): string };
   cliente: { id: number; nome: string } | null;
   itens: ItemPedidoExibicao[];
@@ -72,6 +73,7 @@ export function PedidoTela({
 
       <ClientePedido
         pedidoId={pedido?.id ?? null}
+        tipoPreco={pedido?.tipoPreco ?? "varejo"}
         cliente={pedido?.cliente ?? null}
         somenteLeitura={somenteLeitura}
       />
@@ -83,7 +85,12 @@ export function PedidoTela({
             : "flex flex-col gap-6"
         }
       >
-        {editavel ? <PedidoBuscaProduto pedidoId={pedido?.id ?? null} /> : null}
+        {editavel ? (
+          <PedidoBuscaProduto
+            pedidoId={pedido?.id ?? null}
+            tipoPreco={pedido?.tipoPreco ?? "varejo"}
+          />
+        ) : null}
 
         <ItensPedido
           itens={pedido?.itens ?? []}
