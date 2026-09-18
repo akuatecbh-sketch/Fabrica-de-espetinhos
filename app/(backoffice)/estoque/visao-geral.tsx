@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { formatarQuantidade, rotuloTipo } from "@/lib/format";
 import { CardRegistro } from "../card-registro";
+import {
+  ListaTodosProdutos,
+  type ProdutoEstoqueVisao,
+} from "./lista-todos-produtos";
 
 type Critico = {
   id: number;
@@ -16,11 +20,13 @@ export function VisaoGeralEstoque({
   vendaAbaixoIdeal,
   excesso,
   criticos,
+  produtos,
 }: {
   insumosAbaixoMinimo: number;
   vendaAbaixoIdeal: number;
   excesso: number;
   criticos: Critico[];
+  produtos: ProdutoEstoqueVisao[];
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -122,6 +128,8 @@ export function VisaoGeralEstoque({
           </>
         )}
       </section>
+
+      <ListaTodosProdutos produtos={produtos} />
     </div>
   );
 }

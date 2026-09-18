@@ -66,6 +66,7 @@ async function AbaVisaoGeral() {
   const produtos = await prisma.produto.findMany({
     where: { ativo: true },
     include: { unidade_medida: true },
+    orderBy: { nome: "asc" },
   });
 
   let insumosAbaixoMinimo = 0;
@@ -110,6 +111,15 @@ async function AbaVisaoGeral() {
       vendaAbaixoIdeal={vendaAbaixoIdeal}
       excesso={excesso}
       criticos={criticos}
+      produtos={produtos.map((produto) => ({
+        id: produto.id,
+        nome: produto.nome,
+        codigo: produto.codigo,
+        tipo: produto.tipo,
+        estoque_atual: Number(produto.estoque_atual),
+        estoque_minimo: Number(produto.estoque_minimo ?? 0),
+        unidade: produto.unidade_medida.sigla,
+      }))}
     />
   );
 }
