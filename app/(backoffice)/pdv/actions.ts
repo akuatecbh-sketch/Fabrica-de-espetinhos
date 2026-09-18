@@ -32,6 +32,7 @@ import {
   resolverPrecoCategoria,
 } from "@/lib/preco-categoria";
 import { ehTipoCupom, type TipoCupom } from "@/lib/tipo-cupom";
+import { ehTipoServico, NOME_PRODUTO_FRETE, TIPO_SERVICO } from "@/lib/frete";
 
 export type PdvFormState = {
   error?: string;
@@ -508,6 +509,77 @@ export async function adicionarItem(
   return {};
 }
 
+export async function definirFrete(
+  vendaId: number,
+  valor: number,
+): Promise<PdvFormState> {
+  await exigirModulo("pdv");
+  const contexto = await garantirVendaAberta(vendaId);
+  if ("error" in contexto) return { error: contexto.error };
+
+  const preco = arredondarDinheiro(Number(valor));
+  if (!Number.isFinite(preco) || preco <= 0) {
+    return { error: "Informe um valor de frete maior que zero." };
+  }
+
+  const produto = await prisma.produto.findFirst({
+    where: {
+      nome: NOME_PRODUTO_FRETE,
+      tipo: TIPO_SERVICO,
+      ativo: true,
+    },
+  });
+  if (!produto) {
+    return { error: 'Produto "Frete" não encontrado.' };
+  }
+
+  const existentes = await prisma.venda_item.findMany({
+    where: { venda_id: vendaId, produto_id: produto.id },
+    orderBy: { id: "asc" },
+  });
+
+  if (existentes.length > 0) {
+    await prisma.venda_item.update({
+      where: { id: existentes[0].id },
+      data: {
+        quantidade: 1,
+        preco_unitario: preco,
+        desconto: 0,
+        subtotal: preco,
+        vendido_em_pacote: false,
+        quantidade_pacotes: null,
+        preco_pacote_aplicado: null,
+        tipo_preco_aplicado: CATEGORIA_PRECO_PADRAO,
+      },
+    });
+    const extras = existentes.slice(1).map((item) => item.id);
+    if (extras.length > 0) {
+      await prisma.venda_item.deleteMany({
+        where: { id: { in: extras } },
+      });
+    }
+  } else {
+    await prisma.venda_item.create({
+      data: {
+        venda_id: vendaId,
+        produto_id: produto.id,
+        quantidade: 1,
+        preco_unitario: preco,
+        desconto: 0,
+        subtotal: preco,
+        vendido_em_pacote: false,
+        quantidade_pacotes: null,
+        preco_pacote_aplicado: null,
+        tipo_preco_aplicado: CATEGORIA_PRECO_PADRAO,
+      },
+    });
+  }
+
+  await recalcularTotais(vendaId);
+  revalidatePath("/pdv");
+  return {};
+}
+
 export async function removerItem(itemId: number) {
   await exigirModulo("pdv");
   const item = await prisma.venda_item.findUnique({
@@ -549,6 +621,7 @@ export async function finalizarVenda(
           produto: {
             select: {
               nome: true,
+              tipo: true,
               ncm: true,
               cfop_padrao: true,
               origem_mercadoria: true,
@@ -589,7 +662,11 @@ export async function finalizarVenda(
     const semFiscal = [
       ...new Set(
         venda.venda_item
-          .filter((item) => !classificacaoFiscalCompleta(item.produto))
+          .filter(
+            (item) =>
+              !ehTipoServico(item.produto.tipo) &&
+              !classificacaoFiscalCompleta(item.produto),
+          )
           .map((item) => item.produto.nome),
       ),
     ];

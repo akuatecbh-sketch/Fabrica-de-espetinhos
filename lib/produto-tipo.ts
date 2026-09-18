@@ -3,6 +3,7 @@ export const TIPOS_CATEGORIA = [
   "produto_final",
   "embalagem",
   "revenda",
+  "servico",
 ] as const;
 
 export type TipoCategoria = (typeof TIPOS_CATEGORIA)[number];

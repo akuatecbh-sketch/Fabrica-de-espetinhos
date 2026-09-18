@@ -43,6 +43,7 @@ export function rotuloTipo(tipo: string) {
     produto_final: "Produto final",
     embalagem: "Embalagem",
     revenda: "Revenda",
+    servico: "Serviço",
     custo_fixo: "Custo fixo",
     custo_variavel: "Custo variável",
     receita: "Receita",

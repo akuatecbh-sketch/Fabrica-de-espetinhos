@@ -13,6 +13,7 @@ import { ClienteVenda } from "./cliente-venda";
 import { PagamentoModal } from "./pagamento-modal";
 import { ehPessoaJuridica } from "@/lib/cliente";
 import { PdvBuscaProduto } from "./busca-produto";
+import { ehTipoServico, NOME_PRODUTO_FRETE } from "@/lib/frete";
 import { RemoverItemButton } from "./remover-item-button";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
 import { exigirAcesso } from "@/lib/permissoes";
@@ -66,6 +67,13 @@ export default async function PdvPage() {
 
   const clienteFoco = venda?.cliente ?? null;
   const clientePessoaJuridica = ehPessoaJuridica(clienteFoco?.tipo_pessoa);
+  const itemFrete = venda?.venda_item.find(
+    (item) =>
+      ehTipoServico(item.produto.tipo) &&
+      item.produto.nome === NOME_PRODUTO_FRETE,
+  );
+  const valorFreteAtual =
+    itemFrete != null ? Number(itemFrete.preco_unitario) : null;
   let historicoCliente: {
     quantidade: number;
     ultimaCompra: string | null;
@@ -164,7 +172,11 @@ export default async function PdvPage() {
           </div>
 
           <div className="flex flex-col gap-6 pb-28 lg:grid lg:grid-cols-2 lg:gap-6 lg:pb-0">
-            <PdvBuscaProduto vendaId={venda.id} tipoPreco={venda.tipo_preco} />
+            <PdvBuscaProduto
+              vendaId={venda.id}
+              tipoPreco={venda.tipo_preco}
+              valorFreteAtual={valorFreteAtual}
+            />
 
             <section className="flex flex-col gap-3">
               <h2 className="text-lg font-medium">Itens da venda</h2>

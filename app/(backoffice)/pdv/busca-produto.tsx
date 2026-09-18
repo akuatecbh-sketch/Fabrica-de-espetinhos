@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BuscaAutocomplete } from "@/components/busca-autocomplete";
 import { AdicionarItemForm } from "./adicionar-item-form";
+import { FreteVenda } from "./frete-venda";
 import { buscarProdutosPdv, type ProdutoPdvBusca } from "./actions";
 
 function detalheProduto(produto: ProdutoPdvBusca) {
@@ -13,15 +14,20 @@ function detalheProduto(produto: ProdutoPdvBusca) {
 export function PdvBuscaProduto({
   vendaId,
   tipoPreco,
+  valorFreteAtual,
 }: {
   vendaId: number;
   tipoPreco: string;
+  valorFreteAtual: number | null;
 }) {
   const [produto, setProduto] = useState<ProdutoPdvBusca | null>(null);
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-medium">Buscar produto</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-medium">Buscar produto</h2>
+        <FreteVenda vendaId={vendaId} valorAtual={valorFreteAtual} />
+      </div>
       <BuscaAutocomplete
         buscar={buscarProdutosPdv}
         label="Produto"

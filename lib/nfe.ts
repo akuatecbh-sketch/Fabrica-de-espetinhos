@@ -21,6 +21,7 @@ import {
   type RespostaFocusNfce,
 } from "@/lib/focus-nfe";
 import { prisma } from "@/lib/prisma";
+import { ehTipoServico } from "@/lib/frete";
 
 const MENSAGEM_SIMULADA =
   "Emissão simulada — configure FOCUS_NFE_TOKEN para emitir de verdade";
@@ -33,10 +34,10 @@ type ItemCalculado = {
   quantidade: number;
   valor_unitario: number;
   valor_total: number;
-  ncm: string;
-  cfop: string;
-  origem_mercadoria: string;
-  cst_csosn: string;
+  ncm: string | null;
+  cfop: string | null;
+  origem_mercadoria: string | null;
+  cst_csosn: string | null;
   aliquota_icms: number;
   valor_icms: number;
   aliquota_ipi: number;
@@ -71,6 +72,7 @@ const SELECT_PRODUTO_FISCAL = {
   id: true,
   codigo: true,
   nome: true,
+  tipo: true,
   ncm: true,
   cfop_padrao: true,
   origem_mercadoria: true,
@@ -93,13 +95,20 @@ function impostoDoItem(valorTotal: number, aliquota: unknown) {
 
 function nomesSemClassificacao(
   itens: {
-    produto: { nome: string } & Parameters<typeof classificacaoFiscalCompleta>[0];
+    produto: {
+      nome: string;
+      tipo?: string | null;
+    } & Parameters<typeof classificacaoFiscalCompleta>[0];
   }[],
 ) {
   return [
     ...new Set(
       itens
-        .filter((item) => !classificacaoFiscalCompleta(item.produto))
+        .filter(
+          (item) =>
+            !ehTipoServico(item.produto.tipo) &&
+            !classificacaoFiscalCompleta(item.produto),
+        )
         .map((item) => item.produto.nome),
     ),
   ];
@@ -221,21 +230,32 @@ async function emitirNfeInterno(vendaId: number): Promise<ResultadoEmissaoNfe> {
   }
 
   const itens = venda.venda_item.map((item) => {
+    const servico = ehTipoServico(item.produto.tipo);
     const valorTotal = arredondarDinheiro(Number(item.subtotal));
-    const icms = impostoDoItem(valorTotal, item.produto.aliquota_icms);
-    const ipi = impostoDoItem(valorTotal, item.produto.aliquota_ipi);
-    const pis = impostoDoItem(valorTotal, item.produto.aliquota_pis);
-    const cofins = impostoDoItem(valorTotal, item.produto.aliquota_cofins);
+    const icms = servico
+      ? { aliquota: 0, valor: 0 }
+      : impostoDoItem(valorTotal, item.produto.aliquota_icms);
+    const ipi = servico
+      ? { aliquota: 0, valor: 0 }
+      : impostoDoItem(valorTotal, item.produto.aliquota_ipi);
+    const pis = servico
+      ? { aliquota: 0, valor: 0 }
+      : impostoDoItem(valorTotal, item.produto.aliquota_pis);
+    const cofins = servico
+      ? { aliquota: 0, valor: 0 }
+      : impostoDoItem(valorTotal, item.produto.aliquota_cofins);
     return {
       produto_id: item.produto.id,
       descricao: item.produto.nome.slice(0, 120),
       quantidade: Number(item.quantidade),
       valor_unitario: Number(item.preco_unitario),
       valor_total: valorTotal,
-      ncm: (item.produto.ncm ?? "").trim(),
-      cfop: (item.produto.cfop_padrao ?? "").trim(),
-      origem_mercadoria: (item.produto.origem_mercadoria ?? "").trim(),
-      cst_csosn: (item.produto.cst_csosn ?? "").trim(),
+      ncm: servico ? null : (item.produto.ncm ?? "").trim() || null,
+      cfop: servico ? null : (item.produto.cfop_padrao ?? "").trim() || null,
+      origem_mercadoria: servico
+        ? null
+        : (item.produto.origem_mercadoria ?? "").trim() || null,
+      cst_csosn: servico ? null : (item.produto.cst_csosn ?? "").trim() || null,
       aliquota_icms: icms.aliquota,
       valor_icms: icms.valor,
       aliquota_ipi: ipi.aliquota,
@@ -333,10 +353,10 @@ async function emitirNfeInterno(vendaId: number): Promise<ResultadoEmissaoNfe> {
       desconto: item.desconto,
       subtotal: item.valor_total,
       unidade: item.unidade,
-      ncm: item.ncm,
-      cfop: item.cfop,
-      origem_mercadoria: item.origem_mercadoria,
-      cst_csosn: item.cst_csosn,
+      ncm: item.ncm ?? "",
+      cfop: item.cfop ?? "",
+      origem_mercadoria: item.origem_mercadoria ?? "",
+      cst_csosn: item.cst_csosn ?? "",
       aliquota_icms: item.aliquota_icms,
       valor_icms: item.valor_icms,
       aliquota_ipi: item.aliquota_ipi,
