@@ -78,6 +78,58 @@ export function ehProdutoVenda(tipo: string) {
   return (TIPOS_VENDA as readonly string[]).includes(tipo);
 }
 
+export const FILTROS_VISAO_ESTOQUE = [
+  "todos",
+  "minimo",
+  "ideal",
+  "excesso",
+] as const;
+export type FiltroVisaoEstoque = (typeof FILTROS_VISAO_ESTOQUE)[number];
+
+export type ProdutoNiveisEstoque = {
+  tipo: string;
+  estoque_atual: number;
+  estoque_minimo: number;
+  estoque_ideal: number | null;
+  estoque_maximo: number | null;
+};
+
+export function produtoNoFiltroVisao(
+  produto: ProdutoNiveisEstoque,
+  filtro: FiltroVisaoEstoque,
+) {
+  const atual = Number(produto.estoque_atual);
+  const minimo = Number(produto.estoque_minimo ?? 0);
+  const ideal =
+    produto.estoque_ideal != null ? Number(produto.estoque_ideal) : null;
+  const maximo =
+    produto.estoque_maximo != null ? Number(produto.estoque_maximo) : null;
+
+  if (filtro === "minimo") {
+    return ehInsumoOuEmbalagem(produto.tipo) && atual < minimo;
+  }
+  if (filtro === "ideal") {
+    return ehProdutoVenda(produto.tipo) && ideal != null && atual < ideal;
+  }
+  if (filtro === "excesso") {
+    return maximo != null && atual >= maximo;
+  }
+  return true;
+}
+
+export function contagensVisaoEstoque(produtos: ProdutoNiveisEstoque[]) {
+  return {
+    todos: produtos.length,
+    minimo: produtos.filter((produto) => produtoNoFiltroVisao(produto, "minimo"))
+      .length,
+    ideal: produtos.filter((produto) => produtoNoFiltroVisao(produto, "ideal"))
+      .length,
+    excesso: produtos.filter((produto) =>
+      produtoNoFiltroVisao(produto, "excesso"),
+    ).length,
+  };
+}
+
 export type InsumoFicha = {
   nome: string;
   unidade: string;

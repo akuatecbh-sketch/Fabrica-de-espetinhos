@@ -5,8 +5,6 @@ import {
   ITENS_MOVIMENTACAO_POR_PAGINA,
   abaEstoqueDaUrl,
   calcularProducao,
-  ehInsumoOuEmbalagem,
-  ehProdutoVenda,
   ehTipoMovimentacao,
   limitesDoDiaIso,
   paginaDaUrl,
@@ -69,26 +67,10 @@ async function AbaVisaoGeral() {
     orderBy: { nome: "asc" },
   });
 
-  let insumosAbaixoMinimo = 0;
-  let vendaAbaixoIdeal = 0;
-  let excesso = 0;
   const criticos = produtos
     .map((produto) => {
       const atual = Number(produto.estoque_atual);
       const minimo = Number(produto.estoque_minimo ?? 0);
-      const ideal = produto.estoque_ideal != null ? Number(produto.estoque_ideal) : null;
-      const maximo =
-        produto.estoque_maximo != null ? Number(produto.estoque_maximo) : null;
-
-      if (ehInsumoOuEmbalagem(produto.tipo) && atual < minimo) {
-        insumosAbaixoMinimo += 1;
-      }
-      if (ehProdutoVenda(produto.tipo) && ideal != null && atual < ideal) {
-        vendaAbaixoIdeal += 1;
-      }
-      if (maximo != null && atual >= maximo) {
-        excesso += 1;
-      }
 
       return {
         id: produto.id,
@@ -107,9 +89,6 @@ async function AbaVisaoGeral() {
 
   return (
     <VisaoGeralEstoque
-      insumosAbaixoMinimo={insumosAbaixoMinimo}
-      vendaAbaixoIdeal={vendaAbaixoIdeal}
-      excesso={excesso}
       criticos={criticos}
       produtos={produtos.map((produto) => ({
         id: produto.id,
@@ -118,7 +97,10 @@ async function AbaVisaoGeral() {
         tipo: produto.tipo,
         estoque_atual: Number(produto.estoque_atual),
         estoque_minimo: Number(produto.estoque_minimo ?? 0),
-        unidade: produto.unidade_medida.sigla,
+        estoque_ideal:
+          produto.estoque_ideal != null ? Number(produto.estoque_ideal) : null,
+        estoque_maximo:
+          produto.estoque_maximo != null ? Number(produto.estoque_maximo) : null,
       }))}
     />
   );

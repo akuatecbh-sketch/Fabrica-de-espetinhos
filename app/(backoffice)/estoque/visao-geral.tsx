@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { formatarQuantidade, rotuloTipo } from "@/lib/format";
 import { CardRegistro } from "../card-registro";
-import {
-  ListaTodosProdutos,
-  type ProdutoEstoqueVisao,
-} from "./lista-todos-produtos";
+import { VisaoGeralInterativa } from "./visao-geral-interativa";
+import type { ProdutoEstoqueVisao } from "./lista-todos-produtos";
 
 type Critico = {
   id: number;
@@ -16,47 +14,14 @@ type Critico = {
 };
 
 export function VisaoGeralEstoque({
-  insumosAbaixoMinimo,
-  vendaAbaixoIdeal,
-  excesso,
   criticos,
   produtos,
 }: {
-  insumosAbaixoMinimo: number;
-  vendaAbaixoIdeal: number;
-  excesso: number;
   criticos: Critico[];
   produtos: ProdutoEstoqueVisao[];
 }) {
   return (
-    <div className="flex flex-col gap-6">
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded border border-zinc-200 bg-white px-4 py-3">
-          <dt className="text-xs text-texto-secundario">
-            Insumos/embalagens abaixo do mínimo
-          </dt>
-          <dd className="font-data text-2xl font-semibold text-texto-primario">
-            {insumosAbaixoMinimo}
-          </dd>
-        </div>
-        <div className="rounded border border-zinc-200 bg-white px-4 py-3">
-          <dt className="text-xs text-texto-secundario">
-            Produtos de venda abaixo do ideal
-          </dt>
-          <dd className="font-data text-2xl font-semibold text-texto-primario">
-            {vendaAbaixoIdeal}
-          </dd>
-        </div>
-        <div className="rounded border border-zinc-200 bg-white px-4 py-3">
-          <dt className="text-xs text-texto-secundario">
-            No máximo ou em excesso
-          </dt>
-          <dd className="font-data text-2xl font-semibold text-texto-primario">
-            {excesso}
-          </dd>
-        </div>
-      </dl>
-
+    <VisaoGeralInterativa produtos={produtos}>
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Itens mais críticos</h2>
         {criticos.length === 0 ? (
@@ -128,8 +93,6 @@ export function VisaoGeralEstoque({
           </>
         )}
       </section>
-
-      <ListaTodosProdutos produtos={produtos} />
-    </div>
+    </VisaoGeralInterativa>
   );
 }

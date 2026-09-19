@@ -119,7 +119,7 @@ async function lerDadosProduto(
   const preco_repasse = decimal(formData, "preco_repasse");
   const estoque_minimo = decimal(formData, "estoque_minimo") ?? 0;
   const estoque_ideal = decimal(formData, "estoque_ideal") ?? 0;
-  const estoque_maximo = decimal(formData, "estoque_maximo") ?? 0;
+  const estoque_maximo = decimal(formData, "estoque_maximo");
   const estoque_atual = decimal(formData, "estoque_atual") ?? 0;
   const controla_estoque = formData.get("controla_estoque") === "on";
   const vendido_por_peso = formData.get("vendido_por_peso") === "on";
@@ -160,15 +160,20 @@ async function lerDadosProduto(
   if (
     Number.isNaN(estoque_minimo) ||
     Number.isNaN(estoque_ideal) ||
-    Number.isNaN(estoque_maximo) ||
-    Number.isNaN(estoque_atual)
+    Number.isNaN(estoque_atual) ||
+    (estoque_maximo != null && Number.isNaN(estoque_maximo))
   ) {
     return { error: "Informe quantidades de estoque válidas." } as const;
   }
-  if (estoque_minimo > estoque_ideal || estoque_ideal > estoque_maximo) {
+  if (estoque_minimo > estoque_ideal) {
+    return {
+      error: "O estoque mínimo deve ser menor ou igual ao estoque ideal.",
+    } as const;
+  }
+  if (estoque_maximo != null && estoque_ideal > estoque_maximo) {
     return {
       error:
-        "O estoque mínimo deve ser menor ou igual ao estoque ideal, e o estoque ideal menor ou igual ao estoque máximo.",
+        "O estoque ideal deve ser menor ou igual ao estoque máximo.",
     } as const;
   }
 

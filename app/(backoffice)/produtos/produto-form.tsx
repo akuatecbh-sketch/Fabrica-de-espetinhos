@@ -110,19 +110,32 @@ export function ProdutoForm({
     const formulario = evento.currentTarget;
     const minimo = quantidadeDoFormulario(formulario, "estoque_minimo");
     const ideal = quantidadeDoFormulario(formulario, "estoque_ideal");
-    const maximo = quantidadeDoFormulario(formulario, "estoque_maximo");
+    const maximoBruto = String(
+      new FormData(formulario).get("estoque_maximo") ?? "",
+    ).trim();
+    const maximo = maximoBruto
+      ? numeroDoTexto(maximoBruto)
+      : null;
     const atual = quantidadeDoFormulario(formulario, "estoque_atual");
 
-    if ([minimo, ideal, maximo, atual].some((valor) => Number.isNaN(valor))) {
+    if (
+      [minimo, ideal, atual].some((valor) => Number.isNaN(valor)) ||
+      (maximo != null && Number.isNaN(maximo))
+    ) {
       evento.preventDefault();
       setErroLocal("Informe quantidades de estoque válidas.");
       return;
     }
 
-    if (minimo > ideal || ideal > maximo) {
+    if (minimo > ideal) {
+      evento.preventDefault();
+      setErroLocal("O estoque mínimo deve ser menor ou igual ao estoque ideal.");
+      return;
+    }
+    if (maximo != null && ideal > maximo) {
       evento.preventDefault();
       setErroLocal(
-        "O estoque mínimo deve ser menor ou igual ao estoque ideal, e o estoque ideal menor ou igual ao estoque máximo.",
+        "O estoque ideal deve ser menor ou igual ao estoque máximo.",
       );
       return;
     }
