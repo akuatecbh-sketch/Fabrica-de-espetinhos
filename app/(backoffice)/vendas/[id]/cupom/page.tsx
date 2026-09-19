@@ -7,7 +7,12 @@ import {
 } from "@/lib/format";
 import { formatarCnpjCpf } from "@/lib/documento";
 import { exigirPdvOuVendas } from "@/lib/sessao";
-import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
+import {
+  comFlagPeso,
+  itemUsaLinhaCompleta,
+  linhaItemVenda,
+  rotuloQuantidadeItem,
+} from "@/lib/venda-item";
 import { textoCategoriaPrecoImpressao } from "@/lib/preco-categoria";
 import { rotuloCategoriaPreco } from "@/lib/cliente";
 import { ImprimirCupomButton } from "./imprimir-button";
@@ -31,7 +36,9 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
       include: {
         cliente: { select: { nome: true } },
         venda_item: {
-          include: { produto: { select: { nome: true } } },
+          include: {
+            produto: { select: { nome: true, vendido_por_peso: true } },
+          },
           orderBy: { id: "asc" },
         },
         venda_pagamento: {
@@ -100,27 +107,30 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
         {categoriaImpressa ? <p className="mt-1">{categoriaImpressa}</p> : null}
 
         <ul className="mt-3 border-t border-dashed border-zinc-400 pt-2">
-          {venda.venda_item.map((item) => (
+          {venda.venda_item.map((item) => {
+            const exibicao = comFlagPeso(item);
+            return (
             <li key={item.id} className="mb-2">
               <p className="font-medium">
-                {item.vendido_em_pacote
-                  ? linhaItemVenda(item.produto.nome, item)
+                {itemUsaLinhaCompleta(exibicao)
+                  ? linhaItemVenda(item.produto.nome, exibicao)
                   : item.produto.nome}
                 {item.tipo_preco_aplicado &&
                 item.tipo_preco_aplicado !== "varejo"
                   ? ` · ${rotuloCategoriaPreco(item.tipo_preco_aplicado)}`
                   : ""}
               </p>
-              {item.vendido_em_pacote ? null : (
+              {itemUsaLinhaCompleta(exibicao) ? null : (
                 <p className="flex justify-between gap-2 font-data">
                   <span>
-                    {rotuloQuantidadeItem(item)} × {formatarPreco(item.preco_unitario)}
+                    {rotuloQuantidadeItem(exibicao)} × {formatarPreco(item.preco_unitario)}
                   </span>
                   <span>{formatarPreco(item.subtotal)}</span>
                 </p>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         <div className="border-t border-dashed border-zinc-400 pt-2">

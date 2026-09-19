@@ -18,7 +18,10 @@ export default async function NotasFiscaisPage() {
           tipo_pessoa: true,
         },
       },
-      nfe_item: { orderBy: { id: "asc" } },
+      nfe_item: {
+        orderBy: { id: "asc" },
+        include: { produto: { select: { vendido_por_peso: true } } },
+      },
     },
   });
 
@@ -49,6 +52,7 @@ export default async function NotasFiscaisPage() {
             id: item.id,
             descricao: item.descricao,
             quantidade: item.quantidade.toString(),
+            vendido_por_peso: item.produto.vendido_por_peso,
             valor_total: item.valor_total.toString(),
             valor_icms: item.valor_icms.toString(),
             valor_ipi: item.valor_ipi.toString(),

@@ -16,6 +16,7 @@ type ProdutoBusca = {
   preco_atacado: string | null;
   preco_repasse: string | null;
   unidade: string;
+  vendido_por_peso: boolean;
   permite_venda_pacote: boolean;
   quantidade_por_pacote: string;
   preco_pacote: string | null;
@@ -36,6 +37,7 @@ export function AdicionarItemForm({
   );
   const [modo, setModo] = useState<"unidade" | "pacote">("unidade");
   const [quantidadePacotes, setQuantidadePacotes] = useState("1");
+  const [pesoKg, setPesoKg] = useState("");
 
   const porPacote = Number(produto.quantidade_por_pacote);
   const precoPacote = produto.preco_pacote == null ? null : Number(produto.preco_pacote);
@@ -52,11 +54,24 @@ export function AdicionarItemForm({
     };
   }, [pacotesInformados, pacotesValidos, porPacote, precoPacote]);
 
-  const semPrecoUnidade = resolverPrecoCategoria(produto, tipoPreco).preco == null;
+  const precoCategoria = resolverPrecoCategoria(produto, tipoPreco).preco;
+  const semPrecoUnidade = precoCategoria == null;
   const semPrecoPacote = precoPacote == null || !Number.isFinite(precoPacote);
   const semPreco =
     modo === "pacote" ? semPrecoPacote : semPrecoUnidade;
-  const mostrarSeletor = produto.permite_venda_pacote;
+  const mostrarSeletor =
+    produto.permite_venda_pacote && !produto.vendido_por_peso;
+  const previewPeso = useMemo(() => {
+    if (!produto.vendido_por_peso || precoCategoria == null) return null;
+    const peso = Number(pesoKg.trim().replace(",", "."));
+    if (!Number.isFinite(peso) || peso <= 0) return null;
+    const quantidade = arredondarQuantidade(peso);
+    const preco_unitario = arredondarDinheiro(precoCategoria);
+    return {
+      quantidade,
+      subtotal: arredondarDinheiro(quantidade * preco_unitario),
+    };
+  }, [pesoKg, precoCategoria, produto.vendido_por_peso]);
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
@@ -72,10 +87,8 @@ export function AdicionarItemForm({
           ) : null}
         </span>
         <span className="font-data text-sm text-texto-secundario">
-          {formatarPreco(
-            resolverPrecoCategoria(produto, tipoPreco).preco,
-          )}{" "}
-          / {produto.unidade}
+          {formatarPreco(precoCategoria)} /{" "}
+          {produto.vendido_por_peso ? "kg" : produto.unidade}
         </span>
       </div>
 
@@ -124,6 +137,30 @@ export function AdicionarItemForm({
               <span className="font-data text-sm text-texto-secundario">
                 {formatarQuantidade(previewPacote.unidades)} un ·{" "}
                 {formatarPreco(previewPacote.subtotal)}
+              </span>
+            ) : null}
+          </>
+        ) : produto.vendido_por_peso ? (
+          <>
+            <label className="flex items-center gap-2 text-sm">
+              Peso (kg)
+              <input
+                name="quantidade"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,487"
+                value={pesoKg}
+                onChange={(evento) => setPesoKg(evento.target.value)}
+                required
+                disabled={semPreco || pendente}
+                className="font-data min-h-11 w-28 rounded border border-borda px-2 py-1 text-sm lg:min-h-0"
+              />
+            </label>
+            {previewPeso ? (
+              <span className="font-data text-sm text-texto-secundario">
+                {formatarQuantidade(previewPeso.quantidade)} kg ×{" "}
+                {formatarPreco(precoCategoria ?? 0)}/kg ={" "}
+                {formatarPreco(previewPeso.subtotal)}
               </span>
             ) : null}
           </>

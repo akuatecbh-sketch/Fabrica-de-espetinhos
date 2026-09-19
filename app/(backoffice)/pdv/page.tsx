@@ -15,7 +15,13 @@ import { ehPessoaJuridica } from "@/lib/cliente";
 import { PdvBuscaProduto } from "./busca-produto";
 import { ehTipoServico, NOME_PRODUTO_FRETE } from "@/lib/frete";
 import { RemoverItemButton } from "./remover-item-button";
-import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
+import {
+  comFlagPeso,
+  itemUsaLinhaCompleta,
+  linhaItemVenda,
+  rotuloPrecoUnitarioItem,
+  rotuloQuantidadeItem,
+} from "@/lib/venda-item";
 import { exigirAcesso } from "@/lib/permissoes";
 import { BadgeCategoriaPreco } from "../badge-categoria-preco";
 
@@ -198,15 +204,18 @@ export default async function PdvPage() {
                           }
                         >
                           <p className="flex flex-wrap items-center gap-2 font-medium text-texto-primario">
-                            {item.vendido_em_pacote
-                              ? linhaItemVenda(item.produto.nome, item)
+                            {itemUsaLinhaCompleta(comFlagPeso(item))
+                              ? linhaItemVenda(
+                                  item.produto.nome,
+                                  comFlagPeso(item),
+                                )
                               : item.produto.nome}
                             <BadgeCategoriaPreco
                               categoria={item.tipo_preco_aplicado}
                               ocultarVarejo
                             />
                           </p>
-                          {item.vendido_em_pacote ? null : (
+                          {itemUsaLinhaCompleta(comFlagPeso(item)) ? null : (
                             <>
                               <p className="font-data text-sm text-texto-primario">
                                 {formatarQuantidade(item.quantidade)} ×{" "}
@@ -241,8 +250,11 @@ export default async function PdvPage() {
                             <td className="px-3 py-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span>
-                                  {item.vendido_em_pacote
-                                    ? linhaItemVenda(item.produto.nome, item)
+                                  {itemUsaLinhaCompleta(comFlagPeso(item))
+                                    ? linhaItemVenda(
+                                        item.produto.nome,
+                                        comFlagPeso(item),
+                                      )
                                     : item.produto.nome}
                                 </span>
                                 <BadgeCategoriaPreco
@@ -252,12 +264,10 @@ export default async function PdvPage() {
                               </div>
                             </td>
                             <td className="px-3 py-2 font-data">
-                              {rotuloQuantidadeItem(item)}
+                              {rotuloQuantidadeItem(comFlagPeso(item))}
                             </td>
                             <td className="px-3 py-2 font-data">
-                              {item.vendido_em_pacote
-                                ? "—"
-                                : formatarPreco(item.preco_unitario)}
+                              {rotuloPrecoUnitarioItem(comFlagPeso(item))}
                             </td>
                             <td className="px-3 py-2 font-data">
                               {formatarPreco(item.subtotal)}

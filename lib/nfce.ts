@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { soDigitos } from "@/lib/documento";
 import { rotuloCategoriaPreco } from "@/lib/cliente";
 import { textoCategoriaPrecoImpressao } from "@/lib/preco-categoria";
+import { comFlagPeso, descricaoFiscalItem } from "@/lib/venda-item";
 
 const MENSAGEM_SIMULADA =
   "Emissão simulada — configure FOCUS_NFE_TOKEN no .env para emitir de verdade";
@@ -82,6 +83,7 @@ async function emitirNfceInterno(vendaId: number) {
               id: true,
               codigo: true,
               nome: true,
+              vendido_por_peso: true,
               unidade_medida: { select: { sigla: true } },
             },
           },
@@ -155,10 +157,15 @@ async function emitirNfceInterno(vendaId: number) {
     destinatario: venda.cliente,
     itens: venda.venda_item.map((item) => ({
       codigo: item.produto.codigo?.trim() || String(item.produto.id),
-      descricao:
-        item.tipo_preco_aplicado && item.tipo_preco_aplicado !== "varejo"
-          ? `${item.produto.nome} (${rotuloCategoriaPreco(item.tipo_preco_aplicado)})`
-          : item.produto.nome,
+      descricao: (() => {
+        const base = descricaoFiscalItem(
+          item.produto.nome,
+          comFlagPeso(item),
+        );
+        return item.tipo_preco_aplicado && item.tipo_preco_aplicado !== "varejo"
+          ? `${base} (${rotuloCategoriaPreco(item.tipo_preco_aplicado)})`
+          : base;
+      })(),
       quantidade: Number(item.quantidade),
       preco_unitario: Number(item.preco_unitario),
       desconto: Number(item.desconto),

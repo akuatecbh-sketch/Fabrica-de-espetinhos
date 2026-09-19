@@ -52,6 +52,7 @@ export function PdvBuscaProduto({
               preco_atacado: produto.preco_atacado,
               preco_repasse: produto.preco_repasse,
               unidade: produto.unidade,
+              vendido_por_peso: produto.vendido_por_peso,
               permite_venda_pacote: produto.permite_venda_pacote,
               quantidade_por_pacote: produto.quantidade_por_pacote,
               preco_pacote: produto.preco_pacote,

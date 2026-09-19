@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { formatarDataHora, formatarPreco, formatarQuantidade } from "@/lib/format";
+import { formatarPesoKg } from "@/lib/venda-item";
 import { emitirNfe } from "./actions";
 
 export type NfeListaItem = {
@@ -20,6 +21,7 @@ export type NfeListaItem = {
     id: number;
     descricao: string;
     quantidade: string;
+    vendido_por_peso: boolean;
     valor_total: string;
     valor_icms: string;
     valor_ipi: string;
@@ -148,7 +150,10 @@ export function ListaNfe({ notas }: { notas: NfeListaItem[] }) {
                         <li key={item.id} className="text-sm">
                           <p className="font-medium">{item.descricao}</p>
                           <p className="font-data text-zinc-600">
-                            {formatarQuantidade(item.quantidade)} ·{" "}
+                            {item.vendido_por_peso
+                              ? `${formatarPesoKg(item.quantidade)} kg`
+                              : formatarQuantidade(item.quantidade)}{" "}
+                            ·{" "}
                             {formatarPreco(item.valor_total)}
                           </p>
                           <p className="text-xs text-zinc-500">
@@ -177,7 +182,9 @@ export function ListaNfe({ notas }: { notas: NfeListaItem[] }) {
                           <tr key={item.id} className="border-t border-zinc-100">
                             <td className="py-1.5 pr-3">{item.descricao}</td>
                             <td className="py-1.5 pr-3 font-data">
-                              {formatarQuantidade(item.quantidade)}
+                              {item.vendido_por_peso
+                                ? `${formatarPesoKg(item.quantidade)} kg`
+                                : formatarQuantidade(item.quantidade)}
                             </td>
                             <td className="py-1.5 pr-3 font-data">
                               {formatarPreco(item.valor_total)}

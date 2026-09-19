@@ -22,6 +22,7 @@ import {
 } from "@/lib/focus-nfe";
 import { prisma } from "@/lib/prisma";
 import { ehTipoServico } from "@/lib/frete";
+import { comFlagPeso, descricaoFiscalItem } from "@/lib/venda-item";
 
 const MENSAGEM_SIMULADA =
   "Emissão simulada — configure FOCUS_NFE_TOKEN para emitir de verdade";
@@ -81,6 +82,7 @@ const SELECT_PRODUTO_FISCAL = {
   aliquota_ipi: true,
   aliquota_pis: true,
   aliquota_cofins: true,
+  vendido_por_peso: true,
   unidade_medida: { select: { sigla: true } },
 } as const;
 
@@ -246,7 +248,10 @@ async function emitirNfeInterno(vendaId: number): Promise<ResultadoEmissaoNfe> {
       : impostoDoItem(valorTotal, item.produto.aliquota_cofins);
     return {
       produto_id: item.produto.id,
-      descricao: item.produto.nome.slice(0, 120),
+      descricao: descricaoFiscalItem(
+        item.produto.nome,
+        comFlagPeso(item),
+      ).slice(0, 120),
       quantidade: Number(item.quantidade),
       valor_unitario: Number(item.preco_unitario),
       valor_total: valorTotal,

@@ -32,6 +32,7 @@ import {
   resolverPrecoCategoria,
 } from "@/lib/preco-categoria";
 import { ehTipoCupom, type TipoCupom } from "@/lib/tipo-cupom";
+import { baixarEstoqueDaVenda } from "@/lib/estoque";
 import { ehTipoServico, NOME_PRODUTO_FRETE, TIPO_SERVICO } from "@/lib/frete";
 
 export type PdvFormState = {
@@ -179,6 +180,7 @@ export type ProdutoPdvBusca = {
   preco_atacado: string | null;
   preco_repasse: string | null;
   unidade: string;
+  vendido_por_peso: boolean;
   permite_venda_pacote: boolean;
   quantidade_por_pacote: string;
   preco_pacote: string | null;
@@ -207,6 +209,7 @@ export async function buscarProdutosPdv(
     preco_atacado: produto.preco_atacado?.toString() ?? null,
     preco_repasse: produto.preco_repasse?.toString() ?? null,
     unidade: produto.unidade_medida.sigla,
+    vendido_por_peso: produto.vendido_por_peso,
     permite_venda_pacote: produto.permite_venda_pacote,
     quantidade_por_pacote: produto.quantidade_por_pacote.toString(),
     preco_pacote: produto.preco_pacote?.toString() ?? null,
@@ -426,6 +429,10 @@ export async function adicionarItem(
     };
   }
 
+  if (produto.vendido_por_peso && modoVenda === "pacote") {
+    return { error: "Produto vendido por peso não pode ser lançado em pacote." };
+  }
+
   if (modoVenda === "pacote") {
     if (!produto.permite_venda_pacote) {
       return { error: "Este produto não permite venda em pacote." };
@@ -475,9 +482,13 @@ export async function adicionarItem(
   const quantidadeBruta = String(formData.get("quantidade") ?? "")
     .trim()
     .replace(",", ".");
-  const quantidade = Number(quantidadeBruta);
+  const quantidade = arredondarQuantidade(Number(quantidadeBruta));
   if (!Number.isFinite(quantidade) || quantidade <= 0) {
-    return { error: "Informe uma quantidade maior que zero." };
+    return {
+      error: produto.vendido_por_peso
+        ? "Informe um peso maior que zero."
+        : "Informe uma quantidade maior que zero.",
+    };
   }
   const { preco, tipoAplicado } = resolverPrecoCategoria(
     produto,
@@ -622,6 +633,7 @@ export async function finalizarVenda(
             select: {
               nome: true,
               tipo: true,
+              controla_estoque: true,
               ncm: true,
               cfop_padrao: true,
               origem_mercadoria: true,
@@ -795,6 +807,12 @@ export async function finalizarVenda(
         atualizado_em: agora,
       },
     });
+
+    await baixarEstoqueDaVenda(tx, {
+      vendaId: venda.id,
+      usuarioId: operador.id,
+      itens: venda.venda_item,
+    });
   });
 
   if (tipoCupom === "fiscal") {
@@ -819,5 +837,6 @@ export async function finalizarVenda(
   revalidatePath("/pdv");
   revalidatePath("/vendas/hoje");
   revalidatePath("/notas-fiscais");
+  revalidatePath("/estoque");
   return { tipo_cupom: tipoCupom, vendaId: venda.id };
 }

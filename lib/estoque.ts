@@ -1,4 +1,6 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { arredondarQuantidade } from "@/lib/dinheiro";
+import { ehTipoServico } from "@/lib/frete";
 import { TIPOS_INSUMO, TIPOS_VENDA } from "@/lib/produto-tipo";
 
 export const ITENS_MOVIMENTACAO_POR_PAGINA = 20;
@@ -184,4 +186,50 @@ export function calcularProducao(
     produzivel,
     faltas,
   };
+}
+
+export async function baixarEstoqueDaVenda(
+  tx: Prisma.TransactionClient,
+  params: {
+    vendaId: number;
+    usuarioId: number;
+    itens: {
+      produto_id: number;
+      quantidade: { toString(): string } | number;
+      produto: { tipo: string; controla_estoque: boolean };
+    }[];
+  },
+) {
+  for (const item of params.itens) {
+    if (!item.produto.controla_estoque) continue;
+    if (ehTipoServico(item.produto.tipo)) continue;
+
+    const quantidade = arredondarQuantidade(Number(item.quantidade));
+    if (!(quantidade > 0)) continue;
+
+    const produto = await tx.produto.findUniqueOrThrow({
+      where: { id: item.produto_id },
+      select: { id: true, estoque_atual: true },
+    });
+    const saldoAnterior = Number(produto.estoque_atual);
+    const saldoAtual = arredondarQuantidade(saldoAnterior - quantidade);
+
+    await tx.produto.update({
+      where: { id: produto.id },
+      data: { estoque_atual: saldoAtual },
+    });
+    await tx.movimentacao_estoque.create({
+      data: {
+        produto_id: produto.id,
+        tipo: "saida_venda",
+        quantidade,
+        saldo_anterior: saldoAnterior,
+        saldo_atual: saldoAtual,
+        origem_tipo: "venda",
+        origem_id: params.vendaId,
+        usuario_id: params.usuarioId,
+        observacao: `Saída da venda #${params.vendaId}`,
+      },
+    });
+  }
 }

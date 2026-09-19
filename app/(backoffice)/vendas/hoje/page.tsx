@@ -10,7 +10,13 @@ import {
   formatarQuantidade,
 } from "@/lib/format";
 import { exigirAcesso } from "@/lib/permissoes";
-import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
+import {
+  comFlagPeso,
+  itemUsaLinhaCompleta,
+  linhaItemVenda,
+  rotuloPrecoUnitarioItem,
+  rotuloQuantidadeItem,
+} from "@/lib/venda-item";
 import { nomeExibicao } from "@/lib/visibilidade";
 import { BadgeCategoriaPreco } from "../../badge-categoria-preco";
 import { CupomVendaBadge } from "./cupom-venda-badge";
@@ -127,28 +133,31 @@ export default async function VendasHojePage() {
                   ) : (
                     <>
                       <ul className="flex flex-col gap-2 md:hidden">
-                        {venda.venda_item.map((item) => (
+                        {venda.venda_item.map((item) => {
+                          const exibicao = comFlagPeso(item);
+                          return (
                           <li
                             key={item.id}
                             className="flex items-start justify-between gap-3 text-sm"
                           >
                             <span className="min-w-0 break-words">
-                              {item.vendido_em_pacote
-                                ? linhaItemVenda(item.produto.nome, item)
+                              {itemUsaLinhaCompleta(exibicao)
+                                ? linhaItemVenda(item.produto.nome, exibicao)
                                 : item.produto.nome}{" "}
                               <BadgeCategoriaPreco
                                 categoria={item.tipo_preco_aplicado}
                                 ocultarVarejo
                               />
                             </span>
-                            {item.vendido_em_pacote ? null : (
+                            {itemUsaLinhaCompleta(exibicao) ? null : (
                               <span className="font-data shrink-0 text-texto-secundario">
                                 {formatarQuantidade(item.quantidade)} ×{" "}
                                 {formatarPreco(item.preco_unitario)}
                               </span>
                             )}
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                       <table className="hidden min-w-full text-left text-sm md:table">
                       <thead className="text-zinc-600">
@@ -164,8 +173,11 @@ export default async function VendasHojePage() {
                           <tr key={item.id} className="border-t border-zinc-100">
                             <td className="py-1.5 pr-3">
                               <span className="inline-flex flex-wrap items-center gap-2">
-                                {item.vendido_em_pacote
-                                  ? linhaItemVenda(item.produto.nome, item)
+                                {itemUsaLinhaCompleta(comFlagPeso(item))
+                                  ? linhaItemVenda(
+                                      item.produto.nome,
+                                      comFlagPeso(item),
+                                    )
                                   : item.produto.nome}
                                 <BadgeCategoriaPreco
                                   categoria={item.tipo_preco_aplicado}
@@ -174,12 +186,10 @@ export default async function VendasHojePage() {
                               </span>
                             </td>
                             <td className="py-1.5 pr-3 font-data">
-                              {rotuloQuantidadeItem(item)}
+                              {rotuloQuantidadeItem(comFlagPeso(item))}
                             </td>
                             <td className="py-1.5 pr-3 font-data">
-                              {item.vendido_em_pacote
-                                ? "—"
-                                : formatarPreco(item.preco_unitario)}
+                              {rotuloPrecoUnitarioItem(comFlagPeso(item))}
                             </td>
                             <td className="py-1.5 font-data">
                               {formatarPreco(item.subtotal)}

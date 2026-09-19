@@ -66,7 +66,9 @@ export async function obterVendasHoje() {
         },
       },
       venda_item: {
-        include: { produto: { select: { nome: true } } },
+        include: {
+          produto: { select: { nome: true, vendido_por_peso: true } },
+        },
         orderBy: { id: "asc" },
       },
       venda_pagamento: {
