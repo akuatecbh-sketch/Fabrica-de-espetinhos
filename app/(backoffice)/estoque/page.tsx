@@ -101,6 +101,7 @@ async function AbaVisaoGeral() {
           produto.estoque_ideal != null ? Number(produto.estoque_ideal) : null,
         estoque_maximo:
           produto.estoque_maximo != null ? Number(produto.estoque_maximo) : null,
+        unidade: produto.unidade_medida.sigla,
       }))}
     />
   );
