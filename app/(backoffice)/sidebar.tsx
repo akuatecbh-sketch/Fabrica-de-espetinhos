@@ -310,10 +310,6 @@ export function Sidebar({
           </div>
         ) : null}
 
-        <pre style={{ fontSize: "10px", background: "#fee", padding: "4px" }}>
-          DEBUG: relatorios={String(acessos.relatorios)} | perfil={perfil} | total_modulos={Object.keys(acessos).length}
-        </pre>
-
         {cadastrosVisiveis.length > 0 ? (
         <div className={recolhida ? "lg:hidden" : undefined}>
           <button
