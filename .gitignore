@@ -47,6 +47,11 @@ yarn-error.log*
 # dumps SQL na raiz (podem conter hashes de senha)
 /*.sql
 
+# backups de reconciliação (PII / hashes)
+/backup_sp_antes_reconciliacao.json
+/backup_ohio_antes_reconciliacao.json
+/migracao_sp_para_ohio.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

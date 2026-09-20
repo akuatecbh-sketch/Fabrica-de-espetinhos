@@ -159,24 +159,25 @@ model fornecedor {
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model funcionario {
-  id              Int           @id @default(autoincrement())
-  usuario_id      Int?
-  nome            String        @db.VarChar(150)
-  cpf             String        @unique @db.Char(11)
-  rg              String?       @db.VarChar(20)
-  data_nascimento DateTime      @db.Date
-  telefone        String?       @db.VarChar(20)
-  email           String?       @db.VarChar(150)
-  endereco        String?       @db.VarChar(255)
-  cargo           String        @db.VarChar(80)
-  salario         Decimal       @db.Decimal(10, 2)
-  data_admissao   DateTime      @db.Date
-  data_demissao   DateTime?     @db.Date
-  ativo           Boolean       @default(true)
-  criado_em       DateTime      @default(now()) @db.Timestamp(6)
-  conta_pagar     conta_pagar[]
-  ferias          ferias[]
-  usuario         usuario?      @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                  Int           @id @default(autoincrement())
+  usuario_id          Int?
+  nome                String        @db.VarChar(150)
+  cpf                 String        @unique @db.Char(11)
+  rg                  String?       @db.VarChar(20)
+  data_nascimento     DateTime      @db.Date
+  telefone            String?       @db.VarChar(20)
+  email               String?       @db.VarChar(150)
+  endereco            String?       @db.VarChar(255)
+  cargo               String        @db.VarChar(80)
+  salario             Decimal       @db.Decimal(10, 2)
+  data_admissao       DateTime      @db.Date
+  data_demissao       DateTime?     @db.Date
+  ativo               Boolean       @default(true)
+  criado_em           DateTime      @default(now()) @db.Timestamp(6)
+  percentual_comissao Decimal?      @db.Decimal(5, 2)
+  conta_pagar         conta_pagar[]
+  ferias              ferias[]
+  usuario             usuario?      @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -370,6 +371,7 @@ model usuario {
   etiqueta_impressao                                           etiqueta_impressao[]
   funcionario                                                  funcionario[]
   inventario_contagem                                          inventario_contagem[]
+  log_auditoria                                                log_auditoria[]
   movimentacao_caixa                                           movimentacao_caixa[]
   movimentacao_estoque                                         movimentacao_estoque[]
   nota_fiscal_entrada                                          nota_fiscal_entrada[]
@@ -743,4 +745,20 @@ model inventario_contagem {
 
   @@index([criado_em(sort: Desc)], map: "idx_inventario_contagem_criado_em")
   @@index([status], map: "idx_inventario_contagem_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model log_auditoria {
+  id             Int      @id @default(autoincrement())
+  usuario_id     Int?
+  acao           String   @db.VarChar(60)
+  entidade_tipo  String   @db.VarChar(40)
+  entidade_id    Int?
+  valor_anterior Json?
+  valor_novo     Json?
+  criado_em      DateTime @default(now()) @db.Timestamp(6)
+  usuario        usuario? @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([entidade_tipo, entidade_id], map: "idx_log_auditoria_entidade")
+  @@index([usuario_id, criado_em], map: "idx_log_auditoria_usuario")
 }
