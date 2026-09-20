@@ -239,6 +239,10 @@ html .text-white {
   }
 }
 
+.print-apenas {
+  display: none;
+}
+
 @media print {
   @page {
     margin: 0;
@@ -254,6 +258,87 @@ html .text-white {
 
   .print-ocultar {
     display: none !important;
+  }
+
+  .print-apenas {
+    display: block !important;
+  }
+
+  .inventario-folha {
+    color: #111;
+    font-size: 11pt;
+    line-height: 1.35;
+  }
+
+  .inventario-folha-cabecalho {
+    margin-bottom: 10mm;
+  }
+
+  .inventario-folha-cabecalho h1 {
+    font-size: 16pt;
+    font-weight: 700;
+    margin: 0 0 4mm;
+  }
+
+  .inventario-folha-cabecalho p {
+    margin: 0 0 1.5mm;
+    font-size: 10pt;
+  }
+
+  .inventario-folha table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .inventario-folha th,
+  .inventario-folha td {
+    border: 1px solid #111;
+    padding: 3mm 2.5mm;
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  .inventario-folha th {
+    font-size: 9pt;
+    font-weight: 700;
+  }
+
+  .inventario-folha tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .inventario-folha-numero {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .inventario-folha-campo {
+    display: block;
+    min-height: 8mm;
+  }
+
+  .inventario-folha-marcas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3mm 5mm;
+    align-items: center;
+  }
+
+  .inventario-folha-marca {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5mm;
+    white-space: nowrap;
+    font-size: 9pt;
+  }
+
+  .inventario-folha-quadrado {
+    display: inline-block;
+    width: 4mm;
+    height: 4mm;
+    border: 1.4pt solid #111;
+    background: #fff;
   }
 
   .etiquetas-rolo.etiquetas-grade {

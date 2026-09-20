@@ -10,6 +10,8 @@ import {
   rotuloStatusInventario,
 } from "@/lib/inventario";
 import { ContagemClient } from "./contagem-client";
+import { FolhaImpressaoInventario } from "./folha-impressao";
+import { ImprimirInventarioButton } from "./imprimir-button";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -73,64 +75,82 @@ export default async function ContagemInventarioPage({ params }: Props) {
   const ajustesAplicados = comDiferenca.filter((item) => item.ajusteAplicado).length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          href="/relatorios/inventario"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← Voltar para inventário
-        </Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {contagem.descricao}
-            </h1>
-            <p className="mt-1 text-sm text-texto-secundario">
-              {autor.nome} · criada {formatarDataHora(contagem.criado_em)}
-              {contagem.finalizado_em
-                ? ` · finalizada ${formatarDataHora(contagem.finalizado_em)}`
-                : ""}
-            </p>
-          </div>
-          <span
-            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${classeBadgeStatusInventario(contagem.status)}`}
+    <div>
+      <style>{`@media print { @page { size: A4; margin: 12mm; } }`}</style>
+
+      <div className="print-ocultar flex flex-col gap-6">
+        <div>
+          <Link
+            href="/relatorios/inventario"
+            className="text-sm text-zinc-600 hover:underline"
           >
-            {rotuloStatusInventario(contagem.status)}
-          </span>
+            ← Voltar para inventário
+          </Link>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {contagem.descricao}
+              </h1>
+              <p className="mt-1 text-sm text-texto-secundario">
+                {autor.nome} · criada {formatarDataHora(contagem.criado_em)}
+                {contagem.finalizado_em
+                  ? ` · finalizada ${formatarDataHora(contagem.finalizado_em)}`
+                  : ""}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${classeBadgeStatusInventario(contagem.status)}`}
+              >
+                {rotuloStatusInventario(contagem.status)}
+              </span>
+              <ImprimirInventarioButton />
+            </div>
+          </div>
         </div>
+
+        {contagem.status === "finalizado" ? (
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs text-texto-secundario">Itens com diferença</p>
+              <p className="font-data text-lg font-medium">{comDiferenca.length}</p>
+            </div>
+            <div className="rounded border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs text-texto-secundario">
+                Impacto estimado (custo médio)
+              </p>
+              <p className="font-data text-lg font-medium">
+                {formatarPreco(impactoTotal)}
+              </p>
+            </div>
+            <div className="rounded border border-zinc-200 bg-white px-4 py-3">
+              <p className="text-xs text-texto-secundario">Ajustes aplicados</p>
+              <p className="font-data text-lg font-medium">
+                {ajustesAplicados} de {comDiferenca.length}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        <ContagemClient
+          key={contagem.status}
+          inventarioId={contagem.id}
+          status={contagem.status}
+          itensIniciais={itens.map(({ impacto: _impacto, ...item }) => item)}
+        />
       </div>
 
-      {contagem.status === "finalizado" ? (
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-texto-secundario">Itens com diferença</p>
-            <p className="font-data text-lg font-medium">{comDiferenca.length}</p>
-          </div>
-          <div className="rounded border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-texto-secundario">
-              Impacto estimado (custo médio)
-            </p>
-            <p className="font-data text-lg font-medium">
-              {formatarPreco(impactoTotal)}
-            </p>
-          </div>
-          <div className="rounded border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-texto-secundario">Ajustes aplicados</p>
-            <p className="font-data text-lg font-medium">
-              {ajustesAplicados} de {comDiferenca.length}
-            </p>
-          </div>
-        </section>
-      ) : null}
-
-      <ContagemClient
-        key={contagem.status}
-        inventarioId={contagem.id}
-        status={contagem.status}
-        itensIniciais={itens.map(
-          ({ impacto: _impacto, ...item }) => item,
-        )}
+      <FolhaImpressaoInventario
+        descricao={contagem.descricao}
+        data={formatarDataHora(contagem.criado_em)}
+        criadoPor={autor.nome}
+        itens={itens.map((item) => ({
+          id: item.id,
+          nome: item.nome,
+          categoria: item.categoria,
+          estoqueSistema: item.estoqueSistema,
+          vendidoPorPeso: item.vendidoPorPeso,
+        }))}
       />
     </div>
   );
