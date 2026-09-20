@@ -20,6 +20,9 @@ export function tituloDaRota(pathname: string) {
   if (pathname.startsWith("/relatorios/produtos-mais-vendidos")) {
     return "Produtos mais vendidos";
   }
+  if (pathname.startsWith("/relatorios/inventario/novo")) {
+    return "Nova contagem";
+  }
   if (pathname.startsWith("/relatorios/inventario")) return "Inventário físico";
   if (pathname.startsWith("/relatorios/margem")) return "Margem por produto";
   if (pathname.startsWith("/relatorios")) return "Relatórios";
