@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { arredondarDinheiro } from "@/lib/dinheiro";
 import { dataLocalISO, ehIsoData } from "@/lib/financeiro";
+import type { LinhaMargemProduto } from "@/lib/margem";
+import { TIPOS_VENDA } from "@/lib/produto-tipo";
 
 export const LIMITE_PRODUTOS_MAIS_VENDIDOS = 20;
 
@@ -91,4 +94,63 @@ export async function obterProdutosMaisVendidos(params: {
       };
     }),
   };
+}
+
+function custoMedioDefinido(valor: { toString(): string } | null) {
+  if (valor == null) return null;
+  const numero = Number(valor.toString());
+  if (!Number.isFinite(numero) || numero <= 0) return null;
+  return numero;
+}
+
+export async function obterMargemPorProduto(): Promise<LinhaMargemProduto[]> {
+  const produtos = await prisma.produto.findMany({
+    where: {
+      ativo: true,
+      tipo: { in: [...TIPOS_VENDA] },
+    },
+    select: {
+      id: true,
+      nome: true,
+      tipo: true,
+      preco_custo_medio: true,
+      preco_venda: true,
+    },
+  });
+
+  const linhas = produtos.map((produto) => {
+    const precoCusto = custoMedioDefinido(produto.preco_custo_medio);
+    const precoVenda =
+      produto.preco_venda == null ? null : Number(produto.preco_venda);
+    const vendaValida =
+      precoVenda != null && Number.isFinite(precoVenda) && precoVenda > 0;
+    const margemReais =
+      precoCusto != null && vendaValida
+        ? arredondarDinheiro(precoVenda - precoCusto)
+        : null;
+    const margemPct =
+      precoCusto != null && vendaValida
+        ? ((precoVenda - precoCusto) / precoVenda) * 100
+        : null;
+
+    return {
+      id: produto.id,
+      nome: produto.nome,
+      tipo: produto.tipo,
+      precoCusto,
+      precoVenda: vendaValida ? precoVenda : null,
+      margemReais,
+      margemPct,
+    };
+  });
+
+  return linhas.sort((a, b) => {
+    if (a.margemPct == null && b.margemPct == null) {
+      return a.nome.localeCompare(b.nome, "pt-BR");
+    }
+    if (a.margemPct == null) return 1;
+    if (b.margemPct == null) return -1;
+    if (a.margemPct !== b.margemPct) return a.margemPct - b.margemPct;
+    return a.nome.localeCompare(b.nome, "pt-BR");
+  });
 }

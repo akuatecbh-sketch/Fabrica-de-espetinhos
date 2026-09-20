@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { exigirAcesso } from "@/lib/permissoes";
+import { obterMargemPorProduto } from "@/lib/relatorios";
+import { MargemTabela } from "./margem-tabela";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function MargemPorProdutoPage() {
   await exigirAcesso("relatorios");
+  const linhas = await obterMargemPorProduto();
 
   return (
     <div className="flex flex-col gap-6">
@@ -17,10 +20,12 @@ export default async function MargemPorProdutoPage() {
           Margem por produto
         </h1>
         <p className="mt-1 text-sm text-texto-secundario">
-          Este relatório entra no próximo bloco. Aqui vai aparecer a
-          receita, o custo e a margem de cada produto vendido.
+          Custo médio, preço de venda e margem dos produtos finais e de
+          revenda. Ordenado da margem mais apertada para a mais folgada.
         </p>
       </div>
+
+      <MargemTabela linhas={linhas} />
     </div>
   );
 }
