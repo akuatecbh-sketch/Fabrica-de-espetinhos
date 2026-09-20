@@ -16,6 +16,7 @@ const PREFIXOS_MODULO: [string, string][] = [
   ["/pedidos", "pedidos"],
   ["/caixa", "caixa"],
   ["/financeiro", "financeiro"],
+  ["/relatorios", "relatorios"],
   ["/saude", "saude"],
 ];
 
@@ -36,6 +37,7 @@ export const CHAVE_POR_HREF: Record<string, string> = {
   "/vendas/hoje": "vendas",
   "/notas-fiscais": "vendas",
   "/financeiro": "financeiro",
+  "/relatorios": "relatorios",
   "/saude": "saude",
 };
 

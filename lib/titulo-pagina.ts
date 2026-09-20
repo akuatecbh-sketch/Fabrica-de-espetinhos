@@ -17,6 +17,12 @@ export function tituloDaRota(pathname: string) {
   if (pathname.startsWith("/pedidos")) return "Pedidos";
   if (pathname.startsWith("/caixa")) return "Caixa";
   if (pathname.startsWith("/financeiro")) return "Financeiro";
+  if (pathname.startsWith("/relatorios/produtos-mais-vendidos")) {
+    return "Produtos mais vendidos";
+  }
+  if (pathname.startsWith("/relatorios/inventario")) return "Inventário físico";
+  if (pathname.startsWith("/relatorios/margem")) return "Margem por produto";
+  if (pathname.startsWith("/relatorios")) return "Relatórios";
   if (pathname.startsWith("/permissoes")) return "Permissões";
   if (pathname.startsWith("/ajuda")) return "Perguntas de ajuda";
   if (pathname.startsWith("/acesso-negado")) return "Acesso negado";

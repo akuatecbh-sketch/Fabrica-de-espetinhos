@@ -13,6 +13,7 @@ import {
   KeyRound,
   Landmark,
   LogOut,
+  BarChart3,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
@@ -53,6 +54,7 @@ const PRINCIPAIS = [
   { href: "/vendas/hoje", label: "Vendas", icone: Receipt },
   { href: "/notas-fiscais", label: "Notas fiscais", icone: FileText },
   { href: "/financeiro", label: "Financeiro", icone: Landmark },
+  { href: "/relatorios", label: "Relatórios", icone: BarChart3 },
   { href: "/saude", label: "Saúde do sistema", icone: ShieldAlert },
 ] as const;
 
