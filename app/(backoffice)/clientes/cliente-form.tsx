@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   mascaraCpf,
   mascaraCnpj,
@@ -8,7 +8,6 @@ import {
   formatarCpf,
   formatarCnpjCpf,
   formatarTelefone,
-  validarCnpj,
 } from "@/lib/documento";
 import {
   TIPO_PESSOA_FISICA,
@@ -22,7 +21,8 @@ import {
 } from "@/lib/cliente";
 import { isoDaData } from "@/lib/financeiro";
 import { CampoMascarado } from "../campo-mascarado";
-import { buscarDadosCnpj, type ClienteFormState } from "./actions";
+import { FeedbackBuscaCnpj, useBuscaCnpj } from "../use-busca-cnpj";
+import type { ClienteFormState } from "./actions";
 
 const estadoInicial: ClienteFormState = {};
 
@@ -67,73 +67,13 @@ export function ClienteForm({
   const [tipoPessoa, setTipoPessoa] = useState<TipoPessoaCliente>(
     tipoInicial(cliente),
   );
-  const [razaoSocial, setRazaoSocial] = useState(cliente?.razao_social ?? "");
-  const [nomeFantasia, setNomeFantasia] = useState(cliente?.nome_fantasia ?? "");
-  const [inscricaoEstadual, setInscricaoEstadual] = useState(
-    cliente?.inscricao_estadual ?? "",
-  );
-  const [endereco, setEndereco] = useState(cliente?.endereco ?? "");
-  const [buscandoCnpj, setBuscandoCnpj] = useState(false);
-  const [avisoCnpj, setAvisoCnpj] = useState<string | null>(null);
-  const [sucessoCnpj, setSucessoCnpj] = useState(false);
-  const buscaId = useRef(0);
-  const ultimoCnpjConsultado = useRef("");
+  const cnpj = useBuscaCnpj(cliente);
 
   useEffect(() => {
     if (estado.tipo_pessoa) setTipoPessoa(estado.tipo_pessoa);
   }, [estado.tipo_pessoa]);
 
   const juridica = tipoPessoa === TIPO_PESSOA_JURIDICA;
-
-  async function consultarCnpj(valor: string, forcar = false) {
-    if (!validarCnpj(valor)) {
-      if (forcar) {
-        setAvisoCnpj("CNPJ inválido. Verifique os dígitos e tente novamente.");
-        setSucessoCnpj(false);
-      }
-      return;
-    }
-    if (!forcar && ultimoCnpjConsultado.current === valor) return;
-
-    const id = ++buscaId.current;
-    setBuscandoCnpj(true);
-    setAvisoCnpj(null);
-    setSucessoCnpj(false);
-
-    try {
-      const resultado = await buscarDadosCnpj(valor);
-      if (id !== buscaId.current) return;
-      ultimoCnpjConsultado.current = valor;
-      if (resultado.ok) {
-        setRazaoSocial(resultado.dados.razao_social);
-        setNomeFantasia(resultado.dados.nome_fantasia);
-        setEndereco(resultado.dados.endereco);
-        setInscricaoEstadual(resultado.dados.inscricao_estadual);
-        setSucessoCnpj(true);
-        return;
-      }
-      if (!cliente) {
-        setRazaoSocial("");
-        setNomeFantasia("");
-        setEndereco("");
-        setInscricaoEstadual("");
-      }
-      setAvisoCnpj(resultado.aviso);
-    } catch {
-      if (id !== buscaId.current) return;
-      if (!cliente) {
-        setRazaoSocial("");
-        setNomeFantasia("");
-        setEndereco("");
-        setInscricaoEstadual("");
-      }
-      setAvisoCnpj(
-        "Busca automática indisponível no momento — preencha manualmente",
-      );
-    } finally {
-      if (id === buscaId.current) setBuscandoCnpj(false);
-    }
-  }
 
   return (
     <form action={formAction} className="flex w-full max-w-xl flex-col gap-4">
@@ -203,34 +143,28 @@ export function ClienteForm({
               mascarar={mascaraCnpj}
               required
               placeholder="00.000.000/0000-00"
-              onBlur={(valor) => void consultarCnpj(valor)}
+              onBlur={(valor) => void cnpj.consultarCnpj(valor)}
               acao={
                 <button
                   type="button"
-                  disabled={buscandoCnpj}
+                  disabled={cnpj.buscandoCnpj}
                   onClick={(evento) => {
                     const campo = evento.currentTarget
                       .closest("label")
                       ?.querySelector<HTMLInputElement>('input[name="cnpj"]');
-                    void consultarCnpj(campo?.value ?? "", true);
+                    void cnpj.consultarCnpj(campo?.value ?? "", true);
                   }}
                   className="shrink-0 rounded border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
                 >
-                  {buscandoCnpj ? "Buscando..." : "Buscar dados"}
+                  {cnpj.buscandoCnpj ? "Buscando..." : "Buscar dados"}
                 </button>
               }
             />
-            {buscandoCnpj ? (
-              <p className="text-xs text-zinc-500">Consultando a base pública…</p>
-            ) : null}
-            {sucessoCnpj ? (
-              <p className="text-xs text-emerald-700">
-                Dados preenchidos automaticamente — confira antes de salvar
-              </p>
-            ) : null}
-            {avisoCnpj ? (
-              <p className="text-xs text-amber-800">{avisoCnpj}</p>
-            ) : null}
+            <FeedbackBuscaCnpj
+              buscando={cnpj.buscandoCnpj}
+              sucesso={cnpj.sucessoCnpj}
+              aviso={cnpj.avisoCnpj}
+            />
           </div>
 
           <label className="flex flex-col gap-1 text-sm">
@@ -239,8 +173,8 @@ export function ClienteForm({
               name="razao_social"
               required
               maxLength={150}
-              value={razaoSocial}
-              onChange={(evento) => setRazaoSocial(evento.target.value)}
+              value={cnpj.razaoSocial}
+              onChange={(evento) => cnpj.setRazaoSocial(evento.target.value)}
               className="rounded border border-zinc-300 px-3 py-2"
             />
           </label>
@@ -250,8 +184,8 @@ export function ClienteForm({
             <input
               name="nome_fantasia"
               maxLength={150}
-              value={nomeFantasia}
-              onChange={(evento) => setNomeFantasia(evento.target.value)}
+              value={cnpj.nomeFantasia}
+              onChange={(evento) => cnpj.setNomeFantasia(evento.target.value)}
               className="rounded border border-zinc-300 px-3 py-2"
             />
           </label>
@@ -261,8 +195,8 @@ export function ClienteForm({
             <input
               name="inscricao_estadual"
               maxLength={20}
-              value={inscricaoEstadual}
-              onChange={(evento) => setInscricaoEstadual(evento.target.value)}
+              value={cnpj.inscricaoEstadual}
+              onChange={(evento) => cnpj.setInscricaoEstadual(evento.target.value)}
               className="rounded border border-zinc-300 px-3 py-2"
             />
           </label>
@@ -334,8 +268,8 @@ export function ClienteForm({
         <input
           name="endereco"
           maxLength={255}
-          value={endereco}
-          onChange={(evento) => setEndereco(evento.target.value)}
+          value={cnpj.endereco}
+          onChange={(evento) => cnpj.setEndereco(evento.target.value)}
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>

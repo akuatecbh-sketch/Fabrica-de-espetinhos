@@ -8,6 +8,7 @@ import {
   formatarTelefone,
 } from "@/lib/documento";
 import { CampoMascarado } from "../campo-mascarado";
+import { FeedbackBuscaCnpj, useBuscaCnpj } from "../use-busca-cnpj";
 import type { FornecedorFormState } from "./actions";
 
 const estadoInicial: FornecedorFormState = {};
@@ -37,6 +38,7 @@ export function FornecedorForm({
   submitLabel: string;
 }) {
   const [estado, formAction, pendente] = useActionState(action, estadoInicial);
+  const cnpj = useBuscaCnpj(fornecedor);
 
   return (
     <form action={formAction} className="flex w-full max-w-xl flex-col gap-4">
@@ -46,13 +48,50 @@ export function FornecedorForm({
         </p>
       ) : null}
 
+      <div className="flex flex-col gap-1">
+        <CampoMascarado
+          name="cnpj_cpf"
+          label="CPF ou CNPJ"
+          valorInicial={
+            fornecedor?.cnpj_cpf
+              ? formatarCnpjCpf(fornecedor.cnpj_cpf).replace("—", "")
+              : ""
+          }
+          mascarar={mascaraCnpjCpf}
+          required
+          placeholder="000.000.000-00 ou 00.000.000/0000-00"
+          onBlur={(valor) => void cnpj.consultarCnpj(valor)}
+          acao={
+            <button
+              type="button"
+              disabled={cnpj.buscandoCnpj}
+              onClick={(evento) => {
+                const campo = evento.currentTarget
+                  .closest("label")
+                  ?.querySelector<HTMLInputElement>('input[name="cnpj_cpf"]');
+                void cnpj.consultarCnpj(campo?.value ?? "", true);
+              }}
+              className="shrink-0 rounded border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+            >
+              {cnpj.buscandoCnpj ? "Buscando..." : "Buscar dados"}
+            </button>
+          }
+        />
+        <FeedbackBuscaCnpj
+          buscando={cnpj.buscandoCnpj}
+          sucesso={cnpj.sucessoCnpj}
+          aviso={cnpj.avisoCnpj}
+        />
+      </div>
+
       <label className="flex flex-col gap-1 text-sm">
         Razão social
         <input
           name="razao_social"
           required
           maxLength={150}
-          defaultValue={fornecedor?.razao_social ?? ""}
+          value={cnpj.razaoSocial}
+          onChange={(evento) => cnpj.setRazaoSocial(evento.target.value)}
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>
@@ -62,30 +101,19 @@ export function FornecedorForm({
         <input
           name="nome_fantasia"
           maxLength={150}
-          defaultValue={fornecedor?.nome_fantasia ?? ""}
+          value={cnpj.nomeFantasia}
+          onChange={(evento) => cnpj.setNomeFantasia(evento.target.value)}
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>
-
-      <CampoMascarado
-        name="cnpj_cpf"
-        label="CPF ou CNPJ"
-        valorInicial={
-          fornecedor?.cnpj_cpf
-            ? formatarCnpjCpf(fornecedor.cnpj_cpf).replace("—", "")
-            : ""
-        }
-        mascarar={mascaraCnpjCpf}
-        required
-        placeholder="000.000.000-00 ou 00.000.000/0000-00"
-      />
 
       <label className="flex flex-col gap-1 text-sm">
         Inscrição estadual
         <input
           name="inscricao_estadual"
           maxLength={20}
-          defaultValue={fornecedor?.inscricao_estadual ?? ""}
+          value={cnpj.inscricaoEstadual}
+          onChange={(evento) => cnpj.setInscricaoEstadual(evento.target.value)}
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>
@@ -118,7 +146,8 @@ export function FornecedorForm({
         <input
           name="endereco"
           maxLength={255}
-          defaultValue={fornecedor?.endereco ?? ""}
+          value={cnpj.endereco}
+          onChange={(evento) => cnpj.setEndereco(evento.target.value)}
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>

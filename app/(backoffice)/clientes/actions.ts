@@ -11,11 +11,6 @@ import {
   validarEmail,
 } from "@/lib/documento";
 import {
-  AVISO_CNPJ_BUSCA_INDISPONIVEL,
-  consultarDadosCnpjPublico,
-  type DadosCnpjPublico,
-} from "@/lib/cnpj-publico";
-import {
   TIPO_PESSOA_FISICA,
   TIPO_PESSOA_JURIDICA,
   CATEGORIA_PRECO_PADRAO,
@@ -25,31 +20,13 @@ import {
 } from "@/lib/cliente";
 import { dataUtcMeiaNoite, ehIsoData } from "@/lib/financeiro";
 
+export type { BuscaCnpjResultado } from "../cnpj-actions";
+export { buscarDadosCnpj } from "../cnpj-actions";
+
 export type ClienteFormState = {
   error?: string;
   tipo_pessoa?: TipoPessoaCliente;
 };
-
-export type BuscaCnpjResultado =
-  | { ok: true; dados: DadosCnpjPublico }
-  | { ok: false; aviso: string };
-
-export async function buscarDadosCnpj(
-  cnpj: string,
-): Promise<BuscaCnpjResultado> {
-  await exigirModulo("clientes");
-  try {
-    if (!validarCnpj(cnpj)) {
-      return {
-        ok: false,
-        aviso: "CNPJ inválido. Verifique os dígitos e tente novamente.",
-      };
-    }
-    return await consultarDadosCnpjPublico(soDigitos(cnpj));
-  } catch {
-    return { ok: false, aviso: AVISO_CNPJ_BUSCA_INDISPONIVEL };
-  }
-}
 
 function texto(formData: FormData, campo: string) {
   return String(formData.get(campo) ?? "").trim();
