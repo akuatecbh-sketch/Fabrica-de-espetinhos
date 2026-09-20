@@ -248,7 +248,7 @@ export default async function FinanceiroPage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="print-ocultar flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Financeiro</h1>
         {aba === "despesas" ? (
           <Link

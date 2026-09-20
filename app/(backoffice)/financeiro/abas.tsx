@@ -11,7 +11,7 @@ const ABAS: { id: AbaFinanceiro; label: string }[] = [
 
 export function AbasFinanceiro({ atual }: { atual: AbaFinanceiro }) {
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-zinc-200">
+    <nav className="print-ocultar flex gap-1 overflow-x-auto border-b border-zinc-200">
       {ABAS.map((aba) => (
         <Link
           key={aba.id}

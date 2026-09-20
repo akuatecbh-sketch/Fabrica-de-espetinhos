@@ -1,6 +1,10 @@
 import { formatarPreco } from "@/lib/format";
 import type { FaturamentoMes } from "@/lib/faturamento";
 import { FaturamentoGrafico } from "./faturamento-grafico";
+import {
+  FaturamentoBotoesExportacao,
+  FaturamentoFolhaImpressao,
+} from "./faturamento-exportacao";
 import { SeletorMes } from "./seletor-mes";
 
 function CelulaNumero({
@@ -20,9 +24,13 @@ function CelulaNumero({
 export function FaturamentoPainel({ dados }: { dados: FaturamentoMes }) {
   return (
     <div className="flex flex-col gap-6">
-      <SeletorMes key={dados.mes} mes={dados.mes} aba="faturamento" />
+      <style>{`@media print { @page { size: A4; margin: 12mm; } }`}</style>
+      <div className="print-ocultar flex flex-wrap items-end justify-between gap-3">
+        <SeletorMes key={dados.mes} mes={dados.mes} aba="faturamento" />
+        <FaturamentoBotoesExportacao dados={dados} />
+      </div>
 
-      <section className="overflow-x-auto rounded border border-zinc-200 bg-white">
+      <section className="print-ocultar overflow-x-auto rounded border border-zinc-200 bg-white">
         <h2 className="border-b border-zinc-200 px-4 py-3 text-sm font-medium text-texto-primario">
           Por forma de pagamento — {dados.rotuloMes}
         </h2>
@@ -57,7 +65,7 @@ export function FaturamentoPainel({ dados }: { dados: FaturamentoMes }) {
         </table>
       </section>
 
-      <section className="rounded border border-zinc-200 bg-white px-4 py-4">
+      <section className="print-ocultar rounded border border-zinc-200 bg-white px-4 py-4">
         <h2 className="text-sm font-medium text-texto-primario">
           Faturamento líquido por dia
         </h2>
@@ -65,6 +73,8 @@ export function FaturamentoPainel({ dados }: { dados: FaturamentoMes }) {
           <FaturamentoGrafico pontos={dados.diario} />
         </div>
       </section>
+
+      <FaturamentoFolhaImpressao dados={dados} />
     </div>
   );
 }

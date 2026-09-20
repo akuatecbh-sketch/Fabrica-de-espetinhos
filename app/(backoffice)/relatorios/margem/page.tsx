@@ -12,7 +12,8 @@ export default async function MargemPorProdutoPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
+      <style>{`@media print { @page { size: A4; margin: 12mm; } }`}</style>
+      <div className="print-ocultar">
         <Link href="/relatorios" className="text-sm text-zinc-600 hover:underline">
           ← Voltar para relatórios
         </Link>

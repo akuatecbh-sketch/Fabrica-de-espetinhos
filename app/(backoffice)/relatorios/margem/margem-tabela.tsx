@@ -9,6 +9,11 @@ import {
   type TipoFiltroMargem,
 } from "@/lib/margem";
 import { CardRegistro } from "../../card-registro";
+import {
+  BotoesExportacao,
+  FolhaRelatorio,
+  baixarCsv,
+} from "../../exportacao-relatorio";
 
 function limiarDoCampo(valor: string) {
   const numero = Number(valor.trim().replace(",", "."));
@@ -26,9 +31,30 @@ export function MargemTabela({ linhas }: { linhas: LinhaMargemProduto[] }) {
     return linhas.filter((linha) => linha.tipo === tipo);
   }, [linhas, tipo]);
 
+  const colunasCsv = [
+    "Produto",
+    "Tipo",
+    "Custo médio",
+    "Preço de venda",
+    "Margem (R$)",
+    "Margem (%)",
+  ];
+  const linhasCsv = filtradas.map((linha) => [
+    linha.nome,
+    rotuloTipo(linha.tipo),
+    linha.precoCusto == null ? "Custo desconhecido" : formatarPreco(linha.precoCusto),
+    linha.precoVenda == null ? "—" : formatarPreco(linha.precoVenda),
+    linha.precoCusto == null || linha.margemReais == null
+      ? "—"
+      : formatarPreco(linha.margemReais),
+    linha.precoCusto == null || linha.margemPct == null
+      ? "—"
+      : formatarPercentualMargem(linha.margemPct),
+  ]);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="print-ocultar flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <label className="flex flex-col gap-1 text-sm">
           Tipo
           <select
@@ -53,15 +79,20 @@ export function MargemTabela({ linhas }: { linhas: LinhaMargemProduto[] }) {
             className="font-data w-28 rounded border border-zinc-300 px-3 py-2"
           />
         </label>
+        <BotoesExportacao
+          onExportarCsv={() =>
+            baixarCsv("margem-por-produto.csv", [colunasCsv, ...linhasCsv])
+          }
+        />
       </div>
 
       {filtradas.length === 0 ? (
-        <p className="text-sm text-texto-secundario">
+        <p className="print-ocultar text-sm text-texto-secundario">
           Nenhum produto final ou de revenda cadastrado.
         </p>
       ) : (
         <>
-          <ul className="flex flex-col gap-3 md:hidden">
+          <ul className="print-ocultar flex flex-col gap-3 md:hidden">
             {filtradas.map((linha) => {
               const apertada =
                 linha.margemPct != null && linha.margemPct < limiar;
@@ -112,7 +143,7 @@ export function MargemTabela({ linhas }: { linhas: LinhaMargemProduto[] }) {
             })}
           </ul>
 
-          <div className="hidden overflow-x-auto rounded border border-zinc-200 bg-white md:block">
+          <div className="print-ocultar hidden overflow-x-auto rounded border border-zinc-200 bg-white md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
                 <tr>
@@ -177,6 +208,13 @@ export function MargemTabela({ linhas }: { linhas: LinhaMargemProduto[] }) {
           </div>
         </>
       )}
+
+      <FolhaRelatorio
+        titulo="Margem por produto"
+        subtitulo="Custo médio, preço de venda e margem"
+        colunas={colunasCsv}
+        linhas={linhasCsv}
+      />
     </div>
   );
 }

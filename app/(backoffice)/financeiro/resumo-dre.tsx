@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { formatarPreco } from "@/lib/format";
 import type { ResumoDreMes } from "@/lib/resumo-financeiro";
+import {
+  ResumoBotoesExportacao,
+  ResumoFolhaImpressao,
+} from "./resumo-exportacao";
 import { SeletorMes } from "./seletor-mes";
 
 function LinhaDre({
@@ -50,9 +54,13 @@ export function ResumoDre({ dados }: { dados: ResumoDreMes }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <SeletorMes key={dados.mes} mes={dados.mes} aba="resumo" />
+      <style>{`@media print { @page { size: A4; margin: 12mm; } }`}</style>
+      <div className="print-ocultar flex flex-wrap items-end justify-between gap-3">
+        <SeletorMes key={dados.mes} mes={dados.mes} aba="resumo" />
+        <ResumoBotoesExportacao dados={dados} />
+      </div>
 
-      <section className="rounded border border-zinc-200 bg-white px-4 py-4 sm:px-5">
+      <section className="print-ocultar rounded border border-zinc-200 bg-white px-4 py-4 sm:px-5">
         <h2 className="text-sm font-medium text-texto-primario">
           Resultado de {dados.rotuloMes}
         </h2>
@@ -86,7 +94,7 @@ export function ResumoDre({ dados }: { dados: ResumoDreMes }) {
         </dl>
       </section>
 
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <dl className="print-ocultar grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Link
           href="/financeiro?aba=despesas&filtro=pendentes"
           className="rounded border border-zinc-200 bg-white px-4 py-3 hover:bg-zinc-50"
@@ -115,6 +123,8 @@ export function ResumoDre({ dados }: { dados: ResumoDreMes }) {
           </dd>
         </Link>
       </dl>
+
+      <ResumoFolhaImpressao dados={dados} />
     </div>
   );
 }
