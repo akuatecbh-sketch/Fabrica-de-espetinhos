@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { registrarAuditoria } from "@/lib/auditoria";
 import { exigirModulo } from "@/lib/sessao";
 import { abaPorTipo } from "@/lib/produto-tipo";
 import {
@@ -373,15 +374,49 @@ export async function criarProduto(
   redirect(`/produtos?aba=${abaPorTipo(data.tipo)}`);
 }
 
+function serializarPreco(valor: unknown) {
+  if (valor == null) return null;
+  const numero = Number(valor.toString());
+  return Number.isFinite(numero) ? numero : null;
+}
+
+function precosProduto(fonte: {
+  preco_venda: unknown;
+  preco_atacado: unknown;
+  preco_repasse: unknown;
+}) {
+  return {
+    preco_venda: serializarPreco(fonte.preco_venda),
+    preco_atacado: serializarPreco(fonte.preco_atacado),
+    preco_repasse: serializarPreco(fonte.preco_repasse),
+  };
+}
+
+function precosMudaram(
+  anterior: ReturnType<typeof precosProduto>,
+  atual: ReturnType<typeof precosProduto>,
+) {
+  return (
+    anterior.preco_venda !== atual.preco_venda ||
+    anterior.preco_atacado !== atual.preco_atacado ||
+    anterior.preco_repasse !== atual.preco_repasse
+  );
+}
+
 export async function atualizarProduto(
   id: number,
   _estado: ProdutoFormState,
   formData: FormData,
 ): Promise<ProdutoFormState> {
-  await exigirModulo("produtos");
+  const usuario = await exigirModulo("produtos");
   const produtoAtual = await prisma.produto.findUnique({
     where: { id },
-    select: { codigo_barras: true },
+    select: {
+      codigo_barras: true,
+      preco_venda: true,
+      preco_atacado: true,
+      preco_repasse: true,
+    },
   });
   const resultado = await lerDadosProduto(
     formData,
@@ -399,6 +434,21 @@ export async function atualizarProduto(
       return { error: mensagemErroUnico(erro) };
     }
     return { error: "Não foi possível atualizar o produto." };
+  }
+
+  if (produtoAtual) {
+    const valorAnterior = precosProduto(produtoAtual);
+    const valorNovo = precosProduto(resultado.data);
+    if (precosMudaram(valorAnterior, valorNovo)) {
+      await registrarAuditoria({
+        usuarioId: usuario.id,
+        acao: "produto.atualizar_preco",
+        entidadeTipo: "produto",
+        entidadeId: id,
+        valorAnterior,
+        valorNovo,
+      });
+    }
   }
 
   revalidatePath("/produtos");

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { podeConfigurarPermissoesIndividuais } from "@/lib/acesso";
+import { registrarAuditoria } from "@/lib/auditoria";
 import { obterUsuarioSessao } from "@/lib/sessao";
 import { superAdminOcultoPara } from "@/lib/visibilidade";
 
@@ -37,6 +38,13 @@ export async function salvarPermissaoUsuario(
     return { error: "Acesso não permitido." };
   }
 
+  const anterior = await prisma.permissao_usuario.findFirst({
+    where: { usuario_id: usuarioId, modulo_id: moduloId },
+    select: { pode_acessar: true },
+  });
+  const podeAnterior =
+    anterior == null ? null : anterior.pode_acessar ? "liberar" : "bloquear";
+
   if (estado === "padrao") {
     await prisma.permissao_usuario.deleteMany({
       where: { usuario_id: usuarioId, modulo_id: moduloId },
@@ -56,6 +64,21 @@ export async function salvarPermissaoUsuario(
         pode_acessar: estado === "liberar",
         definido_por_id: logado.id,
       },
+    });
+  }
+
+  if (podeAnterior !== estado) {
+    await registrarAuditoria({
+      usuarioId: logado.id,
+      acao: "permissao_usuario.alterar",
+      entidadeTipo: "permissao_usuario",
+      entidadeId: usuarioId,
+      valorAnterior: {
+        usuario_id: usuarioId,
+        modulo_id: moduloId,
+        estado: podeAnterior ?? "padrao",
+      },
+      valorNovo: { usuario_id: usuarioId, modulo_id: moduloId, estado },
     });
   }
 
