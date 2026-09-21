@@ -50,6 +50,7 @@ yarn-error.log*
 # backups de reconciliação (PII / hashes)
 /backup_sp_antes_reconciliacao.json
 /backup_ohio_antes_reconciliacao.json
+/backup_antes_recriar_constraints.json
 /migracao_sp_para_ohio.json
 
 # typescript

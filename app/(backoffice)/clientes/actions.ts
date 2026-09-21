@@ -20,9 +20,6 @@ import {
 } from "@/lib/cliente";
 import { dataUtcMeiaNoite, ehIsoData } from "@/lib/financeiro";
 
-export type { BuscaCnpjResultado } from "../cnpj-actions";
-export { buscarDadosCnpj } from "../cnpj-actions";
-
 export type ClienteFormState = {
   error?: string;
   tipo_pessoa?: TipoPessoaCliente;
