@@ -57,6 +57,7 @@ export default async function EditarFuncionarioPage({ params }: Props) {
           usuario_id: usuarios.some((item) => item.id === funcionario.usuario_id)
             ? funcionario.usuario_id
             : null,
+          percentual_comissao: funcionario.percentual_comissao,
         }}
       />
     </div>

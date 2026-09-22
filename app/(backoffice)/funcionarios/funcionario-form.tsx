@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   mascaraCpf,
   mascaraTelefone,
@@ -27,6 +27,7 @@ export type FuncionarioInicial = {
   salario: { toString(): string };
   data_admissao: Date;
   usuario_id: number | null;
+  percentual_comissao: { toString(): string } | null;
 };
 
 export function FuncionarioForm({
@@ -46,6 +47,10 @@ export function FuncionarioForm({
   submitLabel: string;
 }) {
   const [estado, formAction, pendente] = useActionState(action, estadoInicial);
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState(
+    funcionario?.usuario_id != null ? String(funcionario.usuario_id) : "",
+  );
+  const temUsuarioVinculado = usuarioSelecionado !== "";
 
   return (
     <form action={formAction} className="flex w-full max-w-xl flex-col gap-4">
@@ -176,7 +181,8 @@ export function FuncionarioForm({
         Vincular a um usuário do sistema
         <select
           name="usuario_id"
-          defaultValue={funcionario?.usuario_id ?? ""}
+          value={usuarioSelecionado}
+          onChange={(evento) => setUsuarioSelecionado(evento.target.value)}
           className="rounded border border-zinc-300 bg-white px-3 py-2"
         >
           <option value="">Nenhum</option>
@@ -193,6 +199,34 @@ export function FuncionarioForm({
           Opcional. Útil se o funcionário também opera o PDV.
         </span>
       </label>
+
+      {temUsuarioVinculado ? (
+        <label className="flex flex-col gap-1 text-sm">
+          Percentual de comissão (%)
+          <input
+            name="percentual_comissao"
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            defaultValue={
+              funcionario?.percentual_comissao != null
+                ? Number(funcionario.percentual_comissao.toString())
+                : ""
+            }
+            className="font-data rounded border border-zinc-300 px-3 py-2"
+          />
+          <span className="text-xs text-texto-secundario">
+            Opcional. Calculado sobre o faturamento líquido das vendas
+            finalizadas por este usuário no PDV.
+          </span>
+        </label>
+      ) : (
+        <p className="text-sm text-texto-secundario">
+          Vincule um usuário do sistema para definir comissão. Só quem opera o
+          PDV gera comissão sobre vendas.
+        </p>
+      )}
 
       <button
         type="submit"

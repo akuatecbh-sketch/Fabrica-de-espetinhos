@@ -4,6 +4,7 @@ import {
   Landmark,
   LineChart,
   Package,
+  Percent,
   Receipt,
   Scale,
   ShoppingBag,
@@ -71,6 +72,13 @@ const CARDS = [
     href: "/relatorios/margem",
     modulo: "relatorios",
     icone: BarChart3,
+  },
+  {
+    titulo: "Comissões",
+    descricao: "Comissão de vendedor por período.",
+    href: "/relatorios/comissoes",
+    modulo: "relatorios",
+    icone: Percent,
   },
   {
     titulo: "Clientes",

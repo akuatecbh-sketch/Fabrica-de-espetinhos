@@ -9,6 +9,7 @@ import {
   validarCpf,
   validarEmail,
 } from "@/lib/documento";
+import { arredondarDinheiro } from "@/lib/dinheiro";
 import { dataLocalISO, dataUtcMeiaNoite, ehIsoData, isoDaData } from "@/lib/financeiro";
 import {
   DIAS_FERIAS_ANO,
@@ -132,6 +133,7 @@ function lerDadosFuncionario(formData: FormData) {
   const salarioBruto = texto(formData, "salario").replace(",", ".");
   const admissaoBruto = texto(formData, "data_admissao");
   const usuarioBruto = texto(formData, "usuario_id");
+  const comissaoBruto = texto(formData, "percentual_comissao").replace(",", ".");
 
   if (!nome) return { error: "Informe o nome do funcionário." } as const;
   if (nome.length > 150) {
@@ -193,6 +195,17 @@ function lerDadosFuncionario(formData: FormData) {
     usuario_id = id;
   }
 
+  let percentual_comissao: number | null = null;
+  if (usuario_id && comissaoBruto) {
+    const percentual = Number(comissaoBruto);
+    if (!Number.isFinite(percentual) || percentual < 0 || percentual > 100) {
+      return {
+        error: "Percentual de comissão inválido. Use um valor entre 0 e 100.",
+      } as const;
+    }
+    percentual_comissao = arredondarDinheiro(percentual);
+  }
+
   return {
     data: {
       nome,
@@ -206,6 +219,7 @@ function lerDadosFuncionario(formData: FormData) {
       salario,
       data_admissao: dataUtcMeiaNoite(admissaoBruto),
       usuario_id,
+      percentual_comissao,
     },
   } as const;
 }
@@ -265,6 +279,7 @@ export async function atualizarFuncionario(
   if (!existente) return { error: "Funcionário não encontrado." };
 
   let usuario_id = resultado.data.usuario_id;
+  let percentual_comissao = resultado.data.percentual_comissao;
   if (usuario_id) {
     const vinculo = await garantirUsuarioVinculavel(usuario_id, logado.perfil);
     if ("error" in vinculo) return { error: vinculo.error };
@@ -283,13 +298,17 @@ export async function atualizarFuncionario(
       !podeVerSuperAdmin(logado.perfil)
     ) {
       usuario_id = existente.usuario_id;
+      percentual_comissao =
+        existente.percentual_comissao == null
+          ? null
+          : Number(existente.percentual_comissao);
     }
   }
 
   try {
     await prisma.funcionario.update({
       where: { id },
-      data: { ...resultado.data, usuario_id },
+      data: { ...resultado.data, usuario_id, percentual_comissao },
     });
   } catch (erro) {
     if (erroUnico(erro)) {
