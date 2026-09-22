@@ -9,9 +9,10 @@
  * Autorização por módulo fica nas páginas com exigirAcesso(), porque Prisma
  * não roda em Edge Runtime.
  *
- * Rotas públicas (lib/acesso.ts → rotaPublica): /login, /pedidos/publico/*,
- * /api/auth, /_next e favicon. O header x-pathname permite ao layout do
- * backoffice não exigir sessão nem Sidebar na revisão pública do pedido.
+ * Rotas públicas (lib/acesso.ts → rotaPublica): /login, /painel,
+ * /pedidos/publico/*, /api/auth, /_next e favicon. O header x-pathname
+ * permite ao layout do backoffice não exigir sessão nem Sidebar na
+ * revisão pública do pedido.
  */
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";

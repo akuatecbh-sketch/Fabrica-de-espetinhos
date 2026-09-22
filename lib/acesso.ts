@@ -112,6 +112,8 @@ export function rotaPublica(pathname: string) {
   return (
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
+    pathname === "/painel" ||
+    pathname.startsWith("/painel/") ||
     pathname.startsWith("/pedidos/publico") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||

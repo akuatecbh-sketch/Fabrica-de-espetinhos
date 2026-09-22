@@ -25,6 +25,7 @@ export function tituloDaRota(pathname: string) {
   }
   if (pathname.startsWith("/relatorios/inventario")) return "Inventário físico";
   if (pathname.startsWith("/relatorios/margem")) return "Margem por produto";
+  if (pathname.startsWith("/relatorios/comissoes")) return "Comissões";
   if (pathname.startsWith("/relatorios")) return "Relatórios";
   if (pathname.startsWith("/permissoes")) return "Permissões";
   if (pathname.startsWith("/ajuda")) return "Perguntas de ajuda";

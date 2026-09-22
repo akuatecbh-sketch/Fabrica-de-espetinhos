@@ -8,8 +8,10 @@ import { BackofficeShell } from "./shell";
 
 export const dynamic = "force-dynamic";
 
-function ehRevisaoPublica(pathname: string) {
+function ehRotaSemShell(pathname: string) {
   return (
+    pathname === "/painel" ||
+    pathname.startsWith("/painel/") ||
     pathname === "/pedidos/publico" ||
     pathname.startsWith("/pedidos/publico/")
   );
@@ -21,7 +23,7 @@ export default async function BackofficeLayout({
   children: ReactNode;
 }) {
   const pathname = (await headers()).get("x-pathname") ?? "";
-  if (ehRevisaoPublica(pathname)) {
+  if (ehRotaSemShell(pathname)) {
     return children;
   }
 
