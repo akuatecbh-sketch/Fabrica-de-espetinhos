@@ -139,7 +139,7 @@ function rotuloDiaCurto(data: Date) {
   return `${DIAS_SEMANA[data.getDay()]} ${String(data.getDate()).padStart(2, "0")}`;
 }
 
-async function faturamentoUltimos7Dias(): Promise<PontoFaturamentoDia[]> {
+export async function faturamentoUltimos7Dias(): Promise<PontoFaturamentoDia[]> {
   const inicio = inicioLocalMaisDias(-6);
   const fim = inicioLocalMaisDias(1);
   const linhas = await prisma.venda_pagamento.findMany({
@@ -304,4 +304,17 @@ export async function obterDadosDashboard(): Promise<DadosDashboard> {
     faturamento7Dias,
     vendasPorForma,
   };
+}
+
+export type DadosPainelTv = {
+  vendasHoje: DadosDashboard["vendasHoje"];
+  faturamento7Dias: PontoFaturamentoDia[];
+};
+
+export async function obterDadosPainelTv(): Promise<DadosPainelTv> {
+  const [vendasHoje, faturamento7Dias] = await Promise.all([
+    obterResumoVendasHoje(),
+    faturamentoUltimos7Dias(),
+  ]);
+  return { vendasHoje, faturamento7Dias };
 }

@@ -52,23 +52,124 @@ function corForma(nome: string, indice: number) {
 function Painel({
   titulo,
   children,
+  tema = "dashboard",
 }: {
   titulo: string;
   children: ReactNode;
+  tema?: "dashboard" | "tv";
 }) {
+  const tv = tema === "tv";
   return (
-    <section className="flex min-h-[22rem] flex-col rounded-xl border border-borda bg-superficie p-4 shadow-[0_4px_14px_rgb(15_23_42_/_0.06)]">
-      <h2 className="text-base font-semibold text-texto-primario">{titulo}</h2>
+    <section
+      className={
+        tv
+          ? "flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-[#111827] p-6"
+          : "flex min-h-[22rem] flex-col rounded-xl border border-borda bg-superficie p-4 shadow-[0_4px_14px_rgb(15_23_42_/_0.06)]"
+      }
+    >
+      <h2
+        className={
+          tv
+            ? "text-2xl font-semibold text-white"
+            : "text-base font-semibold text-texto-primario"
+        }
+      >
+        {titulo}
+      </h2>
       <div className="mt-4 min-h-0 flex-1">{children}</div>
     </section>
   );
 }
 
-function SemDados({ texto }: { texto: string }) {
+function SemDados({
+  texto,
+  tema = "dashboard",
+}: {
+  texto: string;
+  tema?: "dashboard" | "tv";
+}) {
   return (
     <div className="flex h-full min-h-56 items-center justify-center">
-      <p className="text-sm text-texto-secundario">{texto}</p>
+      <p
+        className={
+          tema === "tv"
+            ? "text-xl text-slate-300"
+            : "text-sm text-texto-secundario"
+        }
+      >
+        {texto}
+      </p>
     </div>
+  );
+}
+
+export function GraficoFaturamento7Dias({
+  faturamento7Dias,
+  tema = "dashboard",
+  altura = 280,
+}: {
+  faturamento7Dias: PontoFaturamentoDia[];
+  tema?: "dashboard" | "tv";
+  altura?: number;
+}) {
+  const tv = tema === "tv";
+  const temFaturamento = faturamento7Dias.some(
+    (ponto) => ponto.bruto > 0 || ponto.liquido > 0,
+  );
+  const corEixo = tv ? "#cbd5e1" : "#6b7280";
+  const corGrade = tv ? "#334155" : "#e5e7eb";
+  const fonte = tv ? 16 : 12;
+
+  if (!temFaturamento) {
+    return <SemDados tema={tema} texto="Sem vendas nos últimos 7 dias." />;
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={altura}>
+      <BarChart data={faturamento7Dias} barGap={4}>
+        <CartesianGrid strokeDasharray="3 3" stroke={corGrade} />
+        <XAxis
+          dataKey="rotulo"
+          tick={{ fill: corEixo, fontSize: fonte }}
+          axisLine={{ stroke: corGrade }}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fill: corEixo, fontSize: fonte }}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(valor: number) =>
+            new Intl.NumberFormat("pt-BR", {
+              notation: "compact",
+              maximumFractionDigits: 1,
+            }).format(valor)
+          }
+        />
+        <Tooltip
+          contentStyle={
+            tv
+              ? {
+                  backgroundColor: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: 8,
+                  color: "#fff",
+                }
+              : undefined
+          }
+          formatter={(valor) => formatarPreco(Number(valor ?? 0))}
+        />
+        <Legend
+          wrapperStyle={{ fontSize: tv ? 16 : 13, color: tv ? "#e2e8f0" : undefined }}
+        />
+        <Bar dataKey="bruto" name="Bruto" fill="#16A34A" radius={[4, 4, 0, 0]} />
+        <Bar
+          dataKey="liquido"
+          name="Líquido"
+          fill="#3B82F6"
+          radius={[4, 4, 0, 0]}
+        />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
@@ -79,9 +180,6 @@ export function DashboardGraficos({
   faturamento7Dias: PontoFaturamentoDia[];
   vendasPorForma: PontoFormaPagamento[];
 }) {
-  const temFaturamento = faturamento7Dias.some(
-    (ponto) => ponto.bruto > 0 || ponto.liquido > 0,
-  );
   const totalFormas = vendasPorForma.reduce((soma, ponto) => soma + ponto.valor, 0);
   const formasComPercentual = vendasPorForma.map((ponto) => ({
     ...ponto,
@@ -92,41 +190,7 @@ export function DashboardGraficos({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Painel titulo="Faturamento dos últimos 7 dias">
-        {temFaturamento ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={faturamento7Dias} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="rotulo"
-                tick={{ fill: "#6b7280", fontSize: 12 }}
-                axisLine={{ stroke: "#e5e7eb" }}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: "#6b7280", fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(valor: number) =>
-                  new Intl.NumberFormat("pt-BR", {
-                    notation: "compact",
-                    maximumFractionDigits: 1,
-                  }).format(valor)
-                }
-              />
-              <Tooltip formatter={(valor) => formatarPreco(Number(valor ?? 0))} />
-              <Legend wrapperStyle={{ fontSize: 13 }} />
-              <Bar dataKey="bruto" name="Bruto" fill="#16A34A" radius={[4, 4, 0, 0]} />
-              <Bar
-                dataKey="liquido"
-                name="Líquido"
-                fill="#3B82F6"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <SemDados texto="Sem vendas nos últimos 7 dias." />
-        )}
+        <GraficoFaturamento7Dias faturamento7Dias={faturamento7Dias} />
       </Painel>
 
       <Painel titulo="Vendas por forma de pagamento">
