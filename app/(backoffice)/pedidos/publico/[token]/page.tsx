@@ -5,6 +5,7 @@ import { formatarPreco } from "@/lib/format";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
 import { rotuloCategoriaPreco } from "@/lib/cliente";
 import { textoCategoriaPrecoImpressao } from "@/lib/preco-categoria";
+import { AprovarPedidoPublico } from "./aprovar-pedido-publico";
 import { ImprimirPedidoButton } from "./imprimir-button";
 
 export const dynamic = "force-dynamic";
@@ -153,6 +154,21 @@ export default async function PedidoPublicoPage({ params }: Props) {
           <span className="font-data">{formatarPreco(pedido.total)}</span>
         </p>
       </article>
+
+      {pedido.status === "enviado" ? (
+        <AprovarPedidoPublico token={token} />
+      ) : null}
+
+      {pedido.status === "aprovado" ? (
+        <div className="print-ocultar rounded-lg border border-verde-sucesso/40 bg-verde-sucesso/10 px-4 py-5 text-center">
+          <p className="text-lg font-semibold text-verde-texto">
+            Pedido aprovado!
+          </p>
+          <p className="mt-1 text-sm text-texto-primario">
+            A loja vai preparar seu pedido.
+          </p>
+        </div>
+      ) : null}
     </main>
   );
 }
