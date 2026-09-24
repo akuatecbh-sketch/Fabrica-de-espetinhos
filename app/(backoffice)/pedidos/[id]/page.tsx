@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { exigirAcesso } from "@/lib/permissoes";
-import { nomeExibicaoCliente } from "@/lib/cliente";
+import {
+  nomeExibicaoCliente,
+  nomeMensagemWhatsAppCliente,
+  telefoneWhatsAppCliente,
+} from "@/lib/cliente";
 import { PedidoTela } from "../pedido-tela";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +32,8 @@ export default async function PedidoPage({ params, searchParams }: Props) {
           tipo_pessoa: true,
           razao_social: true,
           nome_fantasia: true,
+          telefone: true,
+          contato_telefone: true,
         },
       },
       pedido_item: {
@@ -51,6 +57,12 @@ export default async function PedidoPage({ params, searchParams }: Props) {
         total: pedido.total,
         cliente: pedido.cliente
           ? { id: pedido.cliente.id, nome: nomeExibicaoCliente(pedido.cliente) }
+          : null,
+        telefoneWhatsApp: pedido.cliente
+          ? telefoneWhatsAppCliente(pedido.cliente)
+          : null,
+        nomeWhatsApp: pedido.cliente
+          ? nomeMensagemWhatsAppCliente(pedido.cliente)
           : null,
         itens: pedido.pedido_item.map((item) => ({
           id: item.id,

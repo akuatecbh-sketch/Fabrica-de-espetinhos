@@ -21,6 +21,8 @@ export type PedidoTelaDados = {
   tipoPreco: string;
   total: { toString(): string };
   cliente: { id: number; nome: string } | null;
+  telefoneWhatsApp: string | null;
+  nomeWhatsApp: string | null;
   itens: ItemPedidoExibicao[];
 };
 
@@ -108,7 +110,11 @@ export function PedidoTela({
       {pedido?.tokenPublico || (pedido && editavel) ? (
         <div className="flex flex-col gap-4 border-t border-borda pt-4">
           {pedido.tokenPublico ? (
-            <CopiarLinkRevisao token={pedido.tokenPublico} />
+            <CopiarLinkRevisao
+              token={pedido.tokenPublico}
+              telefone={pedido.telefoneWhatsApp}
+              nomeCliente={pedido.nomeWhatsApp}
+            />
           ) : null}
           {editavel ? (
             <AcoesPedido

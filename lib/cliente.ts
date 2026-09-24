@@ -30,6 +30,30 @@ export function ehPessoaJuridica(tipo: string | null | undefined) {
   return tipo === TIPO_PESSOA_JURIDICA;
 }
 
+export function telefoneWhatsAppCliente(cliente: {
+  tipo_pessoa?: string | null;
+  telefone?: string | null;
+  contato_telefone?: string | null;
+}) {
+  const bruto = ehPessoaJuridica(cliente.tipo_pessoa)
+    ? cliente.contato_telefone
+    : cliente.telefone;
+  const digitos = (bruto ?? "").replace(/\D/g, "");
+  return digitos || null;
+}
+
+export function nomeMensagemWhatsAppCliente(cliente: {
+  tipo_pessoa?: string | null;
+  nome: string;
+  razao_social?: string | null;
+}) {
+  if (ehPessoaJuridica(cliente.tipo_pessoa)) {
+    const razao = cliente.razao_social?.trim();
+    if (razao) return razao;
+  }
+  return cliente.nome;
+}
+
 export function nomeExibicaoCliente(cliente: {
   tipo_pessoa?: string | null;
   nome: string;
