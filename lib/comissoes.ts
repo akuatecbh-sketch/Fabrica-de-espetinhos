@@ -1,3 +1,4 @@
+import "server-only";
 import { arredondarDinheiro } from "@/lib/dinheiro";
 import { dataLocalISO, ehIsoData } from "@/lib/financeiro";
 import { prisma } from "@/lib/prisma";
@@ -15,19 +16,6 @@ export function periodoComissaoDaUrl(de?: string, ate?: string) {
   const fim = ate && ehIsoData(ate) ? ate : padrao.ate;
   if (inicio > fim) return { de: fim, ate: inicio };
   return { de: inicio, ate: fim };
-}
-
-export function rotuloPeriodo(de: string, ate: string) {
-  const [anoDe, mesDe, diaDe] = de.split("-");
-  const [anoAte, mesAte, diaAte] = ate.split("-");
-  return `${diaDe}/${mesDe}/${anoDe} a ${diaAte}/${mesAte}/${anoAte}`;
-}
-
-export function formatarPercentualComissao(valor: number) {
-  return `${new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(valor)}%`;
 }
 
 export type LinhaComissao = {

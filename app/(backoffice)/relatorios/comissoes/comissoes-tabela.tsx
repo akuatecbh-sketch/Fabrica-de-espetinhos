@@ -1,11 +1,6 @@
 "use client";
 
 import { formatarPreco } from "@/lib/format";
-import {
-  formatarPercentualComissao,
-  rotuloPeriodo,
-  type RelatorioComissoes,
-} from "@/lib/comissoes";
 import { CardRegistro } from "../../card-registro";
 import {
   BotoesExportacao,
@@ -13,6 +8,24 @@ import {
   baixarCsv,
   slugArquivo,
 } from "../../exportacao-relatorio";
+
+export type LinhaComissaoTabela = {
+  funcionarioId: number;
+  nome: string;
+  quantidadeVendas: number;
+  faturamentoLiquido: number;
+  percentual: number;
+  valorComissao: number;
+};
+
+export type RelatorioComissoesTabela = {
+  de: string;
+  ate: string;
+  linhas: LinhaComissaoTabela[];
+  totalVendas: number;
+  totalLiquido: number;
+  totalComissao: number;
+};
 
 const COLUNAS = [
   "Funcionário",
@@ -22,7 +35,20 @@ const COLUNAS = [
   "Comissão (R$)",
 ];
 
-function linhasCsv(dados: RelatorioComissoes) {
+function rotuloPeriodo(de: string, ate: string) {
+  const [anoDe, mesDe, diaDe] = de.split("-");
+  const [anoAte, mesAte, diaAte] = ate.split("-");
+  return `${diaDe}/${mesDe}/${anoDe} a ${diaAte}/${mesAte}/${anoAte}`;
+}
+
+function formatarPercentualComissao(valor: number) {
+  return `${new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(valor)}%`;
+}
+
+function linhasCsv(dados: RelatorioComissoesTabela) {
   const corpo = dados.linhas.map((linha) => [
     linha.nome,
     String(linha.quantidadeVendas),
@@ -41,7 +67,11 @@ function linhasCsv(dados: RelatorioComissoes) {
   return corpo;
 }
 
-export function ComissoesTabela({ dados }: { dados: RelatorioComissoes }) {
+export function ComissoesTabela({
+  dados,
+}: {
+  dados: RelatorioComissoesTabela;
+}) {
   const exportaveis = linhasCsv(dados);
   const periodo = rotuloPeriodo(dados.de, dados.ate);
 
