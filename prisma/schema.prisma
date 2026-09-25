@@ -601,6 +601,7 @@ model empresa {
   endereco      String?  @db.VarChar(255)
   telefone      String?  @db.VarChar(20)
   email         String?  @db.VarChar(150)
+  instagram     String?  @db.VarChar(60)
   logo_url      String?  @db.VarChar(255)
   criado_em     DateTime @default(now()) @db.Timestamp(6)
   atualizado_em DateTime @default(now()) @db.Timestamp(6)

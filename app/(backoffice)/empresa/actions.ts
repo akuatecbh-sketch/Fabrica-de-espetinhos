@@ -78,6 +78,7 @@ function lerDadosEmpresa(formData: FormData) {
   const endereco = texto(formData, "endereco");
   const telefoneBruto = texto(formData, "telefone");
   const email = texto(formData, "email");
+  const instagramBruto = texto(formData, "instagram");
 
   if (!razao_social) {
     return { error: "Informe a razão social." } as const;
@@ -119,6 +120,20 @@ function lerDadosEmpresa(formData: FormData) {
     return { error: "O endereço deve ter no máximo 255 caracteres." } as const;
   }
 
+  let instagram: string | null = null;
+  if (instagramBruto) {
+    const handle = instagramBruto.replace(/^@+/, "").trim();
+    if (!handle) {
+      instagram = null;
+    } else if (handle.length > 59) {
+      return {
+        error: "O Instagram deve ter no máximo 60 caracteres.",
+      } as const;
+    } else {
+      instagram = `@${handle}`;
+    }
+  }
+
   return {
     data: {
       razao_social,
@@ -127,6 +142,7 @@ function lerDadosEmpresa(formData: FormData) {
       endereco: endereco || null,
       telefone,
       email: email || null,
+      instagram,
     },
   } as const;
 }
@@ -167,5 +183,6 @@ export async function salvarEmpresa(
   revalidatePath("/empresa");
   revalidatePath("/etiquetas");
   revalidatePath("/api/logo");
+  revalidatePath("/vendas");
   return { ok: true };
 }

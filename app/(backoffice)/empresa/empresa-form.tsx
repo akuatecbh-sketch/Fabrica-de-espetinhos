@@ -20,6 +20,7 @@ type EmpresaInicial = {
   endereco: string | null;
   telefone: string | null;
   email: string | null;
+  instagram: string | null;
   logo_url: string | null;
   atualizado_em: string | null;
 };
@@ -118,6 +119,17 @@ export function EmpresaForm({ empresa }: { empresa: EmpresaInicial | null }) {
         mascarar={mascaraTelefone}
         placeholder="(00) 00000-0000"
       />
+
+      <label className="flex flex-col gap-1 text-sm">
+        Instagram
+        <input
+          name="instagram"
+          maxLength={60}
+          placeholder="@nomedaloja"
+          defaultValue={empresa?.instagram ?? ""}
+          className="min-h-11 rounded border border-borda px-3 py-2"
+        />
+      </label>
 
       <label className="flex flex-col gap-1 text-sm">
         E-mail
