@@ -424,10 +424,12 @@ export async function atualizarProduto(
   );
   if ("error" in resultado) return { error: resultado.error };
 
+  const ativo = formData.get("ativo") === "on";
+
   try {
     await prisma.produto.update({
       where: { id },
-      data: resultado.data,
+      data: { ...resultado.data, ativo },
     });
   } catch (erro) {
     if (erroUnico(erro)) {
@@ -460,6 +462,15 @@ export async function inativarProduto(id: number) {
   await prisma.produto.update({
     where: { id },
     data: { ativo: false },
+  });
+  revalidatePath("/produtos");
+}
+
+export async function ativarProduto(id: number) {
+  await exigirModulo("produtos");
+  await prisma.produto.update({
+    where: { id },
+    data: { ativo: true },
   });
   revalidatePath("/produtos");
 }

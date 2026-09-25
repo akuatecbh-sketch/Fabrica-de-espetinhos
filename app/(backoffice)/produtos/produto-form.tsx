@@ -41,6 +41,7 @@ type ProdutoInicial = {
   aliquota_ipi: string | null;
   aliquota_pis: string | null;
   aliquota_cofins: string | null;
+  ativo: boolean;
 };
 
 const estadoInicial: ProdutoFormState = {};
@@ -385,6 +386,17 @@ export function ProdutoForm({
           />
         </label>
       </div>
+
+      {produto ? (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            name="ativo"
+            type="checkbox"
+            defaultChecked={produto.ativo}
+          />
+          Ativo
+        </label>
+      ) : null}
 
       <label className="flex items-center gap-2 text-sm">
         <input

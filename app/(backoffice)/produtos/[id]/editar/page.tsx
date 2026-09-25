@@ -105,6 +105,7 @@ export default async function EditarProdutoPage({ params }: Props) {
           aliquota_ipi: produto.aliquota_ipi?.toString() ?? null,
           aliquota_pis: produto.aliquota_pis?.toString() ?? null,
           aliquota_cofins: produto.aliquota_cofins?.toString() ?? null,
+          ativo: produto.ativo,
         }}
       />
       {produto.tipo === "produto_final" ? (

@@ -3,7 +3,7 @@ import { formatarPreco, formatarQuantidade } from "@/lib/format";
 import { estoqueCritico } from "@/lib/estoque-critico";
 import { produtoSemDadosFiscais } from "@/lib/classificacao-fiscal";
 import { CardRegistro } from "../card-registro";
-import { InativarButton } from "./inativar-button";
+import { AlternarAtivoButton } from "./alternar-ativo-button";
 
 type ProdutoLista = {
   id: number;
@@ -67,9 +67,11 @@ function AcoesProduto({ produto }: { produto: ProdutoLista }) {
       >
         Editar
       </Link>
-      {produto.ativo ? (
-        <InativarButton id={produto.id} nome={produto.nome} />
-      ) : null}
+      <AlternarAtivoButton
+        id={produto.id}
+        nome={produto.nome}
+        ativo={produto.ativo}
+      />
     </>
   );
 }
