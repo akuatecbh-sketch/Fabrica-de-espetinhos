@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatarDataHora } from "@/lib/format";
+import { listarBackups } from "@/lib/backup";
 import {
   classesCardStatusSaude,
   classesStatusSaude,
@@ -8,6 +9,8 @@ import {
   rotuloStatusSaude,
 } from "@/lib/saude";
 import { exigirSuperAdmin } from "@/lib/sessao";
+import { AbasSaude, abaSaudeDaUrl } from "./abas";
+import { ListaBackups } from "./lista-backups";
 import { ListaExecucoesSaude } from "./lista-execucoes";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +19,45 @@ const LIMITE_HISTORICO = 30;
 const LIMITE_ATENCAO = 7;
 const HORAS_ATRASO_AGENDADOR = 26;
 
-export default async function SaudePage() {
-  await exigirSuperAdmin();
+type Props = {
+  searchParams: Promise<{ aba?: string }>;
+};
 
+export default async function SaudePage({ searchParams }: Props) {
+  await exigirSuperAdmin();
+  const { aba: abaBruta } = await searchParams;
+  const aba = abaSaudeDaUrl(abaBruta);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Saúde do sistema
+        </h1>
+        <p className="mt-1 text-sm text-texto-secundario">
+          {aba === "backups"
+            ? "Cópias semanais do banco no Netlify Blobs. Só super admin."
+            : "Resultado das verificações diárias. A execução é feita pelo agendador, não por esta tela."}
+        </p>
+      </div>
+
+      <AbasSaude atual={aba} />
+
+      {aba === "backups" ? <PainelBackups /> : <PainelVerificacoes />}
+    </div>
+  );
+}
+
+async function PainelBackups() {
+  const backups = await listarBackups();
+  return (
+    <section className="flex flex-col gap-3">
+      <ListaBackups backups={backups} />
+    </section>
+  );
+}
+
+async function PainelVerificacoes() {
   const execucoes = await prisma.verificacao_saude_execucao.findMany({
     orderBy: { iniciado_em: "desc" },
     take: LIMITE_HISTORICO,
@@ -49,17 +88,7 @@ export default async function SaudePage() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Saúde do sistema
-        </h1>
-        <p className="mt-1 text-sm text-texto-secundario">
-          Resultado das verificações diárias. A execução é feita pelo
-          agendador, não por esta tela.
-        </p>
-      </div>
-
+    <>
       {atencao.length > 0 ? (
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-medium">Precisa da sua atenção</h2>
@@ -116,6 +145,6 @@ export default async function SaudePage() {
         <h2 className="text-lg font-medium">Histórico</h2>
         <ListaExecucoesSaude execucoes={execucoes} />
       </section>
-    </div>
+    </>
   );
 }

@@ -44,6 +44,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Netlify CLI / blobs locais de desenvolvimento
+/.netlify
+
 # dumps SQL na raiz (podem conter hashes de senha)
 /*.sql
 
