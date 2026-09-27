@@ -8,7 +8,8 @@ import {
 import { formatarCnpjCpf, formatarTelefone } from "@/lib/documento";
 import { exigirPdvOuVendas } from "@/lib/sessao";
 import { LOGO_PUBLICA, existeLogoBlob } from "@/lib/empresa-logo";
-import { itensComFreteNoFinal } from "@/lib/frete";
+import { separarItensEFrete } from "@/lib/frete";
+import { arredondarDinheiro } from "@/lib/dinheiro";
 import {
   comFlagPeso,
   itemUsaLinhaCompleta,
@@ -107,7 +108,10 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
     venda.tipo_preco,
     venda.venda_item,
   );
-  const itens = itensComFreteNoFinal(venda.venda_item);
+  const { itensNormais, itemFrete } = separarItensEFrete(venda.venda_item);
+  const subtotalProdutos = arredondarDinheiro(
+    itensNormais.reduce((soma, item) => soma + Number(item.subtotal), 0),
+  );
   const naoFiscal = venda.tipo_cupom === "nao_fiscal";
 
   return (
@@ -163,7 +167,7 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
         {categoriaImpressa ? <p className="mt-1">{categoriaImpressa}</p> : null}
 
         <ul className="mt-3 border-t border-dashed border-zinc-400 pt-2">
-          {itens.map((item) => {
+          {itensNormais.map((item) => {
             const exibicao = comFlagPeso(item);
             return (
             <li key={item.id} className="mb-2">
@@ -189,6 +193,19 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
           })}
         </ul>
 
+        {itemFrete ? (
+          <div className="border-t border-dashed border-zinc-400 pt-2">
+            <p className="flex justify-between gap-2">
+              <span>Subtotal dos produtos</span>
+              <span className="font-data">{formatarPreco(subtotalProdutos)}</span>
+            </p>
+            <p className="flex justify-between gap-2">
+              <span>Frete</span>
+              <span className="font-data">{formatarPreco(itemFrete.subtotal)}</span>
+            </p>
+          </div>
+        ) : null}
+
         <div className="border-t border-dashed border-zinc-400 pt-2">
           {venda.venda_pagamento.map((pagamento) => (
             <p key={pagamento.id} className="flex justify-between gap-2">
@@ -203,7 +220,7 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
         </div>
 
         {naoFiscal ? (
-          <p className="mt-4 border-2 border-black px-2 py-3 text-center text-[11px] font-bold uppercase leading-snug">
+          <p className="mt-2 text-center text-[9px] font-normal uppercase leading-tight text-zinc-600">
             Cupom não fiscal — sem valor fiscal, documento/tributo não recolhido
           </p>
         ) : null}
