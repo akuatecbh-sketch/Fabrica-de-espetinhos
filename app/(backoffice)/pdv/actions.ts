@@ -438,27 +438,34 @@ export async function adicionarItem(
       return { error: "Este produto não permite venda em pacote." };
     }
     const quantidadePorPacote = Number(produto.quantidade_por_pacote);
-    const precoPacote = produto.preco_pacote == null ? NaN : Number(produto.preco_pacote);
     const quantidadePacotes = Number(
       String(formData.get("quantidade_pacotes") ?? "").trim().replace(",", "."),
     );
     if (!Number.isInteger(quantidadePacotes) || quantidadePacotes < 1) {
       return { error: "Informe uma quantidade de pacotes inteira, no mínimo 1." };
     }
-    if (
-      !Number.isFinite(quantidadePorPacote) ||
-      quantidadePorPacote <= 1 ||
-      !Number.isFinite(precoPacote)
-    ) {
+    if (!Number.isFinite(quantidadePorPacote) || quantidadePorPacote <= 1) {
       return { error: "Produto sem preço ou quantidade de pacote cadastrados." };
     }
 
-    const preco_pacote_aplicado = arredondarDinheiro(precoPacote);
-    const quantidade = arredondarQuantidade(quantidadePacotes * quantidadePorPacote);
-    const preco_unitario = arredondarDinheiro(
-      preco_pacote_aplicado / quantidadePorPacote,
+    const { preco, tipoAplicado } = resolverPrecoCategoria(
+      produto,
+      contexto.venda.tipo_preco,
     );
-    const subtotal = arredondarDinheiro(quantidadePacotes * preco_pacote_aplicado);
+    if (preco == null) {
+      return { error: "Produto sem preço de venda cadastrado." };
+    }
+
+    const preco_unitario = arredondarDinheiro(preco);
+    const preco_pacote_aplicado = arredondarDinheiro(
+      preco_unitario * quantidadePorPacote,
+    );
+    const quantidade = arredondarQuantidade(
+      quantidadePacotes * quantidadePorPacote,
+    );
+    const subtotal = arredondarDinheiro(
+      quantidadePacotes * preco_pacote_aplicado,
+    );
 
     await prisma.venda_item.create({
       data: {
@@ -471,7 +478,7 @@ export async function adicionarItem(
         vendido_em_pacote: true,
         quantidade_pacotes: quantidadePacotes,
         preco_pacote_aplicado,
-        tipo_preco_aplicado: normalizarCategoriaPreco(contexto.venda.tipo_preco),
+        tipo_preco_aplicado: tipoAplicado,
       },
     });
     await recalcularTotais(vendaId);

@@ -40,25 +40,29 @@ export function AdicionarItemForm({
   const [pesoKg, setPesoKg] = useState("");
 
   const porPacote = Number(produto.quantidade_por_pacote);
-  const precoPacote = produto.preco_pacote == null ? null : Number(produto.preco_pacote);
+  const precoCategoria = resolverPrecoCategoria(produto, tipoPreco).preco;
+  const precoPacoteCategoria =
+    precoCategoria == null || !Number.isFinite(porPacote) || porPacote <= 1
+      ? null
+      : arredondarDinheiro(arredondarDinheiro(precoCategoria) * porPacote);
   const pacotesInformados = Number(quantidadePacotes.replace(",", "."));
   const pacotesValidos =
     Number.isInteger(pacotesInformados) && pacotesInformados >= 1;
   const previewPacote = useMemo(() => {
-    if (!pacotesValidos || precoPacote == null || !Number.isFinite(porPacote)) {
+    if (
+      !pacotesValidos ||
+      precoPacoteCategoria == null ||
+      !Number.isFinite(porPacote)
+    ) {
       return null;
     }
     return {
       unidades: arredondarQuantidade(pacotesInformados * porPacote),
-      subtotal: arredondarDinheiro(pacotesInformados * precoPacote),
+      subtotal: arredondarDinheiro(pacotesInformados * precoPacoteCategoria),
     };
-  }, [pacotesInformados, pacotesValidos, porPacote, precoPacote]);
+  }, [pacotesInformados, pacotesValidos, porPacote, precoPacoteCategoria]);
 
-  const precoCategoria = resolverPrecoCategoria(produto, tipoPreco).preco;
-  const semPrecoUnidade = precoCategoria == null;
-  const semPrecoPacote = precoPacote == null || !Number.isFinite(precoPacote);
-  const semPreco =
-    modo === "pacote" ? semPrecoPacote : semPrecoUnidade;
+  const semPreco = precoCategoria == null;
   const mostrarSeletor =
     produto.permite_venda_pacote && !produto.vendido_por_peso;
   const previewPeso = useMemo(() => {
@@ -133,8 +137,9 @@ export function AdicionarItemForm({
                 className="font-data min-h-11 w-24 rounded border border-borda px-2 py-1 text-sm lg:min-h-0"
               />
             </label>
-            {previewPacote ? (
+            {previewPacote && precoPacoteCategoria != null ? (
               <span className="font-data text-sm text-texto-secundario">
+                {formatarPreco(precoPacoteCategoria)} / pacote ·{" "}
                 {formatarQuantidade(previewPacote.unidades)} un ·{" "}
                 {formatarPreco(previewPacote.subtotal)}
               </span>
@@ -185,9 +190,7 @@ export function AdicionarItemForm({
         </button>
       </div>
       {semPreco ? (
-        <span className="text-xs text-red-700">
-          {modo === "pacote" ? "Sem preço de pacote" : "Sem preço de venda"}
-        </span>
+        <span className="text-xs text-red-700">Sem preço de venda</span>
       ) : null}
       {estado.error ? (
         <span className="w-full text-xs text-red-700">{estado.error}</span>

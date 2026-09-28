@@ -373,8 +373,6 @@ export async function adicionarItemPedido(
       return { error: "Este produto não permite venda em pacote." };
     }
     const quantidadePorPacote = Number(produto.quantidade_por_pacote);
-    const precoPacote =
-      produto.preco_pacote == null ? NaN : Number(produto.preco_pacote);
     const quantidadePacotes = Number(
       String(formData.get("quantidade_pacotes") ?? "")
         .trim()
@@ -385,20 +383,24 @@ export async function adicionarItemPedido(
         error: "Informe uma quantidade de pacotes inteira, no mínimo 1.",
       };
     }
-    if (
-      !Number.isFinite(quantidadePorPacote) ||
-      quantidadePorPacote <= 1 ||
-      !Number.isFinite(precoPacote)
-    ) {
+    if (!Number.isFinite(quantidadePorPacote) || quantidadePorPacote <= 1) {
       return { error: "Produto sem preço ou quantidade de pacote cadastrados." };
     }
 
-    const preco_pacote_aplicado = arredondarDinheiro(precoPacote);
+    const { preco, tipoAplicado } = resolverPrecoCategoria(
+      produto,
+      contexto.pedido.tipo_preco,
+    );
+    if (preco == null) {
+      return { error: "Produto sem preço de venda cadastrado." };
+    }
+
+    const preco_unitario = arredondarDinheiro(preco);
+    const preco_pacote_aplicado = arredondarDinheiro(
+      preco_unitario * quantidadePorPacote,
+    );
     const quantidade = arredondarQuantidade(
       quantidadePacotes * quantidadePorPacote,
-    );
-    const preco_unitario = arredondarDinheiro(
-      preco_pacote_aplicado / quantidadePorPacote,
     );
     const subtotal = arredondarDinheiro(
       quantidadePacotes * preco_pacote_aplicado,
@@ -415,7 +417,7 @@ export async function adicionarItemPedido(
         vendido_em_pacote: true,
         quantidade_pacotes: quantidadePacotes,
         preco_pacote_aplicado,
-        tipo_preco_aplicado: normalizarCategoriaPreco(contexto.pedido.tipo_preco),
+        tipo_preco_aplicado: tipoAplicado,
       },
     });
     await recalcularTotais(contexto.pedido.id);
