@@ -45,9 +45,11 @@ export async function obterProdutosMaisVendidos(params: {
   de: string;
   ate: string;
   todos?: boolean;
+  limite?: number;
 }): Promise<{ itens: ProdutoMaisVendido[]; temMais: boolean }> {
+  const recorte = params.limite ?? 10;
   const { inicio, fim } = limitesDoPeriodoLocal(params.de, params.ate);
-  const limite = params.todos ? undefined : LIMITE_PRODUTOS_MAIS_VENDIDOS + 1;
+  const limite = params.todos ? undefined : recorte + 1;
 
   const agrupados = await prisma.venda_item.groupBy({
     by: ["produto_id"],
@@ -69,11 +71,8 @@ export async function obterProdutosMaisVendidos(params: {
     take: limite,
   });
 
-  const temMais =
-    !params.todos && agrupados.length > LIMITE_PRODUTOS_MAIS_VENDIDOS;
-  const fatia = temMais
-    ? agrupados.slice(0, LIMITE_PRODUTOS_MAIS_VENDIDOS)
-    : agrupados;
+  const temMais = !params.todos && agrupados.length > recorte;
+  const fatia = temMais ? agrupados.slice(0, recorte) : agrupados;
 
   const produtos = await prisma.produto.findMany({
     where: { id: { in: fatia.map((linha) => linha.produto_id) } },

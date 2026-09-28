@@ -15,6 +15,10 @@ import {
   YAxis,
 } from "recharts";
 import { formatarPreco } from "@/lib/format";
+import {
+  GraficoProdutosMaisVendidos,
+  type PontoProdutoMaisVendido,
+} from "./dashboard-produtos-mais-vendidos";
 
 type PontoFaturamentoDia = {
   rotulo: string;
@@ -176,9 +180,11 @@ export function GraficoFaturamento7Dias({
 export function DashboardGraficos({
   faturamento7Dias,
   vendasPorForma,
+  produtosMaisVendidos,
 }: {
   faturamento7Dias: PontoFaturamentoDia[];
   vendasPorForma: PontoFormaPagamento[];
+  produtosMaisVendidos: PontoProdutoMaisVendido[];
 }) {
   const totalFormas = vendasPorForma.reduce((soma, ponto) => soma + ponto.valor, 0);
   const formasComPercentual = vendasPorForma.map((ponto) => ({
@@ -188,7 +194,7 @@ export function DashboardGraficos({
   }));
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
       <Painel titulo="Faturamento dos últimos 7 dias">
         <GraficoFaturamento7Dias faturamento7Dias={faturamento7Dias} />
       </Painel>
@@ -226,6 +232,10 @@ export function DashboardGraficos({
         ) : (
           <SemDados texto="Sem vendas nos últimos 30 dias." />
         )}
+      </Painel>
+
+      <Painel titulo="Produtos mais vendidos">
+        <GraficoProdutosMaisVendidos itens={produtosMaisVendidos} />
       </Painel>
     </div>
   );

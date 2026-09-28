@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import { obterDadosDashboard } from "@/lib/dashboard";
 import { temAcessoMultiplo } from "@/lib/permissoes";
+import {
+  obterProdutosMaisVendidos,
+  periodoPadraoRelatorio,
+} from "@/lib/relatorios";
 import { obterUsuarioSessao } from "@/lib/sessao";
 import { ContagemValor } from "./contagem-valor";
 import { DashboardGraficos } from "./dashboard-graficos";
@@ -172,9 +176,15 @@ function Linha({
 }
 
 export default async function DashboardPage() {
-  const [usuario, dados] = await Promise.all([
+  const periodoMaisVendidos = periodoPadraoRelatorio();
+  const [usuario, dados, maisVendidos] = await Promise.all([
     obterUsuarioSessao(),
     obterDadosDashboard(),
+    obterProdutosMaisVendidos({
+      de: periodoMaisVendidos.de,
+      ate: periodoMaisVendidos.ate,
+      limite: 5,
+    }),
   ]);
   const acessos = await temAcessoMultiplo(usuario.id);
   const caixaAberto = dados.caixa != null;
@@ -299,6 +309,10 @@ export default async function DashboardPage() {
       <DashboardGraficos
         faturamento7Dias={dados.faturamento7Dias}
         vendasPorForma={dados.vendasPorForma}
+        produtosMaisVendidos={maisVendidos.itens.map((item) => ({
+          nome: item.nome,
+          quantidade: item.quantidade,
+        }))}
       />
     </div>
   );

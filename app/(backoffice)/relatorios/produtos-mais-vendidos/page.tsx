@@ -25,6 +25,7 @@ export default async function ProdutosMaisVendidosPage({ searchParams }: Props) 
     de: periodo.de,
     ate: periodo.ate,
     todos,
+    limite: LIMITE_PRODUTOS_MAIS_VENDIDOS,
   });
 
   const queryPeriodo = `de=${periodo.de}&ate=${periodo.ate}`;
