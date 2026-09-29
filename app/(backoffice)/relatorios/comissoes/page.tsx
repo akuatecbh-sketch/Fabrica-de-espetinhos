@@ -4,6 +4,7 @@ import {
   obterRelatorioComissoes,
   periodoComissaoDaUrl,
 } from "@/lib/comissoes";
+import { SeletorPeriodo } from "@/components/seletor-periodo";
 import { ComissoesTabela } from "./comissoes-tabela";
 
 export const dynamic = "force-dynamic";
@@ -35,35 +36,13 @@ export default async function ComissoesPage({ searchParams }: Props) {
         </p>
       </div>
 
-      <form
-        method="get"
-        className="print-ocultar flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
-      >
-        <label className="flex flex-col gap-1 text-sm">
-          De
-          <input
-            type="date"
-            name="de"
-            defaultValue={periodo.de}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          até
-          <input
-            type="date"
-            name="ate"
-            defaultValue={periodo.ate}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <button
-          type="submit"
-          className="rounded border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-        >
-          Filtrar
-        </button>
-      </form>
+      <SeletorPeriodo
+        key={`${periodo.de}-${periodo.ate}`}
+        rota="/relatorios/comissoes"
+        de={periodo.de}
+        ate={periodo.ate}
+        className="print-ocultar"
+      />
 
       <ComissoesTabela dados={dados} />
     </div>

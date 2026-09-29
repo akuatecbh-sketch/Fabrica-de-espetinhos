@@ -7,6 +7,7 @@ import {
   obterProdutosMaisVendidos,
   periodoDaUrl,
 } from "@/lib/relatorios";
+import { SeletorPeriodo } from "@/components/seletor-periodo";
 import { CardRegistro } from "../../card-registro";
 
 export const dynamic = "force-dynamic";
@@ -44,36 +45,14 @@ export default async function ProdutosMaisVendidosPage({ searchParams }: Props) 
         </p>
       </div>
 
-      <form
-        method="get"
-        className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+      <SeletorPeriodo
+        key={`${periodo.de}-${periodo.ate}-${todos ? "todos" : "recorte"}`}
+        rota="/relatorios/produtos-mais-vendidos"
+        de={periodo.de}
+        ate={periodo.ate}
       >
         {todos ? <input type="hidden" name="todos" value="1" /> : null}
-        <label className="flex flex-col gap-1 text-sm">
-          De
-          <input
-            type="date"
-            name="de"
-            defaultValue={periodo.de}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          até
-          <input
-            type="date"
-            name="ate"
-            defaultValue={periodo.ate}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <button
-          type="submit"
-          className="rounded border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-        >
-          Filtrar
-        </button>
-      </form>
+      </SeletorPeriodo>
 
       {itens.length === 0 ? (
         <p className="text-sm text-texto-secundario">
