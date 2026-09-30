@@ -1,7 +1,8 @@
 export function tituloDaRota(pathname: string) {
   if (pathname === "/") return "Dashboard";
-  if (pathname.startsWith("/vendas/hoje")) return "Vendas do dia";
+  if (pathname.startsWith("/vendas/hoje")) return "Vendas";
   if (pathname.includes("/cupom")) return "Cupom não fiscal";
+  if (pathname.startsWith("/vendas/")) return "Detalhe da venda";
   if (pathname.startsWith("/empresa")) return "Empresa";
   if (pathname.startsWith("/produtos")) return "Produtos";
   if (pathname.startsWith("/clientes")) return "Clientes";

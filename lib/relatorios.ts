@@ -1,8 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { arredondarDinheiro } from "@/lib/dinheiro";
-import { dataLocalISO, ehIsoData } from "@/lib/financeiro";
+import { dataLocalISO } from "@/lib/financeiro";
 import type { LinhaMargemProduto } from "@/lib/margem";
+import {
+  limitesDoPeriodoLocal,
+  periodoDaUrlComPadrao,
+} from "@/lib/periodo";
 import { TIPOS_VENDA } from "@/lib/produto-tipo";
+
+export { limitesDoPeriodoLocal };
 
 export const LIMITE_PRODUTOS_MAIS_VENDIDOS = 20;
 
@@ -17,20 +23,7 @@ export function periodoPadraoRelatorio(hoje = new Date()) {
 }
 
 export function periodoDaUrl(de?: string, ate?: string) {
-  const padrao = periodoPadraoRelatorio();
-  const inicio = de && ehIsoData(de) ? de : padrao.de;
-  const fim = ate && ehIsoData(ate) ? ate : padrao.ate;
-  if (inicio > fim) return { de: fim, ate: inicio };
-  return { de: inicio, ate: fim };
-}
-
-export function limitesDoPeriodoLocal(de: string, ate: string) {
-  const [anoInicio, mesInicio, diaInicio] = de.split("-").map(Number);
-  const [anoFim, mesFim, diaFim] = ate.split("-").map(Number);
-  const inicio = new Date(anoInicio, mesInicio - 1, diaInicio);
-  const fim = new Date(anoFim, mesFim - 1, diaFim);
-  fim.setDate(fim.getDate() + 1);
-  return { inicio, fim };
+  return periodoDaUrlComPadrao(de, ate, periodoPadraoRelatorio());
 }
 
 export type ProdutoMaisVendido = {

@@ -1,15 +1,22 @@
 import Link from "next/link";
+import { SeletorPeriodo } from "@/components/seletor-periodo";
 import {
   obterResumoVendasHoje,
   obterVendasHoje,
   totaisPagamento,
 } from "@/lib/vendas-hoje";
 import {
+  formatarDataHora,
   formatarHora,
   formatarPreco,
   formatarQuantidade,
 } from "@/lib/format";
 import { exigirAcesso } from "@/lib/permissoes";
+import {
+  ehPeriodoHoje,
+  periodoVendasDaUrl,
+  tituloVendasPeriodo,
+} from "@/lib/periodo";
 import {
   comFlagPeso,
   itemUsaLinhaCompleta,
@@ -24,11 +31,18 @@ import { CupomVendaBadge } from "./cupom-venda-badge";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function VendasHojePage() {
+type Props = {
+  searchParams: Promise<{ de?: string; ate?: string }>;
+};
+
+export default async function VendasHojePage({ searchParams }: Props) {
   const logado = await exigirAcesso("vendas");
+  const params = await searchParams;
+  const periodo = periodoVendasDaUrl(params.de, params.ate);
+  const soHoje = ehPeriodoHoje(periodo.de, periodo.ate);
   const [resumo, vendas] = await Promise.all([
-    obterResumoVendasHoje(),
-    obterVendasHoje(),
+    obterResumoVendasHoje(periodo),
+    obterVendasHoje(periodo),
   ]);
 
   return (
@@ -38,9 +52,16 @@ export default async function VendasHojePage() {
           ← Voltar para o dashboard
         </Link>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          Vendas de hoje
+          {tituloVendasPeriodo(periodo.de, periodo.ate)}
         </h1>
       </div>
+
+      <SeletorPeriodo
+        key={`${periodo.de}-${periodo.ate}`}
+        rota="/vendas/hoje"
+        de={periodo.de}
+        ate={periodo.ate}
+      />
 
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded border border-zinc-200 bg-white px-4 py-3">
@@ -62,7 +83,11 @@ export default async function VendasHojePage() {
       </dl>
 
       {vendas.length === 0 ? (
-        <p className="text-sm text-zinc-600">Nenhuma venda finalizada hoje.</p>
+        <p className="text-sm text-zinc-600">
+          {soHoje
+            ? "Nenhuma venda finalizada hoje."
+            : "Nenhuma venda finalizada neste período."}
+        </p>
       ) : (
         <div className="flex flex-col gap-2">
           {vendas.map((venda) => {
@@ -74,21 +99,27 @@ export default async function VendasHojePage() {
                 ),
               ),
             ];
+            const horario = venda.finalizado_em
+              ? soHoje
+                ? formatarHora(venda.finalizado_em)
+                : formatarDataHora(venda.finalizado_em)
+              : "—";
 
             return (
               <article
                 key={venda.id}
                 className="rounded-lg border border-zinc-200 bg-white"
               >
-                <div className="px-4 py-3">
+                <Link
+                  href={`/vendas/${venda.id}`}
+                  className="block px-4 py-3 hover:bg-zinc-50"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex flex-col gap-1">
                       <p className="text-sm font-medium text-zinc-900">
                         Venda #{venda.numero}
                         <span className="ml-2 font-normal text-zinc-500">
-                          {venda.finalizado_em
-                            ? formatarHora(venda.finalizado_em)
-                            : "—"}
+                          {horario}
                         </span>
                       </p>
                       <p className="flex flex-wrap items-center gap-2 text-sm text-zinc-600">
@@ -101,27 +132,35 @@ export default async function VendasHojePage() {
                       <p className="text-sm text-zinc-600">
                         {formas.length > 0 ? formas.join(", ") : "—"}
                       </p>
-                      <CupomVendaBadge
-                        vendaId={venda.id}
-                        tipoCupom={venda.tipo_cupom}
-                        nfce={venda.nfce}
-                      />
                     </div>
                     <div className="grid grid-cols-3 gap-x-3 text-right text-sm sm:gap-x-4">
                       <div>
                         <p className="text-zinc-500">Bruto</p>
-                        <p className="font-data font-medium">{formatarPreco(totais.bruto)}</p>
+                        <p className="font-data font-medium">
+                          {formatarPreco(totais.bruto)}
+                        </p>
                       </div>
                       <div>
                         <p className="text-zinc-500">Taxa</p>
-                        <p className="font-data font-medium">{formatarPreco(totais.taxa)}</p>
+                        <p className="font-data font-medium">
+                          {formatarPreco(totais.taxa)}
+                        </p>
                       </div>
                       <div>
                         <p className="text-zinc-500">Líquido</p>
-                        <p className="font-data font-medium">{formatarPreco(totais.liquido)}</p>
+                        <p className="font-data font-medium">
+                          {formatarPreco(totais.liquido)}
+                        </p>
                       </div>
                     </div>
                   </div>
+                </Link>
+                <div className="px-4 pb-3">
+                  <CupomVendaBadge
+                    vendaId={venda.id}
+                    tipoCupom={venda.tipo_cupom}
+                    nfce={venda.nfce}
+                  />
                 </div>
                 <details>
                   <summary className="cursor-pointer list-none border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 marker:content-none hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">

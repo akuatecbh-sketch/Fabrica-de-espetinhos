@@ -1,3 +1,4 @@
+import { limitesDoPeriodoLocal } from "@/lib/periodo";
 import { prisma } from "@/lib/prisma";
 import { SELECT_USUARIO_RELACAO } from "@/lib/visibilidade";
 
@@ -19,8 +20,15 @@ export type ResumoVendasHoje = {
   faturamentoLiquido: number;
 };
 
-export async function obterResumoVendasHoje(): Promise<ResumoVendasHoje> {
-  const { inicio, fim } = limitesDoDiaLocal();
+function limitesConsulta(periodo?: { de: string; ate: string }) {
+  if (periodo) return limitesDoPeriodoLocal(periodo.de, periodo.ate);
+  return limitesDoDiaLocal();
+}
+
+export async function obterResumoVendasHoje(
+  periodo?: { de: string; ate: string },
+): Promise<ResumoVendasHoje> {
+  const { inicio, fim } = limitesConsulta(periodo);
   const [quantidade, faturamento] = await Promise.all([
     prisma.venda.count({
       where: {
@@ -47,8 +55,8 @@ export async function obterResumoVendasHoje(): Promise<ResumoVendasHoje> {
   };
 }
 
-export async function obterVendasHoje() {
-  const { inicio, fim } = limitesDoDiaLocal();
+export async function obterVendasHoje(periodo?: { de: string; ate: string }) {
+  const { inicio, fim } = limitesConsulta(periodo);
   return prisma.venda.findMany({
     where: {
       status: "finalizada",
@@ -93,4 +101,50 @@ export function totaisPagamento(pagamentos: {
     }),
     { bruto: 0, taxa: 0, liquido: 0 },
   );
+}
+
+export function rotuloStatusVenda(status: string) {
+  if (status === "aberta") return "Aberta";
+  if (status === "finalizada") return "Finalizada";
+  if (status === "cancelada") return "Cancelada";
+  return status;
+}
+
+export function rotuloStatusDocumentoFiscal(status: string) {
+  if (status === "simulado") return "Simulada";
+  if (status === "autorizada") return "Autorizada";
+  if (status === "rejeitada") return "Rejeitada";
+  if (status === "pendente") return "Pendente";
+  if (status === "cancelada") return "Cancelada";
+  if (status === "contingencia") return "Contingência";
+  return status;
+}
+
+const SELECT_DOCUMENTO_FISCAL = {
+  status: true,
+  mensagem_sefaz: true,
+  danfe_url: true,
+  numero: true,
+} as const;
+
+export async function obterVendaDetalhe(id: number) {
+  return prisma.venda.findUnique({
+    where: { id },
+    include: {
+      cliente: { select: { nome: true } },
+      usuario: { select: SELECT_USUARIO_RELACAO },
+      nfce: { select: SELECT_DOCUMENTO_FISCAL },
+      nfe: { select: SELECT_DOCUMENTO_FISCAL },
+      venda_item: {
+        include: {
+          produto: { select: { nome: true, vendido_por_peso: true } },
+        },
+        orderBy: { id: "asc" },
+      },
+      venda_pagamento: {
+        include: { forma_pagamento: { select: { nome: true } } },
+        orderBy: { id: "asc" },
+      },
+    },
+  });
 }
