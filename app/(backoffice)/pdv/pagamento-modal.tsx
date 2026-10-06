@@ -43,12 +43,14 @@ export function PagamentoModal({
   formas,
   taxas,
   clientePessoaJuridica = false,
+  observacaoInicial = "",
 }: {
   vendaId: number;
   total: number;
   formas: Forma[];
   taxas: Taxa[];
   clientePessoaJuridica?: boolean;
+  observacaoInicial?: string;
 }) {
   const [aberto, setAberto] = useState(false);
   const [pagamentos, setPagamentos] = useState<PagamentoRascunho[]>([]);
@@ -56,6 +58,8 @@ export function PagamentoModal({
   const [valor, setValor] = useState("");
   const [parcelas, setParcelas] = useState(1);
   const [tipoCupom, setTipoCupom] = useState<TipoCupom>("fiscal");
+  const [incluirObs, setIncluirObs] = useState(() => observacaoInicial.trim().length > 0);
+  const [observacao, setObservacao] = useState(() => observacaoInicial.slice(0, 200));
   const [cupomNaoFiscalId, setCupomNaoFiscalId] = useState<number | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, startTransition] = useTransition();
@@ -134,6 +138,7 @@ export function PagamentoModal({
           numero_parcelas: pagamento.numero_parcelas,
         })),
         tipoCupom,
+        incluirObs ? observacao : "",
       );
       if (resultado.error) {
         setErro(resultado.error);
@@ -160,6 +165,8 @@ export function PagamentoModal({
           setPagamentos([]);
           setValor(String(total));
           setTipoCupom("fiscal");
+          setIncluirObs(observacaoInicial.trim().length > 0);
+          setObservacao(observacaoInicial.slice(0, 200));
           setCupomNaoFiscalId(null);
           setErro(null);
         }}
@@ -376,6 +383,38 @@ export function PagamentoModal({
                 </label>
               ) : null}
             </fieldset>
+
+            <div className="mt-4 flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={incluirObs}
+                  onChange={(evento) => {
+                    const marcado = evento.target.checked;
+                    setIncluirObs(marcado);
+                    if (!marcado) setObservacao("");
+                  }}
+                />
+                Obs
+              </label>
+              {incluirObs ? (
+                <label className="flex flex-col gap-1 text-sm">
+                  Observação no cupom
+                  <textarea
+                    value={observacao}
+                    maxLength={200}
+                    rows={3}
+                    onChange={(evento) =>
+                      setObservacao(evento.target.value.slice(0, 200))
+                    }
+                    className="rounded border border-zinc-300 px-3 py-2"
+                  />
+                  <span className="text-xs text-texto-secundario">
+                    {observacao.length}/200
+                  </span>
+                </label>
+              ) : null}
+            </div>
 
             <div className="mt-4 flex justify-end gap-2">
               <button

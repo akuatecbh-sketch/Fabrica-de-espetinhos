@@ -18,6 +18,7 @@ import {
 } from "@/lib/venda-item";
 import { textoCategoriaPrecoImpressao } from "@/lib/preco-categoria";
 import { rotuloCategoriaPreco } from "@/lib/cliente";
+import { formatarChavePixCupom, rotuloTipoChavePix } from "@/lib/pix";
 import { ImprimirCupomButton } from "./imprimir-button";
 
 export const dynamic = "force-dynamic";
@@ -113,6 +114,11 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
     itensNormais.reduce((soma, item) => soma + Number(item.subtotal), 0),
   );
   const naoFiscal = venda.tipo_cupom === "nao_fiscal";
+  const observacaoCupom = venda.observacao_cupom?.trim() || "";
+  const pixChave = formatarChavePixCupom(venda.pix_tipo, venda.pix_chave);
+  const pixTipo = rotuloTipoChavePix(venda.pix_tipo);
+  const pixBeneficiario = venda.pix_beneficiario?.trim() || "";
+  const temRodapePixOuObs = Boolean(observacaoCupom || pixChave);
 
   return (
     <div className="flex flex-col gap-4">
@@ -218,6 +224,28 @@ export default async function CupomNaoFiscalPage({ params }: Props) {
             <span className="font-data">{formatarPreco(venda.total)}</span>
           </p>
         </div>
+
+        {temRodapePixOuObs ? (
+          <div className="border-t border-dashed border-zinc-400 pt-2">
+            {observacaoCupom ? (
+              <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                Obs: {observacaoCupom}
+              </p>
+            ) : null}
+            {pixChave ? (
+              <>
+                <p className="mt-1 break-all [overflow-wrap:anywhere]">
+                  PIX ({pixTipo}): {pixChave}
+                </p>
+                {pixBeneficiario ? (
+                  <p className="break-words [overflow-wrap:anywhere]">
+                    Beneficiário: {pixBeneficiario}
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        ) : null}
 
         {naoFiscal ? (
           <p className="mt-2 text-center text-[9px] font-normal uppercase leading-tight text-zinc-600">

@@ -209,6 +209,16 @@ export default async function VendaDetalhePage({ params }: Props) {
               <span className="font-data">{formatarPreco(venda.total)}</span>
             }
           />
+          {venda.observacao_cupom?.trim() ? (
+            <LinhaDado
+              rotulo="Observação do cupom"
+              valor={
+                <span className="whitespace-pre-wrap break-words">
+                  {venda.observacao_cupom.trim()}
+                </span>
+              }
+            />
+          ) : null}
         </dl>
       </section>
 

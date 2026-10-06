@@ -171,6 +171,7 @@ export default async function PdvPage() {
                   formas={formasModal}
                   taxas={taxas}
                   clientePessoaJuridica={clientePessoaJuridica}
+                  observacaoInicial={venda.observacao_cupom ?? ""}
                 />
               ) : null}
               <CancelarVendaButton id={venda.id} />
@@ -311,6 +312,7 @@ export default async function PdvPage() {
                     formas={formasModal}
                     taxas={taxas}
                     clientePessoaJuridica={clientePessoaJuridica}
+                    observacaoInicial={venda.observacao_cupom ?? ""}
                   />
                 ) : null}
               </div>

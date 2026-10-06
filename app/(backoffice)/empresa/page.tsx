@@ -33,6 +33,9 @@ export default async function EmpresaPage() {
                 telefone: empresa.telefone,
                 email: empresa.email,
                 instagram: empresa.instagram,
+                pix_tipo: empresa.pix_tipo,
+                pix_chave: empresa.pix_chave,
+                pix_beneficiario: empresa.pix_beneficiario,
                 logo_url: temLogo ? LOGO_PUBLICA : null,
                 atualizado_em: empresa.atualizado_em.toISOString(),
               }

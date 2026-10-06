@@ -9,6 +9,7 @@ import {
 } from "@/lib/documento";
 import { CampoMascarado } from "../campo-mascarado";
 import { salvarEmpresa, type EmpresaFormState } from "./actions";
+import { TIPOS_CHAVE_PIX, rotuloTipoChavePix } from "@/lib/pix";
 
 const estadoInicial: EmpresaFormState = {};
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
@@ -21,6 +22,9 @@ type EmpresaInicial = {
   telefone: string | null;
   email: string | null;
   instagram: string | null;
+  pix_tipo: string | null;
+  pix_chave: string | null;
+  pix_beneficiario: string | null;
   logo_url: string | null;
   atualizado_em: string | null;
 };
@@ -130,6 +134,47 @@ export function EmpresaForm({ empresa }: { empresa: EmpresaInicial | null }) {
           className="min-h-11 rounded border border-borda px-3 py-2"
         />
       </label>
+
+      <fieldset className="flex flex-col gap-3 rounded border border-borda px-3 py-3">
+        <legend className="px-1 text-sm font-medium">PIX no cupom</legend>
+        <p className="text-xs text-texto-secundario">
+          Se a chave ficar vazia, o cupom não imprime PIX. Cupons já emitidos
+          não mudam.
+        </p>
+        <label className="flex flex-col gap-1 text-sm">
+          Tipo da chave
+          <select
+            name="pix_tipo"
+            defaultValue={empresa?.pix_tipo ?? ""}
+            className="min-h-11 rounded border border-borda px-3 py-2"
+          >
+            <option value="">Nenhuma</option>
+            {TIPOS_CHAVE_PIX.map((tipo) => (
+              <option key={tipo} value={tipo}>
+                {rotuloTipoChavePix(tipo)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Chave PIX
+          <input
+            name="pix_chave"
+            maxLength={100}
+            defaultValue={empresa?.pix_chave ?? ""}
+            className="min-h-11 rounded border border-borda px-3 py-2"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Beneficiário (opcional)
+          <input
+            name="pix_beneficiario"
+            maxLength={150}
+            defaultValue={empresa?.pix_beneficiario ?? ""}
+            className="min-h-11 rounded border border-borda px-3 py-2"
+          />
+        </label>
+      </fieldset>
 
       <label className="flex flex-col gap-1 text-sm">
         E-mail
