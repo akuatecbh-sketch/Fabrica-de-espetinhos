@@ -380,6 +380,28 @@ describe("busca do catálogo por perfil", () => {
     expect(falhas, tabelaConsultas(linhas)).toEqual([]);
   });
 
+  it("proprietario acha tudo menos saúde, inclusive permissões", () => {
+    const linhas = avaliar(
+      CONSULTAS_REAIS.filter((caso) => caso.esperada != null),
+      ACESSOS_GERENTE,
+      "proprietario",
+    ).map((linha) => {
+      if (linha.esperada.startsWith("/saude")) {
+        const ok = linha.encontrada === "—";
+        return { ...linha, ok, resultado: ok ? "ok" : "falhou" };
+      }
+      return linha;
+    });
+    const rotasPermissoes = rotasEncontradas(
+      "permissoes",
+      ACESSOS_GERENTE,
+      "proprietario",
+    );
+    expect(rotasPermissoes.includes("/permissoes")).toBe(true);
+    const falhas = linhas.filter((linha) => !linha.ok);
+    expect(falhas, tabelaConsultas(linhas)).toEqual([]);
+  });
+
   it("super_admin acha tudo", () => {
     const linhas = avaliar(CONSULTAS_REAIS.filter((caso) => caso.esperada != null));
     const falhas = linhas.filter((linha) => !linha.ok);
