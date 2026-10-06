@@ -25,6 +25,7 @@ export function BuscaAutocomplete<T>({
   minimoCaracteres = MINIMO_PADRAO,
   debounceMs = DEBOUNCE_PADRAO,
   inputRef,
+  inputId,
   limparAoSelecionar = false,
   aoAlterar,
   aoDigitar,
@@ -40,12 +41,14 @@ export function BuscaAutocomplete<T>({
   minimoCaracteres?: number;
   debounceMs?: number;
   inputRef?: Ref<HTMLInputElement>;
+  inputId?: string;
   limparAoSelecionar?: boolean;
   aoAlterar?: () => void;
   aoDigitar?: (termo: string) => void;
   disabled?: boolean;
 }) {
-  const id = useId();
+  const idGerado = useId();
+  const id = inputId ?? idGerado;
   const listaId = `${id}-lista`;
   const raizRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLInputElement | null>(null);

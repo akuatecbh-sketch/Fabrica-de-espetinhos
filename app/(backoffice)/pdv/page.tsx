@@ -13,6 +13,7 @@ import { ClienteVenda } from "./cliente-venda";
 import { PagamentoModal } from "./pagamento-modal";
 import { ehPessoaJuridica } from "@/lib/cliente";
 import { PdvBuscaProduto } from "./busca-produto";
+import { PdvF8SemVenda } from "./localizar-cliente-modal";
 import { ehTipoServico, NOME_PRODUTO_FRETE } from "@/lib/frete";
 import { RemoverItemButton } from "./remover-item-button";
 import {
@@ -145,10 +146,13 @@ export default async function PdvPage() {
       <BarraAbas abas={abasComRotulo} focoId={focoId} />
 
       {!venda ? (
-        <p className="text-sm text-texto-secundario">
-          Nenhuma venda em andamento. Clique em &quot;Nova venda&quot; para
-          começar.
-        </p>
+        <>
+          <PdvF8SemVenda />
+          <p className="text-sm text-texto-secundario">
+            Nenhuma venda em andamento. Clique em &quot;Nova venda&quot; para
+            começar.
+          </p>
+        </>
       ) : (
         <>
           <ClienteVenda

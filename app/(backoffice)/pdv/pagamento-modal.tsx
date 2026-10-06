@@ -176,7 +176,7 @@ export function PagamentoModal({
       </button>
 
       {aberto ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/40 md:items-start md:justify-center md:overflow-y-auto md:p-4">
+        <div className="fixed inset-0 z-50 flex items-end bg-black/40 md:items-start md:justify-center md:overflow-y-auto md:p-4" data-modal-aberto="pagamento">
           <div className="sheet-mobile flex h-[100dvh] w-full flex-col overflow-y-auto bg-superficie p-5 md:mt-8 md:h-auto md:max-w-xl md:rounded md:border md:border-borda md:shadow-lg md:[animation:none]">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-lg font-medium">Pagamento — venda #{vendaId}</h2>

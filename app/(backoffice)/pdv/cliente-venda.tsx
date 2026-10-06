@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { BuscaAutocomplete } from "@/components/busca-autocomplete";
-import { formatarCnpjCpf, mascaraCpf, mascaraTelefone } from "@/lib/documento";
+import {
+  formatarCnpjCpf,
+  mascaraCpf,
+  mascaraTelefone,
+  soDigitos,
+} from "@/lib/documento";
 import { formatarPreco } from "@/lib/format";
 import { rotuloStatusPedido } from "@/lib/pedido";
 import { converterPedidoEmVenda } from "../pedidos/actions";
@@ -13,6 +18,10 @@ import {
   removerClienteVenda,
   vincularClienteVenda,
 } from "./actions";
+import {
+  LocalizarClienteModal,
+  useAtalhoLocalizarCliente,
+} from "./localizar-cliente-modal";
 import { SeletorCategoriaPreco } from "../seletor-categoria-preco";
 
 type HistoricoCliente = {
@@ -52,7 +61,21 @@ export function ClienteVenda({
   const [telefoneNovo, setTelefoneNovo] = useState("");
   const [pendente, startTransition] = useTransition();
   const [convertendoId, setConvertendoId] = useState<number | null>(null);
+  const [localizarAberto, setLocalizarAberto] = useState(false);
   const buscaRef = useRef<HTMLInputElement>(null);
+
+  const abrirLocalizar = useCallback(() => {
+    setErro(null);
+    setLocalizarAberto(true);
+  }, []);
+  const fecharLocalizar = useCallback(() => setLocalizarAberto(false), []);
+
+  useAtalhoLocalizarCliente({
+    habilitado: true,
+    aberto: localizarAberto,
+    onAbrir: abrirLocalizar,
+    onFechar: fecharLocalizar,
+  });
 
   useEffect(() => {
     setModo(cliente ? "resumo" : "busca");
@@ -109,6 +132,24 @@ export function ClienteVenda({
     });
   }
 
+  function preencherCadastroRapido(termo: string) {
+    setErro(null);
+    const digitos = soDigitos(termo);
+    const nome = termo
+      .replace(/[\d./()-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    setNomeNovo(nome);
+    setCpfNovo("");
+    setTelefoneNovo("");
+    if (digitos.length === 10 || (digitos.length === 11 && digitos[2] === "9")) {
+      setTelefoneNovo(mascaraTelefone(digitos));
+    } else if (digitos.length > 0 && digitos.length <= 11) {
+      setCpfNovo(mascaraCpf(digitos));
+    }
+    setModo("cadastro");
+  }
+
   const historicoTexto =
     historico == null
       ? null
@@ -119,7 +160,16 @@ export function ClienteVenda({
   return (
     <section className="rounded border border-borda bg-superficie p-3">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <h2 className="text-lg font-medium">Cliente</h2>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-medium">Cliente</h2>
+          <button
+            type="button"
+            onClick={abrirLocalizar}
+            className="min-h-11 w-fit rounded border border-borda bg-superficie px-3 py-2 text-sm font-medium text-texto-primario hover:bg-fundo-hover lg:min-h-0"
+          >
+            Localizar cliente (F8)
+          </button>
+        </div>
         <SeletorCategoriaPreco
           valor={tipoPreco}
           aoAlterar={(categoria) => definirTipoPrecoVenda(vendaId, categoria)}
@@ -234,13 +284,7 @@ export function ClienteVenda({
           />
           <button
             type="button"
-            onClick={() => {
-              setErro(null);
-              setNomeNovo(
-                busca.replace(/[\d./-]/g, " ").replace(/\s+/g, " ").trim(),
-              );
-              setModo("cadastro");
-            }}
+            onClick={() => preencherCadastroRapido(busca)}
             className="w-fit text-sm font-medium text-texto-primario hover:underline"
           >
             + Cadastrar novo cliente
@@ -319,6 +363,14 @@ export function ClienteVenda({
           </div>
         </div>
       ) : null}
+
+      <LocalizarClienteModal
+        vendaId={vendaId}
+        cliente={cliente}
+        aberto={localizarAberto}
+        onFechar={fecharLocalizar}
+        onCadastrarNovo={preencherCadastroRapido}
+      />
     </section>
   );
 }

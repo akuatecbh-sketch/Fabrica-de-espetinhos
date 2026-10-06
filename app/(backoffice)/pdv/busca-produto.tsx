@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BuscaAutocomplete } from "@/components/busca-autocomplete";
 import { AdicionarItemForm } from "./adicionar-item-form";
 import { FreteVenda } from "./frete-venda";
 import { buscarProdutosPdv, type ProdutoPdvBusca } from "./actions";
+
+const PDV_FOCO_PRODUTO = "pdv-foco-produto";
 
 function detalheProduto(produto: ProdutoPdvBusca) {
   const partes = [produto.codigo, produto.codigo_barras].filter(Boolean);
@@ -22,6 +24,16 @@ export function PdvBuscaProduto({
 }) {
   const [produto, setProduto] = useState<ProdutoPdvBusca | null>(null);
 
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(PDV_FOCO_PRODUTO) !== "1") return;
+      sessionStorage.removeItem(PDV_FOCO_PRODUTO);
+    } catch {
+      return;
+    }
+    document.getElementById("pdv-busca-produto")?.focus();
+  }, []);
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -31,6 +43,7 @@ export function PdvBuscaProduto({
       <BuscaAutocomplete
         buscar={buscarProdutosPdv}
         label="Produto"
+        inputId="pdv-busca-produto"
         placeholder="Nome, código ou código de barras"
         chave={(item) => item.id}
         rotulo={(item) => item.nome}
