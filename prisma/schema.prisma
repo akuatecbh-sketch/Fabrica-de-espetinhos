@@ -422,6 +422,10 @@ model venda {
   cancelada_em                            DateTime?         @db.Timestamp(6)
   cancelada_por_id                        Int?
   motivo_cancelamento                     String?
+  observacao_cupom                        String?
+  pix_tipo                                String?           @db.VarChar(20)
+  pix_chave                               String?           @db.VarChar(100)
+  pix_beneficiario                        String?           @db.VarChar(150)
   conta_receber                           conta_receber[]
   nfce                                    nfce?
   nfe                                     nfe?
@@ -617,17 +621,20 @@ model modelo_etiqueta {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model empresa {
-  id            Int      @id @default(1)
-  razao_social  String   @db.VarChar(150)
-  nome_fantasia String?  @db.VarChar(150)
-  cnpj          String?  @db.Char(14)
-  endereco      String?  @db.VarChar(255)
-  telefone      String?  @db.VarChar(20)
-  email         String?  @db.VarChar(150)
-  logo_url      String?  @db.VarChar(255)
-  criado_em     DateTime @default(now()) @db.Timestamp(6)
-  atualizado_em DateTime @default(now()) @db.Timestamp(6)
-  instagram     String?  @db.VarChar(60)
+  id               Int      @id @default(1)
+  razao_social     String   @db.VarChar(150)
+  nome_fantasia    String?  @db.VarChar(150)
+  cnpj             String?  @db.Char(14)
+  endereco         String?  @db.VarChar(255)
+  telefone         String?  @db.VarChar(20)
+  email            String?  @db.VarChar(150)
+  logo_url         String?  @db.VarChar(255)
+  criado_em        DateTime @default(now()) @db.Timestamp(6)
+  atualizado_em    DateTime @default(now()) @db.Timestamp(6)
+  instagram        String?  @db.VarChar(60)
+  pix_tipo         String?  @db.VarChar(20)
+  pix_chave        String?  @db.VarChar(100)
+  pix_beneficiario String?  @db.VarChar(150)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
