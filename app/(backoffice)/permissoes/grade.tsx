@@ -31,6 +31,10 @@ export function GradePermissoes({
   }
 
   function alternar(perfil: string, moduloId: number, marcado: boolean) {
+    const aviso = marcado
+      ? `Liberar este módulo para TODOS os usuários do perfil ${rotuloPerfil(perfil)}? Quem tiver exceção individual na ficha do usuário não segue este padrão.`
+      : `Bloquear este módulo para TODOS os usuários do perfil ${rotuloPerfil(perfil)}? Quem tiver exceção individual na ficha do usuário não segue este padrão.`;
+    if (!window.confirm(aviso)) return;
     const chave = chaveCelula(perfil, moduloId);
     setValores((atual) => ({
       ...atual,

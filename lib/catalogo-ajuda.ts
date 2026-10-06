@@ -6,7 +6,7 @@ export type ItemBuscaAjuda = {
   descricao: string;
   rota: string;
   modulo: string | readonly string[] | null;
-  perfilMinimo?: "super_admin" | "gerente";
+  perfilMinimo?: "super_admin" | "proprietario" | "gerente";
   palavrasChave: readonly string[];
   sinonimos: readonly string[];
   ordem: number;
@@ -509,7 +509,7 @@ export const CATALOGO_AJUDA: ItemCatalogoAjuda[] = [
     descricao: "Libera ou bloqueia módulos por perfil.",
     rota: "/permissoes",
     modulo: null,
-    perfilMinimo: "super_admin",
+    perfilMinimo: "proprietario",
     palavrasChave: ["acesso", "perfil", "modulo"],
     sinonimos: ["permissoes"],
     ordem: 210,

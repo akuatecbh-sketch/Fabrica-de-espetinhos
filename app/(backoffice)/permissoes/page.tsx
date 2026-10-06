@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { PERFIS_GRADE_PERMISSOES } from "@/lib/acesso";
-import { exigirSuperAdmin } from "@/lib/sessao";
+import { exigirSuperAdminOuProprietario } from "@/lib/sessao";
 import { GradePermissoes } from "./grade";
 
 export const dynamic = "force-dynamic";
 
 export default async function PermissoesPage() {
-  await exigirSuperAdmin();
+  await exigirSuperAdminOuProprietario();
 
   const modulos = await prisma.modulo.findMany({
     where: { somente_super_admin: false },
@@ -40,9 +40,11 @@ export default async function PermissoesPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Permissões</h1>
         <p className="mt-2 max-w-3xl text-sm text-texto-secundario">
           Esta tela define o <strong>padrão por perfil</strong>: o acesso
-          inicial de todo usuário daquele perfil. Exceções individuais
-          (liberar ou bloquear um módulo só para uma pessoa) são
-          configuradas na tela de edição de cada usuário.
+          inicial de todo usuário daquele perfil. Ao marcar ou desmarcar,
+          a mudança vale para todos os usuários daquele perfil (quem tem
+          exceção individual na ficha do usuário não segue este padrão).
+          Exceções individuais são configuradas na tela de edição de cada
+          usuário.
         </p>
       </div>
       <GradePermissoes

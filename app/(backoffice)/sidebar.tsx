@@ -175,8 +175,14 @@ export function Sidebar({
   );
   const principaisVisiveis = [
     ...PRINCIPAIS.filter((item) => itemPermitido(item.href, acessos)),
-    ...(perfil === "super_admin" ? [ITEM_PERMISSOES] : []),
-    ...(perfil === "super_admin" || perfil === "gerente" ? [ITEM_AJUDA] : []),
+    ...(perfil === "super_admin" || perfil === "proprietario"
+      ? [ITEM_PERMISSOES]
+      : []),
+    ...(perfil === "super_admin" ||
+    perfil === "proprietario" ||
+    perfil === "gerente"
+      ? [ITEM_AJUDA]
+      : []),
   ];
   const verDashboard = itemPermitido("/", acessos);
   const cadastroAtivo = cadastrosVisiveis.some((item) =>
