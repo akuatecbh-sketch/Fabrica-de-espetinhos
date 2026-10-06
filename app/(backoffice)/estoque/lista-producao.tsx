@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatarQuantidade } from "@/lib/format";
 import type { ResultadoProducao } from "@/lib/estoque";
 import { CardRegistro } from "../card-registro";
@@ -34,7 +35,13 @@ function Badge({ resultado }: { resultado: ResultadoProducao }) {
   );
 }
 
-export function ListaProducao({ itens }: { itens: SugestaoProducao[] }) {
+export function ListaProducao({
+  itens,
+  podeProduzir,
+}: {
+  itens: SugestaoProducao[];
+  podeProduzir: boolean;
+}) {
   if (itens.length === 0) {
     return (
       <p className="text-sm text-texto-secundario">
@@ -68,6 +75,16 @@ export function ListaProducao({ itens }: { itens: SugestaoProducao[] }) {
                   </li>
                 ))}
               </ul>
+            ) : null}
+            {podeProduzir && item.resultado.tipo !== "sem_ficha" ? (
+              <div className="mt-3">
+                <Link
+                  href={`/producao/nova?produto=${item.id}&quantidade=${item.resultado.sugerida}`}
+                  className="inline-flex min-h-11 items-center rounded bg-gradiente-brasa px-4 py-2 text-sm font-medium text-white"
+                >
+                  Produzir
+                </Link>
+              </div>
             ) : null}
           </CardRegistro>
         </li>

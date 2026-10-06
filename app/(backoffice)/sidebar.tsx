@@ -19,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  Factory,
   FileText,
   ShieldAlert,
   ShoppingBag,
@@ -47,6 +48,7 @@ const CADASTROS = [
 
 const PRINCIPAIS = [
   { href: "/estoque", label: "Estoque", icone: Warehouse },
+  { href: "/producao", label: "Produção", icone: Factory },
   { href: "/etiquetas", label: "Etiquetas", icone: Tag },
   { href: "/compras", label: "Compras", icone: ClipboardList },
   { href: "/pdv", label: "PDV", icone: Store },

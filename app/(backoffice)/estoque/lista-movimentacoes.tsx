@@ -29,7 +29,9 @@ function Origem({ movimento }: { movimento: Movimento }) {
   const rotulo =
     movimento.origem_tipo === "nota_fiscal_entrada"
       ? "Ver nota"
-      : "Ver vendas de hoje";
+      : movimento.origem_tipo === "producao"
+        ? "Ver produção"
+        : "Ver vendas de hoje";
   return (
     <Link
       href={movimento.hrefOrigem}

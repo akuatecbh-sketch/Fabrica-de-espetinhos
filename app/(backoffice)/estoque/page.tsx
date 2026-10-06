@@ -140,7 +140,7 @@ async function AbaMovimentacoes({
   }
 
   const usuario = await obterUsuarioSessao();
-  const [total, registros] = await Promise.all([
+  const [total, registros, podeVerVendas, podeVerProducao] = await Promise.all([
     prisma.movimentacao_estoque.count({ where }),
     prisma.movimentacao_estoque.findMany({
       where,
@@ -152,8 +152,9 @@ async function AbaMovimentacoes({
       skip: (pagina - 1) * ITENS_MOVIMENTACAO_POR_PAGINA,
       take: ITENS_MOVIMENTACAO_POR_PAGINA,
     }),
+    temAcesso(usuario.id, "vendas"),
+    temAcesso(usuario.id, "producao"),
   ]);
-  const podeVerVendas = await temAcesso(usuario.id, "vendas");
 
   const vendaIds = [
     ...new Set(
@@ -187,6 +188,12 @@ async function AbaMovimentacoes({
       vendasHojeIds.has(item.origem_id)
     ) {
       hrefOrigem = "/vendas/hoje";
+    } else if (
+      item.origem_tipo === "producao" &&
+      item.origem_id &&
+      podeVerProducao
+    ) {
+      hrefOrigem = `/producao/${item.origem_id}`;
     }
     const { usuario: operador, ...resto } = item;
     return {
@@ -289,5 +296,8 @@ async function AbaProducao() {
     .filter((item) => item != null)
     .sort((a, b) => b.resultado.sugerida - a.resultado.sugerida);
 
-  return <ListaProducao itens={itens} />;
+  const usuario = await obterUsuarioSessao();
+  const podeProduzir = await temAcesso(usuario.id, "producao");
+
+  return <ListaProducao itens={itens} podeProduzir={podeProduzir} />;
 }

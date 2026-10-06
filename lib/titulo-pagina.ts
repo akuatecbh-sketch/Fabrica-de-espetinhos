@@ -16,6 +16,12 @@ export function tituloDaRota(pathname: string) {
   if (pathname.startsWith("/trocar-senha")) return "Trocar senha";
   if (pathname.startsWith("/compras")) return "Compras";
   if (pathname.startsWith("/estoque")) return "Estoque";
+  if (pathname.startsWith("/producao/nova")) return "Nova produção";
+  if (pathname.startsWith("/producao/") && pathname.endsWith("/cancelar")) {
+    return "Cancelar produção";
+  }
+  if (pathname.startsWith("/producao/")) return "Detalhe da produção";
+  if (pathname.startsWith("/producao")) return "Produção";
   if (pathname.startsWith("/etiquetas")) return "Etiquetas";
   if (pathname.startsWith("/pdv")) return "PDV";
   if (pathname.startsWith("/pedidos")) return "Pedidos";
