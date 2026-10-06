@@ -34,6 +34,10 @@ import {
 import { ehTipoCupom, type TipoCupom } from "@/lib/tipo-cupom";
 import { baixarEstoqueDaVenda } from "@/lib/estoque";
 import { ehTipoServico, NOME_PRODUTO_FRETE, TIPO_SERVICO } from "@/lib/frete";
+import {
+  normalizarObservacaoCupom,
+  snapshotPixDe,
+} from "@/lib/pix";
 
 export type PdvFormState = {
   error?: string;
@@ -623,6 +627,7 @@ export async function finalizarVenda(
   vendaId: number,
   pagamentos: PagamentoInput[],
   tipoCupom: TipoCupom = "fiscal",
+  observacaoCupom?: string,
 ): Promise<PdvFormState> {
   const operador = await exigirModulo("pdv");
   const contexto = await garantirVendaAberta(vendaId);
@@ -771,6 +776,11 @@ export async function finalizarVenda(
     return { error: "A soma dos pagamentos deve cobrir o total da venda." };
   }
 
+  const observacao = normalizarObservacaoCupom(observacaoCupom);
+  if (!observacao.ok) {
+    return { error: observacao.error };
+  }
+
   const agora = new Date();
 
   await prisma.$transaction(async (tx) => {
@@ -805,6 +815,16 @@ export async function finalizarVenda(
       }
     }
 
+    const empresa = await tx.empresa.findUnique({
+      where: { id: 1 },
+      select: {
+        pix_tipo: true,
+        pix_chave: true,
+        pix_beneficiario: true,
+      },
+    });
+    const pix = snapshotPixDe(empresa);
+
     await tx.venda.update({
       where: { id: venda.id },
       data: {
@@ -812,6 +832,10 @@ export async function finalizarVenda(
         tipo_cupom: tipoCupom,
         finalizado_em: agora,
         atualizado_em: agora,
+        observacao_cupom: observacao.valor,
+        pix_tipo: pix.pix_tipo,
+        pix_chave: pix.pix_chave,
+        pix_beneficiario: pix.pix_beneficiario,
       },
     });
 

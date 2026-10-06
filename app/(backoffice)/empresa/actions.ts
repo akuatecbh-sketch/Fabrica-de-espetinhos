@@ -13,6 +13,7 @@ import {
   salvarLogoBlob,
 } from "@/lib/empresa-logo";
 import { exigirModulo } from "@/lib/sessao";
+import { lerDadosPix } from "@/lib/pix";
 
 export type EmpresaFormState = {
   error?: string;
@@ -79,6 +80,9 @@ function lerDadosEmpresa(formData: FormData) {
   const telefoneBruto = texto(formData, "telefone");
   const email = texto(formData, "email");
   const instagramBruto = texto(formData, "instagram");
+  const pixTipoBruto = texto(formData, "pix_tipo");
+  const pixChaveBruta = texto(formData, "pix_chave");
+  const pixBeneficiarioBruto = texto(formData, "pix_beneficiario");
 
   if (!razao_social) {
     return { error: "Informe a razão social." } as const;
@@ -134,6 +138,15 @@ function lerDadosEmpresa(formData: FormData) {
     }
   }
 
+  const pix = lerDadosPix({
+    tipoBruto: pixTipoBruto,
+    chaveBruta: pixChaveBruta,
+    beneficiarioBruto: pixBeneficiarioBruto,
+  });
+  if ("error" in pix) {
+    return { error: pix.error } as const;
+  }
+
   return {
     data: {
       razao_social,
@@ -143,6 +156,9 @@ function lerDadosEmpresa(formData: FormData) {
       telefone,
       email: email || null,
       instagram,
+      pix_tipo: pix.pix_tipo,
+      pix_chave: pix.pix_chave,
+      pix_beneficiario: pix.pix_beneficiario,
     },
   } as const;
 }

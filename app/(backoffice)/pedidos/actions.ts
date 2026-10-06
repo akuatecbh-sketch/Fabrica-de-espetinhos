@@ -15,6 +15,7 @@ import {
   resolverPrecoCategoria,
 } from "@/lib/preco-categoria";
 import { ehSituacaoManual, pedidoEditavel } from "@/lib/pedido";
+import { cortarObservacaoCupom } from "@/lib/pix";
 
 export type PedidoFormState = {
   error?: string;
@@ -689,6 +690,7 @@ export async function converterPedidoEmVenda(pedidoId: number) {
         desconto: 0,
         total: subtotal,
         tipo_preco: normalizarCategoriaPreco(pedido.tipo_preco),
+        observacao_cupom: cortarObservacaoCupom(pedido.observacao),
         venda_item: {
           create: pedido.pedido_item.map((item) => ({
             produto_id: item.produto_id,
