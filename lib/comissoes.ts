@@ -1,17 +1,13 @@
 import "server-only";
 import { arredondarDinheiro } from "@/lib/dinheiro";
-import { dataLocalISO } from "@/lib/financeiro";
 import {
   limitesDoPeriodoLocal,
   periodoDaUrlComPadrao,
+  periodoMesAtual,
 } from "@/lib/periodo";
 import { prisma } from "@/lib/prisma";
 
-export function periodoMesAtual(hoje = new Date()) {
-  const de = dataLocalISO(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-  const ate = dataLocalISO(new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0));
-  return { de, ate };
-}
+export { periodoMesAtual };
 
 export function periodoComissaoDaUrl(de?: string, ate?: string) {
   return periodoDaUrlComPadrao(de, ate, periodoMesAtual());

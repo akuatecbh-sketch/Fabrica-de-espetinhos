@@ -22,7 +22,7 @@ export function FaturamentoGrafico({
   if (!temDados) {
     return (
       <p className="py-10 text-center text-sm text-texto-secundario">
-        Sem faturamento líquido neste mês.
+        Sem faturamento líquido neste período.
       </p>
     );
   }

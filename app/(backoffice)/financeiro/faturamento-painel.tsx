@@ -5,7 +5,7 @@ import {
   FaturamentoBotoesExportacao,
   FaturamentoFolhaImpressao,
 } from "./faturamento-exportacao";
-import { SeletorMes } from "./seletor-mes";
+import { SeletorPeriodo } from "@/components/seletor-periodo";
 
 function CelulaNumero({
   valor,
@@ -26,13 +26,20 @@ export function FaturamentoPainel({ dados }: { dados: FaturamentoMes }) {
     <div className="flex flex-col gap-6">
       <style>{`@media print { @page { size: A4; margin: 12mm; } }`}</style>
       <div className="print-ocultar flex flex-wrap items-end justify-between gap-3">
-        <SeletorMes key={dados.mes} mes={dados.mes} aba="faturamento" />
+        <SeletorPeriodo
+          key={`${dados.de}-${dados.ate}`}
+          rota="/financeiro"
+          de={dados.de}
+          ate={dados.ate}
+        >
+          <input type="hidden" name="aba" value="faturamento" />
+        </SeletorPeriodo>
         <FaturamentoBotoesExportacao dados={dados} />
       </div>
 
       <section className="print-ocultar overflow-x-auto rounded border border-zinc-200 bg-white">
         <h2 className="border-b border-zinc-200 px-4 py-3 text-sm font-medium text-texto-primario">
-          Por forma de pagamento — {dados.rotuloMes}
+          Por forma de pagamento — {dados.rotuloPeriodo}
         </h2>
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">

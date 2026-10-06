@@ -35,7 +35,7 @@ export function FaturamentoBotoesExportacao({
   return (
     <BotoesExportacao
       onExportarCsv={() =>
-        baixarCsv(`faturamento-${slugArquivo(dados.rotuloMes)}.csv`, [
+        baixarCsv(`faturamento-${slugArquivo(dados.rotuloPeriodo)}.csv`, [
           COLUNAS,
           ...linhasFaturamento(dados),
         ])
@@ -51,7 +51,7 @@ export function FaturamentoFolhaImpressao({
 }) {
   return (
     <FolhaRelatorio
-      titulo={`Faturamento — ${dados.rotuloMes}`}
+      titulo={`Faturamento — ${dados.rotuloPeriodo}`}
       subtitulo="Por forma de pagamento"
       colunas={COLUNAS}
       linhas={linhasFaturamento(dados)}

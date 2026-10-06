@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SeletorPeriodo } from "@/components/seletor-periodo";
 import { formatarDataHora, formatarQuantidade } from "@/lib/format";
 import {
   TIPOS_MOVIMENTACAO,
@@ -71,60 +72,40 @@ export function ListaMovimentacoes({
 
   return (
     <div className="flex flex-col gap-4">
-      <form
-        method="get"
-        className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+      <SeletorPeriodo
+        key={`${de}-${ate}-${busca}-${tipo}`}
+        rota="/estoque"
+        de={de}
+        ate={ate}
       >
         <input type="hidden" name="aba" value="movimentacoes" />
-        <label className="flex min-w-0 w-full flex-1 flex-col gap-1 text-sm sm:min-w-64">
-          Produto
-          <input
-            name="q"
-            defaultValue={busca}
-            placeholder="Nome do produto"
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Tipo
-          <select
-            name="tipo"
-            defaultValue={tipo}
-            className="rounded border border-zinc-300 bg-white px-3 py-2"
-          >
-            <option value="todos">Todos</option>
-            {TIPOS_MOVIMENTACAO.map((opcao) => (
-              <option key={opcao} value={opcao}>
-                {rotuloTipoMovimentacao(opcao)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          De
-          <input
-            type="date"
-            name="de"
-            defaultValue={de}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          até
-          <input
-            type="date"
-            name="ate"
-            defaultValue={ate}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <button
-          type="submit"
-          className="rounded border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-        >
-          Filtrar
-        </button>
-      </form>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <label className="flex min-w-0 w-full flex-1 flex-col gap-1 text-sm sm:min-w-64">
+            Produto
+            <input
+              name="q"
+              defaultValue={busca}
+              placeholder="Nome do produto"
+              className="rounded border border-zinc-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Tipo
+            <select
+              name="tipo"
+              defaultValue={tipo}
+              className="rounded border border-zinc-300 bg-white px-3 py-2"
+            >
+              <option value="todos">Todos</option>
+              {TIPOS_MOVIMENTACAO.map((opcao) => (
+                <option key={opcao} value={opcao}>
+                  {rotuloTipoMovimentacao(opcao)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </SeletorPeriodo>
 
       {movimentos.length === 0 ? (
         <p className="text-sm text-texto-secundario">

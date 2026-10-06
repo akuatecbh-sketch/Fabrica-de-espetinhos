@@ -1,4 +1,4 @@
-import { dataLocalISO, ehIsoData } from "@/lib/financeiro";
+import { dataLocalISO, ehIsoData, ehMesAno } from "@/lib/financeiro";
 
 export function periodoDaUrlComPadrao(
   de: string | undefined,
@@ -14,6 +14,47 @@ export function periodoDaUrlComPadrao(
 export function periodoHoje(hoje = new Date()) {
   const iso = dataLocalISO(hoje);
   return { de: iso, ate: iso };
+}
+
+export function periodoMesAtual(hoje = new Date()) {
+  const de = dataLocalISO(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  const ate = dataLocalISO(
+    new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0),
+  );
+  return { de, ate };
+}
+
+export function ultimoDiaDoMesIso(mesIso: string) {
+  const ano = Number(mesIso.slice(0, 4));
+  const mes = Number(mesIso.slice(5, 7));
+  return dataLocalISO(new Date(ano, mes, 0));
+}
+
+export function periodoFaturamentoDaUrl(
+  de?: string,
+  ate?: string,
+  mes?: string,
+) {
+  if ((de && ehIsoData(de)) || (ate && ehIsoData(ate))) {
+    return periodoDaUrlComPadrao(de, ate, periodoMesAtual());
+  }
+  if (mes && ehMesAno(mes)) {
+    return { de: `${mes}-01`, ate: ultimoDiaDoMesIso(mes) };
+  }
+  return periodoMesAtual();
+}
+
+export function datasIsoDoPeriodo(de: string, ate: string) {
+  const dias: string[] = [];
+  const [anoInicio, mesInicio, diaInicio] = de.split("-").map(Number);
+  const [anoFim, mesFim, diaFim] = ate.split("-").map(Number);
+  const atual = new Date(anoInicio, mesInicio - 1, diaInicio);
+  const limite = new Date(anoFim, mesFim - 1, diaFim);
+  while (atual.getTime() <= limite.getTime()) {
+    dias.push(dataLocalISO(atual));
+    atual.setDate(atual.getDate() + 1);
+  }
+  return dias;
 }
 
 export function periodoVendasDaUrl(de?: string, ate?: string) {

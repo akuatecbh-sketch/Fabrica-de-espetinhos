@@ -9,7 +9,8 @@ import {
   ehTipoCategoriaPagar,
   mesFinanceiroDaUrl,
 } from "@/lib/financeiro";
-import { obterFaturamentoMes } from "@/lib/faturamento";
+import { obterFaturamentoPeriodo } from "@/lib/faturamento";
+import { periodoFaturamentoDaUrl } from "@/lib/periodo";
 import { obterResumoDreMes } from "@/lib/resumo-financeiro";
 import type { Prisma } from "@/generated/prisma/client";
 import { AbasFinanceiro } from "./abas";
@@ -233,6 +234,11 @@ export default async function FinanceiroPage({ searchParams }: Props) {
   const params = await searchParams;
   const aba = abaFinanceiroDaUrl(params.aba);
   const mes = mesFinanceiroDaUrl(params.mes);
+  const periodoFaturamento = periodoFaturamentoDaUrl(
+    params.de,
+    params.ate,
+    params.mes,
+  );
   const status =
     params.filtro === "pendentes"
       ? "pendentes"
@@ -244,7 +250,12 @@ export default async function FinanceiroPage({ searchParams }: Props) {
 
   const resumo = aba === "resumo" ? await obterResumoDreMes(mes) : null;
   const faturamento =
-    aba === "faturamento" ? await obterFaturamentoMes(mes) : null;
+    aba === "faturamento"
+      ? await obterFaturamentoPeriodo(
+          periodoFaturamento.de,
+          periodoFaturamento.ate,
+        )
+      : null;
 
   return (
     <div className="flex flex-col gap-6">

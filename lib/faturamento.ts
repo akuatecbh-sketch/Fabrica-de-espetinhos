@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { arredondarDinheiro } from "@/lib/dinheiro";
 import { rotuloMesAno } from "@/lib/financeiro";
+import {
+  datasIsoDoPeriodo,
+  formatarDataIso,
+  ultimoDiaDoMesIso,
+} from "@/lib/periodo";
 
 export type LinhaFaturamentoForma = {
   forma: string;
@@ -16,8 +21,9 @@ export type PontoFaturamentoDia = {
 };
 
 export type FaturamentoMes = {
-  mes: string;
-  rotuloMes: string;
+  de: string;
+  ate: string;
+  rotuloPeriodo: string;
   linhas: LinhaFaturamentoForma[];
   total: LinhaFaturamentoForma;
   diario: PontoFaturamentoDia[];
@@ -68,13 +74,6 @@ function isoDaLinha(data: Date | string) {
   return data.toISOString().slice(0, 10);
 }
 
-function proximoMesISO(mesIso: string) {
-  const ano = Number(mesIso.slice(0, 4));
-  const mes = Number(mesIso.slice(5, 7));
-  if (mes === 12) return `${ano + 1}-01`;
-  return `${ano}-${String(mes + 1).padStart(2, "0")}`;
-}
-
 function somarLinha(
   atual: LinhaFaturamentoForma,
   extra: { qtd: number; bruto: number; taxa: number; liquido: number },
@@ -92,11 +91,26 @@ function linhaVazia(forma: string): LinhaFaturamentoForma {
   return { forma, qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
 }
 
-export async function obterFaturamentoMes(mes: string): Promise<FaturamentoMes> {
-  const inicio = `${mes}-01`;
-  const proximo = `${proximoMesISO(mes)}-01`;
+export function rotuloPeriodoFaturamento(de: string, ate: string) {
+  const mes = de.slice(0, 7);
+  if (de.endsWith("-01") && ate === ultimoDiaDoMesIso(mes)) {
+    return rotuloMesAno(mes);
+  }
+  if (de === ate) return formatarDataIso(de);
+  return `${formatarDataIso(de)} até ${formatarDataIso(ate)}`;
+}
 
-  const [mensal, diario] = await Promise.all([
+function rotuloDiaGrafico(iso: string, de: string, ate: string) {
+  if (de.slice(0, 7) === ate.slice(0, 7)) return iso.slice(8);
+  const [, mes, dia] = iso.split("-");
+  return `${dia}/${mes}`;
+}
+
+export async function obterFaturamentoPeriodo(
+  de: string,
+  ate: string,
+): Promise<FaturamentoMes> {
+  const [porForma, diario] = await Promise.all([
     prisma.$queryRaw<
       {
         forma_pagamento: string;
@@ -107,14 +121,19 @@ export async function obterFaturamentoMes(mes: string): Promise<FaturamentoMes> 
       }[]
     >`
       SELECT
-        forma_pagamento,
-        qtd_transacoes,
-        receita_bruta,
-        despesa_taxa_maquininha,
-        valor_liquido_recebido
-      FROM vw_export_contabilidade_mensal
-      WHERE mes_referencia >= CAST(${inicio} AS date)
-        AND mes_referencia < CAST(${proximo} AS date)
+        fp.nome AS forma_pagamento,
+        COUNT(vp.id) AS qtd_transacoes,
+        SUM(vp.valor) AS receita_bruta,
+        SUM(vp.valor_taxa) AS despesa_taxa_maquininha,
+        SUM(vp.valor_liquido) AS valor_liquido_recebido
+      FROM venda_pagamento vp
+      JOIN venda v ON v.id = vp.venda_id
+      JOIN forma_pagamento fp ON fp.id = vp.forma_pagamento_id
+      WHERE vp.status = 'confirmado'
+        AND v.status = 'finalizada'
+        AND v.finalizado_em::date >= CAST(${de} AS date)
+        AND v.finalizado_em::date <= CAST(${ate} AS date)
+      GROUP BY fp.nome
     `,
     prisma.$queryRaw<
       {
@@ -124,8 +143,8 @@ export async function obterFaturamentoMes(mes: string): Promise<FaturamentoMes> 
     >`
       SELECT data, SUM(valor_liquido) AS valor_liquido
       FROM vw_faturamento_diario
-      WHERE data >= CAST(${inicio} AS date)
-        AND data < CAST(${proximo} AS date)
+      WHERE data >= CAST(${de} AS date)
+        AND data <= CAST(${ate} AS date)
       GROUP BY data
       ORDER BY data
     `,
@@ -136,7 +155,7 @@ export async function obterFaturamentoMes(mes: string): Promise<FaturamentoMes> 
     mapa.set(forma.rotulo, linhaVazia(forma.rotulo));
   }
 
-  for (const linha of mensal) {
+  for (const linha of porForma) {
     const forma = rotuloForma(linha.forma_pagamento);
     const atual = mapa.get(forma) ?? linhaVazia(forma);
     mapa.set(
@@ -155,30 +174,29 @@ export async function obterFaturamentoMes(mes: string): Promise<FaturamentoMes> 
     (linha) => !FORMAS_TABELA.some((forma) => forma.rotulo === linha.forma),
   );
   const linhas = [...conhecidas, ...extras];
-  const total = linhas.reduce((acc, linha) => somarLinha(acc, linha), linhaVazia("Total"));
+  const total = linhas.reduce(
+    (acc, linha) => somarLinha(acc, linha),
+    linhaVazia("Total"),
+  );
 
   const porDia = new Map<string, number>();
   for (const linha of diario) {
     porDia.set(isoDaLinha(linha.data), numero(linha.valor_liquido));
   }
 
-  const ano = Number(mes.slice(0, 4));
-  const mesNum = Number(mes.slice(5, 7));
-  const ultimoDia = new Date(Date.UTC(ano, mesNum, 0)).getUTCDate();
-  const pontos: PontoFaturamentoDia[] = [];
-  for (let dia = 1; dia <= ultimoDia; dia += 1) {
-    const iso = `${mes}-${String(dia).padStart(2, "0")}`;
-    pontos.push({
-      rotulo: String(dia).padStart(2, "0"),
+  const diarioPontos: PontoFaturamentoDia[] = datasIsoDoPeriodo(de, ate).map(
+    (iso) => ({
+      rotulo: rotuloDiaGrafico(iso, de, ate),
       liquido: porDia.get(iso) ?? 0,
-    });
-  }
+    }),
+  );
 
   return {
-    mes,
-    rotuloMes: rotuloMesAno(mes),
+    de,
+    ate,
+    rotuloPeriodo: rotuloPeriodoFaturamento(de, ate),
     linhas,
     total,
-    diario: pontos,
+    diario: diarioPontos,
   };
 }
