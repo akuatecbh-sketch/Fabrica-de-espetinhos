@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { exigirGerenteOuSuperAdmin } from "@/lib/sessao";
+import { CatalogoAjudaSomenteLeitura } from "./lista-catalogo";
 import { ListaFaq } from "./lista-faq";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +47,8 @@ export default async function GerenciarFaqPage({ searchParams }: Props) {
             Perguntas de ajuda
           </h1>
           <p className="mt-1 text-sm text-texto-secundario">
-            Itens da busca (Ctrl+K). Desative em vez de excluir.
+            O catálogo do sistema alimenta o Ctrl+K. Abaixo, só textos extras.
+            Desative em vez de excluir.
           </p>
         </div>
         <Link
@@ -57,6 +59,17 @@ export default async function GerenciarFaqPage({ searchParams }: Props) {
         </Link>
       </div>
 
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Catálogo do sistema</h2>
+        <p className="text-sm text-texto-secundario">
+          Somente leitura. Telas novas precisam de item neste catálogo (o teste
+          de cobertura falha se o menu ganhar rota sem entrada).
+        </p>
+        <CatalogoAjudaSomenteLeitura />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Textos extras</h2>
       <form method="get" className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-0 w-full flex-1 flex-col gap-1 text-sm sm:min-w-64">
           Buscar por título
@@ -79,10 +92,11 @@ export default async function GerenciarFaqPage({ searchParams }: Props) {
         itens={itens}
         vazio={
           busca
-            ? "Nenhuma pergunta encontrada para essa busca."
-            : "Nenhuma pergunta cadastrada."
+            ? "Nenhum texto extra encontrado para essa busca."
+            : "Nenhum texto extra cadastrado."
         }
       />
+      </section>
     </div>
   );
 }

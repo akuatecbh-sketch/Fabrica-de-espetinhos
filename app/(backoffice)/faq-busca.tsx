@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
 type FaqItem = {
-  id: number;
+  id: string;
   titulo: string;
   resposta: string;
   rota_destino: string;
