@@ -181,6 +181,7 @@ async function emitirNfeInterno(vendaId: number): Promise<ResultadoEmissaoNfe> {
     },
   });
 
+  // Venda cancelada ou ainda aberta: recusa sem lançar (PDV / "Tentar novamente").
   if (!venda || venda.status !== "finalizada") {
     return { error: "A venda precisa estar finalizada para emitir a NF-e." };
   }

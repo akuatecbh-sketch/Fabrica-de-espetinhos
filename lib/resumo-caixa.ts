@@ -1,6 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { arredondarDinheiro } from "@/lib/dinheiro";
 
+type ClienteSql = Pick<typeof prisma, "$queryRaw">;
+
+export async function somarEstornosDinheiroOutroCaixa(
+  db: ClienteSql,
+  caixaId: number,
+) {
+  const linhas = await db.$queryRaw<{ total: unknown }[]>`
+    SELECT COALESCE(SUM(mc.valor), 0) AS total
+    FROM movimentacao_caixa mc
+    INNER JOIN venda v
+      ON v.id = mc.origem_id
+     AND mc.origem_tipo = 'venda'
+    LEFT JOIN forma_pagamento fp ON fp.id = mc.forma_pagamento_id
+    WHERE mc.caixa_id = ${caixaId}
+      AND mc.tipo = 'estorno'
+      AND (fp.tipo = 'dinheiro' OR mc.forma_pagamento_id IS NULL)
+      AND v.caixa_id IS DISTINCT FROM ${caixaId}
+  `;
+  return numero(linhas[0]?.total);
+}
+
 export type LinhaFormaCaixa = {
   forma_pagamento: string;
   valor_bruto: number;
@@ -33,7 +54,7 @@ export async function obterResumoCaixa(
   caixaId: number,
   valorAbertura: { toString(): string },
 ): Promise<ResumoCaixa> {
-  const [totais, linhas] = await Promise.all([
+  const [totais, linhas, estornosOutroCaixa] = await Promise.all([
     prisma.$queryRaw<
       {
         faturamento_bruto: unknown;
@@ -62,6 +83,7 @@ export async function obterResumoCaixa(
       GROUP BY forma_pagamento
       ORDER BY forma_pagamento
     `,
+    somarEstornosDinheiroOutroCaixa(prisma, caixaId),
   ]);
 
   const total = totais[0];
@@ -99,7 +121,7 @@ export async function obterResumoCaixa(
     formas,
     vendas_dinheiro,
     valor_fechamento_sistema: arredondarDinheiro(
-      numero(valorAbertura) + vendas_dinheiro,
+      numero(valorAbertura) + vendas_dinheiro - estornosOutroCaixa,
     ),
   };
 }

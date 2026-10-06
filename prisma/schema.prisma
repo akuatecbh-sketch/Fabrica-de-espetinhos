@@ -24,6 +24,8 @@ model caixa {
   usuario_caixa_usuario_fechamento_idTousuario usuario?             @relation("caixa_usuario_fechamento_idTousuario", fields: [usuario_fechamento_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   movimentacao_caixa                           movimentacao_caixa[]
   venda                                        venda[]
+
+  @@index([status], map: "idx_caixa_status")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -88,6 +90,8 @@ model conta_pagar {
   fornecedor             fornecedor?          @relation(fields: [fornecedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   funcionario            funcionario?         @relation(fields: [funcionario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   nota_fiscal_entrada    nota_fiscal_entrada? @relation(fields: [nota_fiscal_entrada_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status, data_vencimento], map: "idx_conta_pagar_status_vencimento")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -103,6 +107,8 @@ model conta_receber {
   criado_em        DateTime  @default(now()) @db.Timestamp(6)
   cliente          cliente?  @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   venda            venda?    @relation(fields: [venda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status, data_vencimento], map: "idx_conta_receber_status_vencimento")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -118,6 +124,8 @@ model ferias {
   status                    String      @default("pendente") @db.VarChar(20)
   observacao                String?
   funcionario               funcionario @relation(fields: [funcionario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status, periodo_aquisitivo_fim], map: "idx_ferias_status_periodo")
 }
 
 model ficha_tecnica {
@@ -318,6 +326,8 @@ model produto {
   categoria_produto                                     categoria_produto          @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   unidade_medida                                        unidade_medida             @relation(fields: [unidade_medida_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   venda_item                                            venda_item[]
+
+  @@index([tipo, ativo], map: "idx_produto_tipo_ativo")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -381,6 +391,7 @@ model usuario {
   taxa_cartao                                                  taxa_cartao[]
   criado_por                                                   usuario?               @relation("usuario_criado_por", fields: [criado_por_id], references: [id], onUpdate: NoAction)
   usuarios_criados                                             usuario[]              @relation("usuario_criado_por")
+  venda_venda_cancelada_por_idTousuario                        venda[]                @relation("venda_cancelada_por_idTousuario")
   venda                                                        venda[]
 
   @@index([criado_por_id], map: "idx_usuario_criado_por")
@@ -388,34 +399,39 @@ model usuario {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model venda {
-  id              Int               @id @default(autoincrement())
-  numero          Int               @default(autoincrement())
-  terminal_id     Int?
-  caixa_id        Int?
-  cliente_id      Int?
-  operador_id     Int
-  aba_rotulo      String?           @db.VarChar(30)
-  status          String            @default("aberta") @db.VarChar(20)
-  subtotal        Decimal           @default(0) @db.Decimal(12, 2)
-  desconto        Decimal           @default(0) @db.Decimal(12, 2)
-  total           Decimal           @default(0) @db.Decimal(12, 2)
-  criado_em       DateTime          @default(now()) @db.Timestamp(6)
-  atualizado_em   DateTime          @default(now()) @db.Timestamp(6)
-  finalizado_em   DateTime?         @db.Timestamp(6)
-  tipo_cupom      String            @default("fiscal") @db.VarChar(20)
-  tipo_preco      String            @default("varejo") @db.VarChar(20)
-  conta_receber   conta_receber[]
-  nfce            nfce?
-  nfe             nfe?
-  pedido          pedido?
-  caixa           caixa?            @relation(fields: [caixa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  cliente         cliente?          @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  usuario         usuario           @relation(fields: [operador_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  terminal_pdv    terminal_pdv?     @relation(fields: [terminal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  venda_item      venda_item[]
-  venda_pagamento venda_pagamento[]
+  id                                      Int               @id @default(autoincrement())
+  numero                                  Int               @default(autoincrement())
+  terminal_id                             Int?
+  caixa_id                                Int?
+  cliente_id                              Int?
+  operador_id                             Int
+  aba_rotulo                              String?           @db.VarChar(30)
+  status                                  String            @default("aberta") @db.VarChar(20)
+  subtotal                                Decimal           @default(0) @db.Decimal(12, 2)
+  desconto                                Decimal           @default(0) @db.Decimal(12, 2)
+  total                                   Decimal           @default(0) @db.Decimal(12, 2)
+  criado_em                               DateTime          @default(now()) @db.Timestamp(6)
+  atualizado_em                           DateTime          @default(now()) @db.Timestamp(6)
+  finalizado_em                           DateTime?         @db.Timestamp(6)
+  tipo_cupom                              String            @default("fiscal") @db.VarChar(20)
+  tipo_preco                              String            @default("varejo") @db.VarChar(20)
+  cancelada_em                            DateTime?         @db.Timestamp(6)
+  cancelada_por_id                        Int?
+  motivo_cancelamento                     String?
+  conta_receber                           conta_receber[]
+  nfce                                    nfce?
+  nfe                                     nfe?
+  pedido                                  pedido?
+  caixa                                   caixa?            @relation(fields: [caixa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario_venda_cancelada_por_idTousuario usuario?          @relation("venda_cancelada_por_idTousuario", fields: [cancelada_por_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cliente                                 cliente?          @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario                                 usuario           @relation(fields: [operador_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  terminal_pdv                            terminal_pdv?     @relation(fields: [terminal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda_item                              venda_item[]
+  venda_pagamento                         venda_pagamento[]
 
   @@index([terminal_id, status], map: "idx_venda_status_terminal")
+  @@index([status, finalizado_em], map: "idx_venda_status_finalizado")
 }
 
 model venda_item {
@@ -453,6 +469,9 @@ model venda_pagamento {
   forma_pagamento          forma_pagamento @relation(fields: [forma_pagamento_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   taxa_cartao              taxa_cartao?    @relation(fields: [taxa_cartao_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   venda                    venda           @relation(fields: [venda_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_venda_pagamento_status")
+  @@index([venda_id], map: "idx_venda_pagamento_venda_id")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -601,10 +620,10 @@ model empresa {
   endereco      String?  @db.VarChar(255)
   telefone      String?  @db.VarChar(20)
   email         String?  @db.VarChar(150)
-  instagram     String?  @db.VarChar(60)
   logo_url      String?  @db.VarChar(255)
   criado_em     DateTime @default(now()) @db.Timestamp(6)
   atualizado_em DateTime @default(now()) @db.Timestamp(6)
+  instagram     String?  @db.VarChar(60)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -692,6 +711,7 @@ model pedido {
   @@index([criado_em(sort: Desc)], map: "idx_pedido_criado_em")
   @@index([status], map: "idx_pedido_status")
   @@index([venda_id], map: "idx_pedido_venda")
+  @@index([cliente_id, status], map: "idx_pedido_cliente_status")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

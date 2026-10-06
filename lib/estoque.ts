@@ -23,6 +23,7 @@ export function abaEstoqueDaUrl(valor?: string): AbaModuloEstoque {
 export const TIPOS_MOVIMENTACAO = [
   "entrada_compra",
   "saida_venda",
+  "devolucao_venda",
   "ajuste_positivo",
   "ajuste_negativo",
   "producao_consumo",
@@ -50,6 +51,7 @@ export function rotuloTipoMovimentacao(tipo: string) {
   const mapa: Record<string, string> = {
     entrada_compra: "Entrada de compra",
     saida_venda: "Saída de venda",
+    devolucao_venda: "Devolução de venda",
     ajuste_positivo: "Ajuste positivo",
     ajuste_negativo: "Ajuste negativo",
     producao_consumo: "Consumo de produção",

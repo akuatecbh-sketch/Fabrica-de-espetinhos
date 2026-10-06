@@ -98,6 +98,7 @@ async function emitirNfceInterno(vendaId: number) {
     },
   });
 
+  // Venda cancelada ou ainda aberta: não emite e não grava status (PDV / "Tentar novamente").
   if (!venda || venda.status !== "finalizada") return;
   if (venda.nfce?.status === "autorizada") return;
 

@@ -55,5 +55,6 @@ export function rotuloAcaoAuditoria(acao: string, valorNovo?: unknown) {
     return "Alteração de permissão do usuário";
   }
   if (acao === "produto.atualizar_preco") return "Atualização de preço do produto";
+  if (acao === "venda.cancelar") return "Cancelamento de venda finalizada";
   return acao;
 }
