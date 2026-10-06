@@ -58,6 +58,8 @@ export function rotuloAcaoAuditoria(
   if (acao === "permissao_usuario.alterar") {
     return "Alteração de permissão do usuário";
   }
+  if (acao === "usuario.criar") return "Usuário criado";
+  if (acao === "usuario.alterar_perfil") return "Alteração de perfil do usuário";
   if (acao === "produto.atualizar_preco") return "Atualização de preço do produto";
   if (acao === "producao.criar") {
     const n = Number(entidadeId ?? 0);

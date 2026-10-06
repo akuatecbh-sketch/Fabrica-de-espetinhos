@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { PERFIS_GRADE_PERMISSOES } from "@/lib/acesso";
+import { podeSalvarPermissaoPerfil } from "@/lib/acesso";
 import { registrarAuditoria } from "@/lib/auditoria";
-import { exigirSuperAdmin } from "@/lib/sessao";
+import { exigirSuperAdminOuProprietario } from "@/lib/sessao";
 
 export type PermissaoFormState = {
   error?: string;
@@ -15,20 +15,27 @@ export async function salvarPermissaoPerfil(
   perfil: string,
   podeAcessar: boolean,
 ): Promise<PermissaoFormState> {
-  const logado = await exigirSuperAdmin();
-
-  if (
-    !(PERFIS_GRADE_PERMISSOES as readonly string[]).includes(perfil)
-  ) {
-    return { error: "Perfil inválido." };
-  }
+  const logado = await exigirSuperAdminOuProprietario();
 
   const modulo = await prisma.modulo.findUnique({
     where: { id: moduloId },
-    select: { id: true, somente_super_admin: true },
+    select: { id: true, chave: true, somente_super_admin: true },
   });
-  if (!modulo || modulo.somente_super_admin) {
-    return { error: "Módulo inválido." };
+  if (
+    !modulo ||
+    !podeSalvarPermissaoPerfil({
+      ator: logado.perfil,
+      perfilAlvo: perfil,
+      somenteSuperAdmin: modulo.somente_super_admin,
+    })
+  ) {
+    return { error: "Acesso não permitido." };
+  }
+
+  if (perfil === logado.perfil && modulo.chave === "usuarios" && !podeAcessar) {
+    return {
+      error: "Você não pode remover o acesso a Usuários do próprio perfil.",
+    };
   }
 
   const anterior = await prisma.permissao_perfil.findUnique({

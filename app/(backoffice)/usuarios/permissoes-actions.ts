@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { podeConfigurarPermissoesIndividuais } from "@/lib/acesso";
+import { podeSalvarPermissaoUsuario } from "@/lib/acesso";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { obterUsuarioSessao } from "@/lib/sessao";
 import { superAdminOcultoPara } from "@/lib/visibilidade";
@@ -25,16 +25,21 @@ export async function salvarPermissaoUsuario(
   if (superAdminOcultoPara(logado.perfil, alvo.perfil)) {
     return { error: "Acesso não permitido." };
   }
-  if (!podeConfigurarPermissoesIndividuais(logado.perfil, alvo.perfil)) {
-    return { error: "Acesso não permitido." };
-  }
 
   const modulo = await prisma.modulo.findUnique({
     where: { id: moduloId },
     select: { id: true, somente_super_admin: true },
   });
   if (!modulo) return { error: "Módulo inválido." };
-  if (modulo.somente_super_admin && logado.perfil !== "super_admin") {
+  if (
+    !podeSalvarPermissaoUsuario({
+      ator: logado.perfil,
+      atorId: logado.id,
+      alvoId: alvo.id,
+      alvoPerfil: alvo.perfil,
+      somenteSuperAdmin: modulo.somente_super_admin,
+    })
+  ) {
     return { error: "Acesso não permitido." };
   }
 

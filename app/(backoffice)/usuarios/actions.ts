@@ -6,9 +6,11 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { validarEmail } from "@/lib/documento";
 import {
+  mudancaPerdeAcessoPermissoes,
   podeAtribuirPerfil,
   podeGerenciarUsuario,
 } from "@/lib/acesso";
+import { registrarAuditoria } from "@/lib/auditoria";
 import { validarNovaSenha } from "@/lib/senha";
 import { exigirModuloUsuarios } from "@/lib/sessao";
 import { superAdminOcultoPara } from "@/lib/visibilidade";
@@ -52,7 +54,7 @@ export async function criarUsuario(
   if (senhaErro) return { error: senhaErro };
 
   try {
-    await prisma.usuario.create({
+    const criado = await prisma.usuario.create({
       data: {
         nome,
         email,
@@ -62,6 +64,13 @@ export async function criarUsuario(
         ativo: true,
         criado_por_id: logado.id,
       },
+    });
+    await registrarAuditoria({
+      usuarioId: logado.id,
+      acao: "usuario.criar",
+      entidadeTipo: "usuario",
+      entidadeId: criado.id,
+      valorNovo: { id: criado.id, nome, email, perfil },
     });
   } catch (erro) {
     if (erroUnico(erro)) return { error: "Já existe um usuário com este e-mail." };
@@ -105,11 +114,35 @@ export async function atualizarUsuario(
     }
   }
 
+  if (id === logado.id && perfil !== alvo.perfil) {
+    if (mudancaPerdeAcessoPermissoes(alvo.perfil, perfil)) {
+      return {
+        error: "Você não pode alterar o próprio perfil e perder o acesso a Permissões.",
+      };
+    }
+    const manteriaUsuarios = await acessoUsuariosComPerfil(id, perfil);
+    if (!manteriaUsuarios) {
+      return {
+        error: "Você não pode alterar o próprio perfil e perder o acesso a Usuários.",
+      };
+    }
+  }
+
   try {
     await prisma.usuario.update({
       where: { id },
       data: { nome, email, perfil },
     });
+    if (perfil !== alvo.perfil) {
+      await registrarAuditoria({
+        usuarioId: logado.id,
+        acao: "usuario.alterar_perfil",
+        entidadeTipo: "usuario",
+        entidadeId: id,
+        valorAnterior: { id, perfil: alvo.perfil },
+        valorNovo: { id, perfil },
+      });
+    }
   } catch (erro) {
     if (erroUnico(erro)) return { error: "Já existe um usuário com este e-mail." };
     throw erro;
@@ -141,6 +174,25 @@ export async function inativarUsuario(id: number): Promise<{ error?: string }> {
   });
   revalidatePath("/usuarios");
   return {};
+}
+
+async function acessoUsuariosComPerfil(usuarioId: number, perfil: string) {
+  const modulo = await prisma.modulo.findUnique({
+    where: { chave: "usuarios" },
+    select: { id: true, somente_super_admin: true },
+  });
+  if (!modulo) return false;
+  if (modulo.somente_super_admin) return perfil === "super_admin";
+  const excecao = await prisma.permissao_usuario.findFirst({
+    where: { usuario_id: usuarioId, modulo_id: modulo.id },
+    select: { pode_acessar: true },
+  });
+  if (excecao) return excecao.pode_acessar;
+  const doPerfil = await prisma.permissao_perfil.findFirst({
+    where: { perfil, modulo_id: modulo.id },
+    select: { pode_acessar: true },
+  });
+  return doPerfil?.pode_acessar ?? false;
 }
 
 export async function redefinirSenhaUsuario(

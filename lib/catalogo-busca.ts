@@ -122,8 +122,15 @@ export function itemAjudaVisivel(
   perfil: PerfilBuscaAjuda,
 ) {
   if (item.perfilMinimo === "super_admin") return perfil === "super_admin";
+  if (item.perfilMinimo === "proprietario") {
+    return perfil === "super_admin" || perfil === "proprietario";
+  }
   if (item.perfilMinimo === "gerente") {
-    return perfil === "super_admin" || perfil === "gerente";
+    return (
+      perfil === "super_admin" ||
+      perfil === "proprietario" ||
+      perfil === "gerente"
+    );
   }
   if (item.modulo == null) return true;
   const modulos = Array.isArray(item.modulo) ? item.modulo : [item.modulo];

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ehChaveBackup, obterBackup } from "@/lib/backup";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,11 @@ export async function GET(_req: Request, { params }: Props) {
   if (!sessao?.usuario?.id) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
-  if (sessao.usuario.perfil !== "super_admin") {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: sessao.usuario.id },
+    select: { perfil: true, ativo: true },
+  });
+  if (!usuario?.ativo || usuario.perfil !== "super_admin") {
     return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
   }
 

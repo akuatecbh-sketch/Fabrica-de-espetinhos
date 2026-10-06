@@ -13,9 +13,21 @@ export async function exigirSuperAdmin() {
   return usuario;
 }
 
+export async function exigirSuperAdminOuProprietario() {
+  const usuario = await obterUsuarioSessao();
+  if (usuario.perfil !== "super_admin" && usuario.perfil !== "proprietario") {
+    redirect("/acesso-negado");
+  }
+  return usuario;
+}
+
 export async function exigirGerenteOuSuperAdmin() {
   const usuario = await obterUsuarioSessao();
-  if (usuario.perfil !== "super_admin" && usuario.perfil !== "gerente") {
+  if (
+    usuario.perfil !== "super_admin" &&
+    usuario.perfil !== "proprietario" &&
+    usuario.perfil !== "gerente"
+  ) {
     redirect("/acesso-negado");
   }
   return usuario;
