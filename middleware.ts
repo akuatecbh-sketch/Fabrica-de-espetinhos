@@ -5,7 +5,8 @@
  * continua suportado no Next.js 16 (descontinuado, não removido) e o Netlify
  * executa Edge Runtime normalmente.
  *
- * Aqui só entra autenticação via cookie JWT (login e senha provisória).
+ * Aqui só entra autenticação via cookie JWT (tem sessão ou não).
+ * Senha provisória e usuário ativo são lidos do banco no layout Node.
  * Autorização por módulo fica nas páginas com exigirAcesso(), porque Prisma
  * não roda em Edge Runtime.
  *

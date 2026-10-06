@@ -32,5 +32,6 @@ export function tituloDaRota(pathname: string) {
   if (pathname.startsWith("/ajuda")) return "Perguntas de ajuda";
   if (pathname.startsWith("/acesso-negado")) return "Acesso negado";
   if (pathname.startsWith("/saude")) return "Saúde do sistema";
+  if (pathname.startsWith("/auditoria")) return "Auditoria";
   return "Gestão";
 }

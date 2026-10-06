@@ -5,7 +5,7 @@ import { autenticar, type LoginState } from "./actions";
 
 const estadoInicial: LoginState = {};
 
-export function LoginForm() {
+export function LoginForm({ aviso }: { aviso?: string }) {
   const [estado, formAction, pendente] = useActionState(
     autenticar,
     estadoInicial,
@@ -13,6 +13,11 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="flex w-full flex-col gap-4">
+      {aviso ? (
+        <p className="rounded border border-verde-sucesso/40 bg-verde-sucesso/10 px-3 py-2 text-sm text-verde-sucesso">
+          {aviso}
+        </p>
+      ) : null}
       {estado.error ? (
         <p className="rounded border border-vermelho-erro/40 bg-vermelho-erro/10 px-3 py-2 text-sm text-vermelho-erro">
           {estado.error}

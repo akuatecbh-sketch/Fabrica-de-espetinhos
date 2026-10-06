@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { MapaAcessos } from "@/lib/permissoes-rotas";
+import { obterUsuarioSessao } from "@/lib/usuario-sessao";
 
 export type { MapaAcessos } from "@/lib/permissoes-rotas";
 export { CHAVE_POR_HREF, moduloChaveDaRota } from "@/lib/permissoes-rotas";
@@ -100,9 +100,7 @@ export async function temAcessoMultiplo(usuarioId: number): Promise<MapaAcessos>
 }
 
 export async function exigirAcesso(moduloChave: string) {
-  const sessao = await auth();
-  const usuario = sessao?.usuario;
-  if (!usuario?.id) redirect("/login");
+  const usuario = await obterUsuarioSessao();
   if (!(await temAcesso(usuario.id, moduloChave))) {
     redirect("/acesso-negado");
   }

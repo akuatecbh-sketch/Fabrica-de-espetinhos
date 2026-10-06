@@ -9,6 +9,7 @@ import {
   ClipboardList,
   ContactRound,
   Folder,
+  History,
   LayoutDashboard,
   KeyRound,
   Landmark,
@@ -56,6 +57,7 @@ const PRINCIPAIS = [
   { href: "/financeiro", label: "Financeiro", icone: Landmark },
   { href: "/relatorios", label: "Relatórios", icone: BarChart3 },
   { href: "/saude", label: "Saúde do sistema", icone: ShieldAlert },
+  { href: "/auditoria", label: "Auditoria", icone: History },
 ] as const;
 
 const ITEM_PERMISSOES = {

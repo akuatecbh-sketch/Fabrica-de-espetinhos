@@ -1,13 +1,9 @@
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { exigirAcesso, temAcesso } from "@/lib/permissoes";
+import { temAcesso } from "@/lib/permissoes";
+import { obterUsuarioSessao } from "@/lib/usuario-sessao";
 
-export async function obterUsuarioSessao() {
-  const sessao = await auth();
-  const usuario = sessao?.usuario;
-  if (!usuario?.id) redirect("/login");
-  return usuario;
-}
+export type { UsuarioSessao } from "@/lib/usuario-sessao";
+export { obterUsuarioSessao } from "@/lib/usuario-sessao";
 
 export async function exigirSuperAdmin() {
   const usuario = await obterUsuarioSessao();
@@ -38,7 +34,11 @@ export async function exigirPdvOuVendas() {
 }
 
 export async function exigirModulo(moduloChave: string) {
-  return exigirAcesso(moduloChave);
+  const usuario = await obterUsuarioSessao();
+  if (!(await temAcesso(usuario.id, moduloChave))) {
+    redirect("/acesso-negado");
+  }
+  return usuario;
 }
 
 export async function exigirCompras() {

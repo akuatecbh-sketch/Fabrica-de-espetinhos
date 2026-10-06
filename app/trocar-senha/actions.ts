@@ -1,9 +1,8 @@
 "use server";
 
-import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { signIn } from "@/auth";
+import { signOut } from "@/auth";
 import { validarNovaSenha } from "@/lib/senha";
 import { obterUsuarioSessao } from "@/lib/sessao";
 
@@ -24,10 +23,11 @@ export async function trocarSenhaProvisoria(
 
   const usuario = await prisma.usuario.findUnique({
     where: { id: sessao.id },
+    select: { id: true, ativo: true, senha_provisoria: true },
   });
-  if (!usuario || !usuario.ativo) return { error: "Usuário não encontrado." };
-  if (!usuario.senha_provisoria) {
-    return { error: "Esta conta já está com senha definitiva." };
+  if (!usuario || !usuario.ativo || !usuario.senha_provisoria) {
+    await signOut({ redirectTo: "/login" });
+    return {};
   }
 
   await prisma.usuario.update({
@@ -38,18 +38,10 @@ export async function trocarSenhaProvisoria(
     },
   });
 
-  try {
-    await signIn("credentials", {
-      email: usuario.email,
-      password: senha,
-      redirectTo: "/",
-    });
-  } catch (erro) {
-    if (erro instanceof AuthError) {
-      return { error: "Senha alterada. Entre novamente." };
-    }
-    throw erro;
-  }
-
+  await signOut({ redirectTo: "/login?senha=alterada" });
   return {};
+}
+
+export async function sairDaTrocaDeSenha() {
+  await signOut({ redirectTo: "/login" });
 }

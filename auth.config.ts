@@ -39,30 +39,15 @@ export const authConfig = {
 
       const logado = Boolean(auth?.usuario?.id);
       const login = pathname === "/login" || pathname.startsWith("/login/");
-      const trocarSenha =
-        pathname === "/trocar-senha" || pathname.startsWith("/trocar-senha/");
-      const provisoria = Boolean(auth?.usuario?.senha_provisoria);
 
       if (login) {
         if (logado) {
-          return Response.redirect(
-            new URL(provisoria ? "/trocar-senha" : "/", request.nextUrl),
-          );
+          return Response.redirect(new URL("/", request.nextUrl));
         }
         return true;
       }
 
       if (!logado) return false;
-
-      if (provisoria) {
-        if (trocarSenha) return true;
-        return Response.redirect(new URL("/trocar-senha", request.nextUrl));
-      }
-
-      if (trocarSenha) {
-        return Response.redirect(new URL("/", request.nextUrl));
-      }
-
       return true;
     },
   },

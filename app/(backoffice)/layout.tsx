@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { signOut } from "@/auth";
 import { obterCaixaAberto } from "@/lib/caixa";
 import { temAcessoMultiplo } from "@/lib/permissoes";
 import { obterUsuarioSessao } from "@/lib/sessao";
@@ -31,6 +32,9 @@ export default async function BackofficeLayout({
     obterUsuarioSessao(),
     obterCaixaAberto(),
   ]);
+  if (!usuario.ativo) {
+    await signOut({ redirectTo: "/login" });
+  }
   if (usuario.senha_provisoria) redirect("/trocar-senha");
   const acessos = await temAcessoMultiplo(usuario.id);
   return (

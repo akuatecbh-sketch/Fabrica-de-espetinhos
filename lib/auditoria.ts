@@ -31,3 +31,29 @@ export async function registrarAuditoria(params: RegistroAuditoria) {
     console.error("Falha ao registrar auditoria", erro);
   }
 }
+
+function motivoDoValor(valorNovo: unknown) {
+  if (valorNovo && typeof valorNovo === "object" && "motivo" in valorNovo) {
+    return String((valorNovo as { motivo: unknown }).motivo ?? "");
+  }
+  return "";
+}
+
+export function rotuloAcaoAuditoria(acao: string, valorNovo?: unknown) {
+  if (acao === "login.falha") {
+    const motivo = motivoDoValor(valorNovo);
+    if (motivo === "senha_incorreta") return "Falha de login: senha incorreta";
+    if (motivo === "inativo") return "Falha de login: usuário inativo";
+    if (motivo === "usuario_nao_encontrado") {
+      return "Falha de login: usuário não encontrado";
+    }
+    if (motivo === "erro_banco") return "Falha de login: serviço indisponível";
+    return "Falha de login";
+  }
+  if (acao === "permissao_perfil.alterar") return "Alteração de permissão do perfil";
+  if (acao === "permissao_usuario.alterar") {
+    return "Alteração de permissão do usuário";
+  }
+  if (acao === "produto.atualizar_preco") return "Atualização de preço do produto";
+  return acao;
+}

@@ -18,6 +18,7 @@ const PREFIXOS_MODULO: [string, string][] = [
   ["/financeiro", "financeiro"],
   ["/relatorios", "relatorios"],
   ["/saude", "saude"],
+  ["/auditoria", "auditoria"],
 ];
 
 export const CHAVE_POR_HREF: Record<string, string> = {
@@ -39,6 +40,7 @@ export const CHAVE_POR_HREF: Record<string, string> = {
   "/financeiro": "financeiro",
   "/relatorios": "relatorios",
   "/saude": "saude",
+  "/auditoria": "auditoria",
 };
 
 function rotaLivre(pathname: string) {
