@@ -32,17 +32,18 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type Props = {
-  searchParams: Promise<{ de?: string; ate?: string }>;
+  searchParams: Promise<{ de?: string; ate?: string; canceladas?: string }>;
 };
 
 export default async function VendasHojePage({ searchParams }: Props) {
   const logado = await exigirAcesso("vendas");
   const params = await searchParams;
   const periodo = periodoVendasDaUrl(params.de, params.ate);
+  const mostrarCanceladas = params.canceladas === "1";
   const soHoje = ehPeriodoHoje(periodo.de, periodo.ate);
   const [resumo, vendas] = await Promise.all([
     obterResumoVendasHoje(periodo),
-    obterVendasHoje(periodo),
+    obterVendasHoje(periodo, { incluirCanceladas: mostrarCanceladas }),
   ]);
 
   return (
@@ -57,11 +58,21 @@ export default async function VendasHojePage({ searchParams }: Props) {
       </div>
 
       <SeletorPeriodo
-        key={`${periodo.de}-${periodo.ate}`}
+        key={`${periodo.de}-${periodo.ate}-${mostrarCanceladas ? "1" : "0"}`}
         rota="/vendas/hoje"
         de={periodo.de}
         ate={periodo.ate}
-      />
+      >
+        <label className="flex items-center gap-2 text-sm text-zinc-700">
+          <input
+            type="checkbox"
+            name="canceladas"
+            value="1"
+            defaultChecked={mostrarCanceladas}
+          />
+          Mostrar canceladas
+        </label>
+      </SeletorPeriodo>
 
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded border border-zinc-200 bg-white px-4 py-3">
@@ -91,7 +102,13 @@ export default async function VendasHojePage({ searchParams }: Props) {
       ) : (
         <div className="flex flex-col gap-2">
           {vendas.map((venda) => {
-            const totais = totaisPagamento(venda.venda_pagamento);
+            const totais = totaisPagamento(
+              venda.status === "cancelada"
+                ? venda.venda_pagamento
+                : venda.venda_pagamento.filter(
+                    (pagamento) => pagamento.status === "confirmado",
+                  ),
+            );
             const formas = [
               ...new Set(
                 venda.venda_pagamento.map(
@@ -121,6 +138,11 @@ export default async function VendasHojePage({ searchParams }: Props) {
                         <span className="ml-2 font-normal text-zinc-500">
                           {horario}
                         </span>
+                        {venda.status === "cancelada" ? (
+                          <span className="ml-2 inline-flex rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                            Cancelada
+                          </span>
+                        ) : null}
                       </p>
                       <p className="flex flex-wrap items-center gap-2 text-sm text-zinc-600">
                         {venda.cliente?.nome ?? "Sem cliente"} ·{" "}

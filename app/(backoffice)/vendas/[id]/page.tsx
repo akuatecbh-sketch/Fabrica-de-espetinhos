@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { BadgeCategoriaPreco } from "../../badge-categoria-preco";
 import { CupomVendaBadge } from "../hoje/cupom-venda-badge";
-import { formatarDataHora, formatarPreco } from "@/lib/format";
-import { exigirAcesso } from "@/lib/permissoes";
+import { formatarDataHora, formatarPreco, formatarQuantidade } from "@/lib/format";
+import { exigirAcesso, temAcesso } from "@/lib/permissoes";
 import { rotuloCategoriaPreco } from "@/lib/cliente";
 import { normalizarCategoriaPreco } from "@/lib/preco-categoria";
 import {
+  obterDevolucoesEstoqueDaVenda,
   obterVendaDetalhe,
   rotuloStatusDocumentoFiscal,
   rotuloStatusVenda,
@@ -109,24 +110,76 @@ export default async function VendaDetalhePage({ params }: Props) {
   const venda = await obterVendaDetalhe(vendaId);
   if (!venda) notFound();
 
+  const [podeCancelar, devolucoes] = await Promise.all([
+    venda.status === "finalizada"
+      ? temAcesso(logado.id, "cancelar_venda")
+      : Promise.resolve(false),
+    venda.status === "cancelada"
+      ? obterDevolucoesEstoqueDaVenda(venda.id)
+      : Promise.resolve([]),
+  ]);
+
   const totais = totaisPagamento(
-    venda.venda_pagamento.filter((pagamento) => pagamento.status === "confirmado"),
+    venda.status === "cancelada"
+      ? venda.venda_pagamento
+      : venda.venda_pagamento.filter(
+          (pagamento) => pagamento.status === "confirmado",
+        ),
   );
   const dataHora = venda.finalizado_em ?? venda.criado_em;
+  const quemCancelou = venda.usuario_venda_cancelada_por_idTousuario;
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Link href="/vendas/hoje" className="text-sm text-zinc-600 hover:underline">
-          ← Voltar para vendas
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          Venda #{venda.numero}
-        </h1>
-        <p className="mt-1 text-sm text-texto-secundario">
-          {formatarDataHora(dataHora)}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <Link href="/vendas/hoje" className="text-sm text-zinc-600 hover:underline">
+            ← Voltar para vendas
+          </Link>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+            Venda #{venda.numero}
+          </h1>
+          <p className="mt-1 text-sm text-texto-secundario">
+            {formatarDataHora(dataHora)}
+          </p>
+        </div>
+        {podeCancelar ? (
+          <Link
+            href={`/vendas/${venda.id}/cancelar`}
+            className="min-h-11 rounded border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
+          >
+            Cancelar venda
+          </Link>
+        ) : null}
       </div>
+
+      {venda.status === "cancelada" ? (
+        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="font-medium">Venda cancelada</p>
+          <p className="mt-1">
+            Motivo: {venda.motivo_cancelamento?.trim() || "—"}
+          </p>
+          <p className="mt-1">
+            Por {quemCancelou ? nomeExibicao(quemCancelou, logado.perfil).nome : "—"}
+            {venda.cancelada_em
+              ? ` em ${formatarDataHora(venda.cancelada_em)}`
+              : ""}
+          </p>
+          {devolucoes.length > 0 ? (
+            <p className="mt-1">
+              Devolvido ao estoque:{" "}
+              {devolucoes
+                .map(
+                  (item) =>
+                    `${item.produto.nome} (${formatarQuantidade(item.quantidade)})`,
+                )
+                .join(", ")}
+            </p>
+          ) : (
+            <p className="mt-1">Nenhum item devolvido ao estoque.</p>
+          )}
+        </div>
+      ) : null}
 
       <section className="rounded-lg border border-zinc-200 bg-white px-4 py-4">
         <h2 className="text-sm font-medium text-zinc-900">Dados da venda</h2>

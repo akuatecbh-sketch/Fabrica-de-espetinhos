@@ -55,11 +55,16 @@ export async function obterResumoVendasHoje(
   };
 }
 
-export async function obterVendasHoje(periodo?: { de: string; ate: string }) {
+export async function obterVendasHoje(
+  periodo?: { de: string; ate: string },
+  opcoes?: { incluirCanceladas?: boolean },
+) {
   const { inicio, fim } = limitesConsulta(periodo);
   return prisma.venda.findMany({
     where: {
-      status: "finalizada",
+      status: opcoes?.incluirCanceladas
+        ? { in: ["finalizada", "cancelada"] }
+        : "finalizada",
       finalizado_em: { gte: inicio, lt: fim },
     },
     orderBy: { finalizado_em: "desc" },
@@ -80,7 +85,6 @@ export async function obterVendasHoje(periodo?: { de: string; ate: string }) {
         orderBy: { id: "asc" },
       },
       venda_pagamento: {
-        where: { status: "confirmado" },
         include: { forma_pagamento: { select: { nome: true } } },
         orderBy: { id: "asc" },
       },
@@ -133,6 +137,12 @@ export async function obterVendaDetalhe(id: number) {
     include: {
       cliente: { select: { nome: true } },
       usuario: { select: SELECT_USUARIO_RELACAO },
+      usuario_venda_cancelada_por_idTousuario: {
+        select: SELECT_USUARIO_RELACAO,
+      },
+      caixa: {
+        select: { id: true, status: true, data_fechamento: true },
+      },
       nfce: { select: SELECT_DOCUMENTO_FISCAL },
       nfe: { select: SELECT_DOCUMENTO_FISCAL },
       venda_item: {
@@ -142,9 +152,27 @@ export async function obterVendaDetalhe(id: number) {
         orderBy: { id: "asc" },
       },
       venda_pagamento: {
-        include: { forma_pagamento: { select: { nome: true } } },
+        include: {
+          forma_pagamento: { select: { nome: true, tipo: true } },
+        },
         orderBy: { id: "asc" },
       },
     },
   });
+}
+
+export async function obterDevolucoesEstoqueDaVenda(vendaId: number) {
+  return prisma.movimentacao_estoque.findMany({
+    where: {
+      origem_tipo: "venda",
+      origem_id: vendaId,
+      tipo: "devolucao_venda",
+    },
+    include: { produto: { select: { nome: true } } },
+    orderBy: { id: "asc" },
+  });
+}
+
+export function notaFiscalBloqueiaCancelamento(status?: string | null) {
+  return status === "autorizada" || status === "contingencia";
 }

@@ -39,7 +39,11 @@ function motivoDoValor(valorNovo: unknown) {
   return "";
 }
 
-export function rotuloAcaoAuditoria(acao: string, valorNovo?: unknown) {
+export function rotuloAcaoAuditoria(
+  acao: string,
+  valorNovo?: unknown,
+  entidadeId?: number | null,
+) {
   if (acao === "login.falha") {
     const motivo = motivoDoValor(valorNovo);
     if (motivo === "senha_incorreta") return "Falha de login: senha incorreta";
@@ -55,6 +59,17 @@ export function rotuloAcaoAuditoria(acao: string, valorNovo?: unknown) {
     return "Alteração de permissão do usuário";
   }
   if (acao === "produto.atualizar_preco") return "Atualização de preço do produto";
-  if (acao === "venda.cancelar") return "Cancelamento de venda finalizada";
+  if (acao === "venda.cancelar") {
+    const motivo = motivoDoValor(valorNovo);
+    let numero: unknown;
+    if (valorNovo && typeof valorNovo === "object" && "numero" in valorNovo) {
+      numero = (valorNovo as { numero: unknown }).numero;
+    }
+    const n = Number(numero ?? entidadeId ?? 0);
+    const rotulo = Number.isInteger(n) && n > 0 ? String(n) : "?";
+    return motivo
+      ? `Venda #${rotulo} cancelada: ${motivo}`
+      : `Venda #${rotulo} cancelada`;
+  }
   return acao;
 }

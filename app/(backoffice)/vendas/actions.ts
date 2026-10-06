@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { obterCaixaAberto } from "@/lib/caixa";
 import {
   cancelarVendaFinalizada,
@@ -71,4 +72,42 @@ export async function cancelarVendaFinalizadaAction(params: {
     }
     throw erro;
   }
+}
+
+function quantidadeDoFormulario(formData: FormData, produtoId: number) {
+  const bruto = String(formData.get(`qtd_${produtoId}`) ?? "")
+    .trim()
+    .replace(",", ".");
+  return Number(bruto);
+}
+
+export async function cancelarVendaFinalizadaFormAction(
+  _estado: CancelarVendaFinalizadaState,
+  formData: FormData,
+): Promise<CancelarVendaFinalizadaState> {
+  const vendaId = Number(formData.get("vendaId"));
+  const motivo = String(formData.get("motivo") ?? "");
+  const devolverDinheiroGaveta = formData.get("devolver_dinheiro") === "1";
+  const marcados = new Set(
+    formData.getAll("devolver").map((valor) => Number(valor)),
+  );
+  const devolucoes: DevolucaoEstoque[] = [];
+  for (const produtoId of marcados) {
+    if (!Number.isInteger(produtoId) || produtoId <= 0) {
+      return { error: "Produto da devolução inválido." };
+    }
+    devolucoes.push({
+      produto_id: produtoId,
+      quantidade: quantidadeDoFormulario(formData, produtoId),
+    });
+  }
+
+  const resultado = await cancelarVendaFinalizadaAction({
+    vendaId,
+    motivo,
+    devolucoes,
+    devolverDinheiroGaveta,
+  });
+  if (resultado.error) return resultado;
+  redirect(`/vendas/${vendaId}`);
 }

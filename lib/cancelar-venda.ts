@@ -29,6 +29,7 @@ export type ParamsCancelarVenda = {
 
 export type ResultadoCancelarVenda = {
   vendaId: number;
+  numero: number;
   total: number;
   motivo: string;
   devolucoes: DevolucaoEstoque[];
@@ -315,6 +316,7 @@ export async function cancelarVendaNaTransacao(
 
   return {
     vendaId: venda.id,
+    numero: venda.numero,
     total: Number(venda.total),
     motivo,
     devolucoes,
@@ -336,6 +338,7 @@ export async function cancelarVendaFinalizada(params: ParamsCancelarVenda) {
     valorAnterior: { status: "finalizada", total: resultado.total },
     valorNovo: {
       status: "cancelada",
+      numero: resultado.numero,
       motivo: resultado.motivo,
       devolucoes: resultado.devolucoes,
       estorno_dinheiro: resultado.estornoDinheiro,

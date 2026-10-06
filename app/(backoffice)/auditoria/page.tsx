@@ -52,7 +52,11 @@ export default async function AuditoriaPage() {
                       : "—"}
                   </td>
                   <td className="px-3 py-2">
-                    {rotuloAcaoAuditoria(registro.acao, registro.valor_novo)}
+                    {rotuloAcaoAuditoria(
+                      registro.acao,
+                      registro.valor_novo,
+                      registro.entidade_id,
+                    )}
                   </td>
                 </tr>
               ))}
