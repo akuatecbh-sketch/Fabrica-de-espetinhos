@@ -28,6 +28,10 @@ import {
   type CategoriaPreco,
 } from "@/lib/cliente";
 import {
+  consultarClientesPdv,
+  type ClientePdvLista,
+} from "@/lib/cliente-busca-pdv";
+import {
   normalizarCategoriaPreco,
   resolverPrecoCategoria,
 } from "@/lib/preco-categoria";
@@ -264,6 +268,16 @@ export async function buscarClientesPdv(termo: string): Promise<ClienteBusca[]> 
     cpf: cliente.cpf,
     cnpj: cliente.cnpj,
   }));
+}
+
+export type { ClientePdvLista };
+
+export async function listarClientesPdv(
+  termo: string,
+  offset = 0,
+): Promise<{ itens: ClientePdvLista[]; temMais: boolean }> {
+  await exigirModulo("pdv");
+  return consultarClientesPdv(termo, offset);
 }
 
 export async function vincularClienteVenda(
