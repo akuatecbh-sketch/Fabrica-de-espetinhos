@@ -98,8 +98,8 @@ async function estoqueDivergenteDoHistorico(): Promise<ItemResultado> {
       p.estoque_atual,
       COALESCE(SUM(
         CASE
-          WHEN m.tipo IN ('entrada_compra', 'ajuste_positivo', 'producao_geracao', 'devolucao_venda') THEN m.quantidade
-          WHEN m.tipo IN ('saida_venda', 'ajuste_negativo', 'producao_consumo', 'perda') THEN -m.quantidade
+          WHEN m.tipo IN ('entrada_compra', 'ajuste_positivo', 'producao_geracao', 'devolucao_venda', 'producao_entrada') THEN m.quantidade
+          WHEN m.tipo IN ('saida_venda', 'ajuste_negativo', 'producao_consumo', 'perda', 'producao_saida_insumo') THEN -m.quantidade
           ELSE 0
         END
       ), 0) AS saldo_historico,

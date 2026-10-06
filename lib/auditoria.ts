@@ -59,6 +59,19 @@ export function rotuloAcaoAuditoria(
     return "Alteração de permissão do usuário";
   }
   if (acao === "produto.atualizar_preco") return "Atualização de preço do produto";
+  if (acao === "producao.criar") {
+    const n = Number(entidadeId ?? 0);
+    const rotulo = Number.isInteger(n) && n > 0 ? String(n) : "?";
+    return `Produção #${rotulo} registrada`;
+  }
+  if (acao === "producao.cancelar") {
+    const motivo = motivoDoValor(valorNovo);
+    const n = Number(entidadeId ?? 0);
+    const rotulo = Number.isInteger(n) && n > 0 ? String(n) : "?";
+    return motivo
+      ? `Produção #${rotulo} cancelada: ${motivo}`
+      : `Produção #${rotulo} cancelada`;
+  }
   if (acao === "venda.cancelar") {
     const motivo = motivoDoValor(valorNovo);
     let numero: unknown;
