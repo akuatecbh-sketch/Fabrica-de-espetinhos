@@ -1,24 +1,36 @@
 import { prisma } from "@/lib/prisma";
 import { temAcessoMultiplo } from "@/lib/permissoes";
+import {
+  CATALOGO_AJUDA,
+  rotasDoItemCatalogo,
+} from "@/lib/catalogo-ajuda";
+import {
+  filtrarItensAjuda,
+  type ItemBuscaAjuda,
+} from "@/lib/catalogo-busca";
 
 export type FaqResultado = {
-  id: number;
+  id: string;
   titulo: string;
   resposta: string;
   rota_destino: string;
 };
 
-const SELECT_FAQ = {
-  id: true,
-  titulo: true,
-  palavras_chave: true,
-  resposta: true,
-  rota_destino: true,
-  modulo_chave: true,
-  ordem: true,
-} as const;
+function rotaBase(rota: string) {
+  return rota.split("?")[0] ?? rota;
+}
 
-type FaqLinha = {
+function rotasDoCatalogo() {
+  const rotas = new Set<string>();
+  for (const item of CATALOGO_AJUDA) {
+    for (const rota of rotasDoItemCatalogo(item)) {
+      rotas.add(rotaBase(rota));
+    }
+  }
+  return rotas;
+}
+
+function extraParaBusca(extra: {
   id: number;
   titulo: string;
   palavras_chave: string | null;
@@ -26,29 +38,29 @@ type FaqLinha = {
   rota_destino: string;
   modulo_chave: string | null;
   ordem: number;
-};
-
-function visivel(
-  item: { modulo_chave: string | null },
-  acessos: Record<string, boolean>,
-) {
-  if (!item.modulo_chave) return true;
-  return Boolean(acessos[item.modulo_chave]);
+}): ItemBuscaAjuda {
+  const palavras = (extra.palavras_chave ?? "")
+    .split(",")
+    .map((parte) => parte.trim())
+    .filter(Boolean);
+  return {
+    id: `faq-${extra.id}`,
+    titulo: extra.titulo,
+    descricao: extra.resposta,
+    rota: extra.rota_destino,
+    modulo: extra.modulo_chave,
+    palavrasChave: palavras,
+    sinonimos: [],
+    ordem: 10_000 + extra.ordem,
+  };
 }
 
-function ranque(item: FaqLinha, termo: string) {
-  const t = termo.toLowerCase();
-  if (item.titulo.toLowerCase().includes(t)) return 0;
-  if ((item.palavras_chave ?? "").toLowerCase().includes(t)) return 1;
-  return 2;
-}
-
-function paraResultado(item: FaqLinha): FaqResultado {
+function paraResultado(item: ItemBuscaAjuda): FaqResultado {
   return {
     id: item.id,
     titulo: item.titulo,
-    resposta: item.resposta,
-    rota_destino: item.rota_destino,
+    resposta: item.descricao,
+    rota_destino: item.rota,
   };
 }
 
@@ -56,38 +68,36 @@ export async function buscarFaq(
   usuarioId: number,
   consulta: string,
 ): Promise<FaqResultado[]> {
-  const termo = consulta.trim();
-  const acessos = await temAcessoMultiplo(usuarioId);
-
-  if (!termo) {
-    const sugestoes = await prisma.faq_item.findMany({
+  const [acessos, usuario, extras] = await Promise.all([
+    temAcessoMultiplo(usuarioId),
+    prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { perfil: true },
+    }),
+    prisma.faq_item.findMany({
       where: { ativo: true },
-      orderBy: [{ ordem: "asc" }, { id: "asc" }],
-      select: SELECT_FAQ,
-    });
-    return sugestoes.filter((item) => visivel(item, acessos)).slice(0, 5).map(paraResultado);
-  }
+      select: {
+        id: true,
+        titulo: true,
+        palavras_chave: true,
+        resposta: true,
+        rota_destino: true,
+        modulo_chave: true,
+        ordem: true,
+      },
+    }),
+  ]);
 
-  const itens = await prisma.faq_item.findMany({
-    where: {
-      ativo: true,
-      OR: [
-        { titulo: { contains: termo, mode: "insensitive" } },
-        { palavras_chave: { contains: termo, mode: "insensitive" } },
-        { resposta: { contains: termo, mode: "insensitive" } },
-      ],
-    },
-    select: SELECT_FAQ,
-  });
+  const perfil = usuario?.perfil ?? "";
+  const cobertas = rotasDoCatalogo();
+  const extrasBusca = extras
+    .filter((extra) => !cobertas.has(rotaBase(extra.rota_destino)))
+    .map(extraParaBusca);
 
-  return itens
-    .filter((item) => visivel(item, acessos))
-    .sort((a, b) => {
-      const diff = ranque(a, termo) - ranque(b, termo);
-      if (diff !== 0) return diff;
-      if (a.ordem !== b.ordem) return a.ordem - b.ordem;
-      return a.id - b.id;
-    })
-    .slice(0, 20)
-    .map(paraResultado);
+  return filtrarItensAjuda(
+    [...CATALOGO_AJUDA, ...extrasBusca],
+    consulta,
+    acessos,
+    perfil,
+  ).map(paraResultado);
 }
