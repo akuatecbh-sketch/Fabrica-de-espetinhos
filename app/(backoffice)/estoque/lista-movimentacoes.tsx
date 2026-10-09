@@ -6,7 +6,7 @@ import {
   rotuloTipoMovimentacao,
 } from "@/lib/estoque";
 import { CardRegistro } from "../card-registro";
-import { Paginacao } from "./paginacao";
+import { Paginacao } from "../paginacao";
 import { nomeExibicao } from "@/lib/visibilidade";
 
 type Movimento = {

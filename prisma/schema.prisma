@@ -387,7 +387,8 @@ model usuario {
   movimentacao_caixa                                           movimentacao_caixa[]
   movimentacao_estoque                                         movimentacao_estoque[]
   nota_fiscal_entrada                                          nota_fiscal_entrada[]
-  pedido                                                       pedido[]
+  pedido                                                       pedido[]               @relation("pedido_usuario_idTousuario")
+  pedido_pedido_registrado_por_idTousuario                     pedido[]               @relation("pedido_registrado_por_idTousuario")
   permissao_usuario_permissao_usuario_definido_por_idTousuario permissao_usuario[]    @relation("permissao_usuario_definido_por_idTousuario")
   permissao_usuario                                            permissao_usuario[]
   producao_producao_cancelada_por_idTousuario                  producao[]             @relation("producao_cancelada_por_idTousuario")
@@ -710,13 +711,17 @@ model pedido {
   criado_em     DateTime      @default(now()) @db.Timestamp(6)
   atualizado_em DateTime      @default(now()) @db.Timestamp(6)
   enviado_em    DateTime?     @db.Timestamp(6)
-  cancelado_em  DateTime?     @db.Timestamp(6)
-  venda_id      Int?          @unique
-  tipo_preco    String        @default("varejo") @db.VarChar(20)
-  cliente       cliente?      @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  usuario       usuario       @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  venda         venda?        @relation(fields: [venda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  pedido_item   pedido_item[]
+  cancelado_em       DateTime?     @db.Timestamp(6)
+  venda_id           Int?          @unique
+  tipo_preco         String        @default("varejo") @db.VarChar(20)
+  entregue_em        DateTime?     @db.Timestamp(6)
+  recebido_por_nome  String?       @db.VarChar(150)
+  registrado_por_id  Int?
+  cliente            cliente?      @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario            usuario       @relation("pedido_usuario_idTousuario", fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  registrado_por     usuario?      @relation("pedido_registrado_por_idTousuario", fields: [registrado_por_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  venda              venda?        @relation(fields: [venda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pedido_item        pedido_item[]
 
   @@index([cliente_id], map: "idx_pedido_cliente")
   @@index([criado_em(sort: Desc)], map: "idx_pedido_criado_em")

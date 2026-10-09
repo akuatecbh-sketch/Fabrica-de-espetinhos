@@ -1,25 +1,25 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  cancelarPedido,
-  converterPedidoEmVenda,
-  marcarPedidoEnviado,
-} from "./actions";
+import { motivoCancelarIndisponivel } from "@/lib/pedido";
+import { converterPedidoEmVenda, marcarPedidoEnviado } from "./actions";
+import { BotaoCancelarPedido } from "./cancelar-pedido-dialog";
 
 export function AcoesPedido({
   pedidoId,
+  numero,
   status,
   temItens,
+  podeCancelarPedido,
 }: {
   pedidoId: number;
+  numero: number;
   status: string;
   temItens: boolean;
+  podeCancelarPedido: boolean;
 }) {
   const [erro, setErro] = useState<string | null>(null);
-  const [acao, setAcao] = useState<"enviar" | "cancelar" | "vender" | null>(
-    null,
-  );
+  const [acao, setAcao] = useState<"enviar" | "vender" | null>(null);
   const [pendente, startTransition] = useTransition();
 
   function finalizar() {
@@ -27,17 +27,6 @@ export function AcoesPedido({
     setAcao("enviar");
     startTransition(async () => {
       const resultado = await marcarPedidoEnviado(pedidoId);
-      if (resultado.error) setErro(resultado.error);
-      setAcao(null);
-    });
-  }
-
-  function cancelar() {
-    if (!confirm("Cancelar este pedido?")) return;
-    setErro(null);
-    setAcao("cancelar");
-    startTransition(async () => {
-      const resultado = await cancelarPedido(pedidoId);
       if (resultado.error) setErro(resultado.error);
       setAcao(null);
     });
@@ -53,10 +42,14 @@ export function AcoesPedido({
     });
   }
 
-  const emEdicao = status === "aberto" || status === "enviado" || status === "aprovado";
+  const emEdicao =
+    status === "aberto" || status === "enviado" || status === "aprovado";
   const podeFinalizarOuVender = emEdicao && temItens;
-  const podeCancelar = emEdicao;
-  if (!podeFinalizarOuVender && !podeCancelar) return null;
+  const motivoCancelar = motivoCancelarIndisponivel(
+    status,
+    podeCancelarPedido,
+  );
+  if (!podeFinalizarOuVender && !emEdicao) return null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -82,17 +75,13 @@ export function AcoesPedido({
           </button>
         </div>
       ) : null}
-      {podeCancelar ? (
-        <button
-          type="button"
-          disabled={pendente}
-          onClick={cancelar}
-          className="min-h-11 w-fit rounded border border-red-200 px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60 lg:min-h-0"
-        >
-          {acao === "cancelar" && pendente
-            ? "Cancelando..."
-            : "Cancelar pedido"}
-        </button>
+      {emEdicao ? (
+        <BotaoCancelarPedido
+          pedidoId={pedidoId}
+          numero={numero}
+          disabled={Boolean(motivoCancelar)}
+          title={motivoCancelar ?? undefined}
+        />
       ) : null}
       {erro ? <p className="text-sm text-vermelho-erro">{erro}</p> : null}
     </div>

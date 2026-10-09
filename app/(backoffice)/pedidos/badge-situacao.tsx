@@ -33,6 +33,18 @@ export function BadgeSituacaoPedido({
     setErro(null);
     setAberto(false);
     if (proximo === status) return;
+    const jaVisto = status === "enviado" || status === "aprovado";
+    if (
+      jaVisto &&
+      proximo !== status &&
+      !confirm(
+        proximo === "aprovado"
+          ? "Marcar como aprovado sem o cliente ter confirmado no link?"
+          : "O cliente pode já ter visto este pedido. Continuar a mudança de situação?",
+      )
+    ) {
+      return;
+    }
     startTransition(async () => {
       const resultado = await alterarSituacaoPedido(pedidoId, proximo);
       if (resultado.error) setErro(resultado.error);

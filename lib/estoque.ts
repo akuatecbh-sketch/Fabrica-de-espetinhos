@@ -65,10 +65,7 @@ export function rotuloTipoMovimentacao(tipo: string) {
   return mapa[tipo] ?? tipo;
 }
 
-export function paginaDaUrl(valor?: string) {
-  const n = Number(valor);
-  return Number.isInteger(n) && n > 0 ? n : 1;
-}
+export { paginaDaUrl } from "@/lib/paginacao";
 
 export function limitesDoDiaIso(iso: string) {
   const [ano, mes, dia] = iso.split("-").map(Number);

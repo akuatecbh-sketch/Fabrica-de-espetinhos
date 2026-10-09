@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { nomeExibicaoCliente } from "@/lib/cliente";
+import {
+  documentoPedidoImpressao,
+  enderecoPedidoImpressao,
+  telefonePedidoImpressao,
+} from "@/lib/pedido-impressao";
 import { obterLogoBlob } from "@/lib/empresa-logo";
 import { formatarPreco } from "@/lib/format";
 import { linhaItemVenda, rotuloQuantidadeItem } from "@/lib/venda-item";
@@ -39,6 +44,11 @@ export default async function PedidoPublicoPage({ params }: Props) {
                 tipo_pessoa: true,
                 razao_social: true,
                 nome_fantasia: true,
+                telefone: true,
+                contato_telefone: true,
+                endereco: true,
+                cpf: true,
+                cnpj: true,
               },
             },
             pedido_item: {
@@ -69,6 +79,9 @@ export default async function PedidoPublicoPage({ params }: Props) {
   const nomeCliente = pedido.cliente
     ? nomeExibicaoCliente(pedido.cliente)
     : "Cliente não informado";
+  const telefoneCliente = telefonePedidoImpressao(pedido.cliente);
+  const enderecoCliente = enderecoPedidoImpressao(pedido.cliente?.endereco);
+  const documentoCliente = documentoPedidoImpressao(pedido.cliente);
   const categoriaImpressa = textoCategoriaPrecoImpressao(
     pedido.tipo_preco,
     pedido.pedido_item,
@@ -103,6 +116,17 @@ export default async function PedidoPublicoPage({ params }: Props) {
           </h2>
           <p className="mt-1 text-base font-medium text-texto-primario">
             {nomeCliente}
+          </p>
+          {documentoCliente ? (
+            <p className="mt-1 font-data text-sm text-texto-secundario">
+              {documentoCliente.rotulo} {documentoCliente.valor}
+            </p>
+          ) : null}
+          <p className="mt-1 text-sm text-texto-secundario">
+            Telefone: {telefoneCliente}
+          </p>
+          <p className="mt-1 text-sm text-texto-secundario">
+            Endereço: {enderecoCliente}
           </p>
           {categoriaImpressa ? (
             <p className="mt-1 text-sm text-texto-secundario">

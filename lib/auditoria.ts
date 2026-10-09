@@ -74,6 +74,23 @@ export function rotuloAcaoAuditoria(
       ? `Produção #${rotulo} cancelada: ${motivo}`
       : `Produção #${rotulo} cancelada`;
   }
+  if (acao === "pedido.cancelar") {
+    const motivo = motivoDoValor(valorNovo);
+    let numero: unknown;
+    if (valorNovo && typeof valorNovo === "object" && "numero" in valorNovo) {
+      numero = (valorNovo as { numero: unknown }).numero;
+    }
+    const n = Number(numero ?? entidadeId ?? 0);
+    const rotulo = Number.isInteger(n) && n > 0 ? String(n) : "?";
+    return motivo
+      ? `Pedido #${rotulo} cancelado: ${motivo}`
+      : `Pedido #${rotulo} cancelado`;
+  }
+  if (acao === "pedido.confirmar_entrega") {
+    const n = Number(entidadeId ?? 0);
+    const rotulo = Number.isInteger(n) && n > 0 ? String(n) : "?";
+    return `Pedido #${rotulo}: entrega confirmada`;
+  }
   if (acao === "venda.cancelar") {
     const motivo = motivoDoValor(valorNovo);
     let numero: unknown;

@@ -2,9 +2,11 @@ import Link from "next/link";
 import {
   classesStatusPedido,
   pedidoEditavel,
+  precisaAvisarEdicaoAposEnvio,
   rotuloStatusPedido,
 } from "@/lib/pedido";
 import { AcoesPedido } from "./acoes-pedido";
+import { ConfirmarEntregaPedido } from "./confirmar-entrega";
 import { BadgeSituacaoPedido } from "./badge-situacao";
 import { ClientePedido } from "./cliente-pedido";
 import { CopiarLinkRevisao } from "./copiar-link-revisao";
@@ -24,14 +26,18 @@ export type PedidoTelaDados = {
   telefoneWhatsApp: string | null;
   nomeWhatsApp: string | null;
   itens: ItemPedidoExibicao[];
+  entregueEm: Date | null;
+  recebidoPorNome: string | null;
 };
 
 export function PedidoTela({
   pedido,
   forcarLeitura = false,
+  podeCancelarPedido = false,
 }: {
   pedido: PedidoTelaDados | null;
   forcarLeitura?: boolean;
+  podeCancelarPedido?: boolean;
 }) {
   const editavelPorStatus = pedido == null || pedidoEditavel(pedido.status);
   const editavel = editavelPorStatus && !forcarLeitura;
@@ -47,6 +53,14 @@ export function PedidoTela({
           <h1 className="text-2xl font-semibold tracking-tight">
             {pedido ? `Pedido #${pedido.numero}` : "Novo pedido"}
           </h1>
+          {pedido ? (
+            <Link
+              href={`/pedidos/${pedido.id}/imprimir`}
+              className="text-sm text-texto-primario underline-offset-2 hover:underline"
+            >
+              Imprimir
+            </Link>
+          ) : null}
           {pedido ? (
             <BadgeSituacaoPedido pedidoId={pedido.id} status={pedido.status} />
           ) : (
@@ -64,6 +78,13 @@ export function PedidoTela({
             >
               Editar este pedido
             </Link>
+          </p>
+        ) : null}
+        {editavel && pedido && precisaAvisarEdicaoAposEnvio(pedido.status) ? (
+          <p className="mt-2 rounded border border-ambar/40 bg-ambar/10 px-3 py-2 text-sm text-texto-primario">
+            Este pedido já foi enviado ao cliente. Qualquer alteração invalida a
+            aprovação anterior. O link do WhatsApp continua o mesmo e o cliente
+            precisará aprovar de novo.
           </p>
         ) : null}
         {!editavelPorStatus ? (
@@ -119,11 +140,22 @@ export function PedidoTela({
           {editavel ? (
             <AcoesPedido
               pedidoId={pedido.id}
+              numero={pedido.numero}
               status={pedido.status}
               temItens={pedido.itens.length > 0}
+              podeCancelarPedido={podeCancelarPedido}
             />
           ) : null}
         </div>
+      ) : null}
+
+      {pedido ? (
+        <ConfirmarEntregaPedido
+          pedidoId={pedido.id}
+          status={pedido.status}
+          entregueEm={pedido.entregueEm}
+          recebidoPorNome={pedido.recebidoPorNome}
+        />
       ) : null}
     </div>
   );

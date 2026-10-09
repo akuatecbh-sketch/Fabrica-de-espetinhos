@@ -7,6 +7,7 @@ import { filtroBuscaProduto } from "@/lib/busca-produto";
 import { TIPOS_VENDA } from "@/lib/produto-tipo";
 import { arredondarDinheiro, arredondarQuantidade } from "@/lib/dinheiro";
 import { exigirModulo } from "@/lib/sessao";
+import { temAcesso } from "@/lib/permissoes";
 import { obterCaixaAberto } from "@/lib/caixa";
 import { soDigitos, validarCpf } from "@/lib/documento";
 import { nomeExibicaoCliente, CATEGORIA_PRECO_PADRAO, type CategoriaPreco } from "@/lib/cliente";
@@ -14,8 +15,14 @@ import {
   normalizarCategoriaPreco,
   resolverPrecoCategoria,
 } from "@/lib/preco-categoria";
-import { ehSituacaoManual, pedidoEditavel } from "@/lib/pedido";
+import {
+  ehSituacaoManual,
+  motivoConfirmarEntregaIndisponivel,
+  pedidoEditavel,
+  statusAposEditarPedido,
+} from "@/lib/pedido";
 import { cortarObservacaoCupom } from "@/lib/pix";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 export type PedidoFormState = {
   error?: string;
@@ -46,6 +53,7 @@ function revalidarPedido(pedidoId: number) {
   revalidatePath("/");
   revalidatePath("/pedidos");
   revalidatePath(`/pedidos/${pedidoId}`);
+  revalidatePath(`/pedidos/${pedidoId}/imprimir`);
   revalidatePath("/pedidos/novo");
 }
 
@@ -81,6 +89,14 @@ function concluir(pedidoId: number, criado: boolean) {
   if (criado) redirect(`/pedidos/${pedidoId}`);
 }
 
+function dadosAposEditarPedido(status: string) {
+  const proximo = statusAposEditarPedido(status);
+  return {
+    atualizado_em: new Date(),
+    ...(proximo !== status ? { status: proximo } : {}),
+  };
+}
+
 async function recalcularTotais(pedidoId: number) {
   const itens = await prisma.pedido_item.findMany({
     where: { pedido_id: pedidoId },
@@ -88,7 +104,7 @@ async function recalcularTotais(pedidoId: number) {
   });
   const pedido = await prisma.pedido.findUniqueOrThrow({
     where: { id: pedidoId },
-    select: { desconto: true },
+    select: { desconto: true, status: true },
   });
 
   const subtotal = arredondarDinheiro(
@@ -101,7 +117,7 @@ async function recalcularTotais(pedidoId: number) {
     data: {
       subtotal,
       total,
-      atualizado_em: new Date(),
+      ...dadosAposEditarPedido(pedido.status),
     },
   });
 }
@@ -209,7 +225,7 @@ export async function vincularClientePedido(
     data: {
       cliente_id: cliente.id,
       tipo_preco: normalizarCategoriaPreco(cliente.categoria_preco),
-      atualizado_em: new Date(),
+      ...dadosAposEditarPedido(contexto.pedido.status),
     },
   });
   concluir(contexto.pedido.id, contexto.criado);
@@ -228,7 +244,7 @@ export async function removerClientePedido(
     data: {
       cliente_id: null,
       tipo_preco: CATEGORIA_PRECO_PADRAO,
-      atualizado_em: new Date(),
+      ...dadosAposEditarPedido(contexto.pedido.status),
     },
   });
   revalidarPedido(contexto.pedido.id);
@@ -246,7 +262,10 @@ export async function definirTipoPrecoPedido(
 
   await prisma.pedido.update({
     where: { id: contexto.pedido.id },
-    data: { tipo_preco: categoria, atualizado_em: new Date() },
+    data: {
+      tipo_preco: categoria,
+      ...dadosAposEditarPedido(contexto.pedido.status),
+    },
   });
   concluir(contexto.pedido.id, contexto.criado);
   return {};
@@ -301,7 +320,7 @@ export async function cadastrarClienteNoPedido(
       data: {
         cliente_id: cliente.id,
         tipo_preco: CATEGORIA_PRECO_PADRAO,
-        atualizado_em: new Date(),
+        ...dadosAposEditarPedido(contexto.pedido.status),
       },
     });
   } catch (erro) {
@@ -334,7 +353,7 @@ export async function salvarObservacaoPedido(
     where: { id: contexto.pedido.id },
     data: {
       observacao: observacaoBruta || null,
-      atualizado_em: new Date(),
+      ...dadosAposEditarPedido(contexto.pedido.status),
     },
   });
   concluir(contexto.pedido.id, contexto.criado);
@@ -576,22 +595,52 @@ export async function marcarPedidoEnviado(
 
 export async function cancelarPedido(
   pedidoId: number,
+  motivoBruto: string,
 ): Promise<PedidoFormState> {
-  await exigirModulo("pedidos");
+  const usuario = await exigirModulo("pedidos");
+  if (!(await temAcesso(usuario.id, "cancelar_pedido"))) {
+    return { error: "Sem permissão para cancelar pedido." };
+  }
   if (!Number.isInteger(pedidoId)) return { error: "Pedido inválido." };
+
+  const motivo = String(motivoBruto ?? "").trim();
+  if (motivo.length < 5) {
+    return { error: "Informe o motivo do cancelamento (mínimo 5 caracteres)." };
+  }
 
   const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
   if (!pedido) return { error: "Pedido não encontrado." };
+  if (pedido.status === "convertido") {
+    return {
+      error: "Este pedido já foi convertido em venda e não pode ser cancelado.",
+    };
+  }
+  if (pedido.status === "cancelado") {
+    return { error: "Este pedido já está cancelado." };
+  }
   if (!pedidoEditavel(pedido.status)) {
     return { error: "Este pedido não pode ser cancelado." };
   }
 
+  const agora = new Date();
   await prisma.pedido.update({
     where: { id: pedido.id },
     data: {
       status: "cancelado",
-      cancelado_em: new Date(),
-      atualizado_em: new Date(),
+      cancelado_em: agora,
+      atualizado_em: agora,
+    },
+  });
+  await registrarAuditoria({
+    usuarioId: usuario.id,
+    acao: "pedido.cancelar",
+    entidadeTipo: "pedido",
+    entidadeId: pedido.id,
+    valorAnterior: { status: pedido.status },
+    valorNovo: {
+      status: "cancelado",
+      motivo,
+      numero: pedido.numero,
     },
   });
   revalidarPedido(pedido.id);
@@ -620,6 +669,67 @@ export async function alterarSituacaoPedido(
     data: {
       status,
       atualizado_em: new Date(),
+    },
+  });
+  revalidarPedido(pedido.id);
+  return {};
+}
+
+export async function confirmarEntregaPedido(
+  pedidoId: number,
+  recebidoPorNomeBruto: string,
+): Promise<PedidoFormState> {
+  const usuario = await exigirModulo("pedidos");
+  if (!Number.isInteger(pedidoId)) return { error: "Pedido inválido." };
+
+  const recebidoPorNome = String(recebidoPorNomeBruto ?? "").trim();
+  if (recebidoPorNome.length < 2) {
+    return { error: "Informe o nome de quem recebeu o pedido." };
+  }
+  if (recebidoPorNome.length > 150) {
+    return { error: "O nome de quem recebeu deve ter no máximo 150 caracteres." };
+  }
+
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: pedidoId },
+    select: {
+      id: true,
+      numero: true,
+      status: true,
+      entregue_em: true,
+    },
+  });
+  if (!pedido) return { error: "Pedido não encontrado." };
+
+  const motivo = motivoConfirmarEntregaIndisponivel(
+    pedido.status,
+    Boolean(pedido.entregue_em),
+  );
+  if (motivo) return { error: motivo };
+
+  const agora = new Date();
+  const marcado = await prisma.pedido.updateMany({
+    where: { id: pedido.id, entregue_em: null },
+    data: {
+      entregue_em: agora,
+      recebido_por_nome: recebidoPorNome,
+      registrado_por_id: usuario.id,
+      atualizado_em: agora,
+    },
+  });
+  if (marcado.count !== 1) {
+    return { error: "Entrega já registrada." };
+  }
+
+  await registrarAuditoria({
+    usuarioId: usuario.id,
+    acao: "pedido.confirmar_entrega",
+    entidadeTipo: "pedido",
+    entidadeId: pedido.id,
+    valorNovo: {
+      numero: pedido.numero,
+      recebido_por_nome: recebidoPorNome,
+      entregue_em: agora.toISOString(),
     },
   });
   revalidarPedido(pedido.id);

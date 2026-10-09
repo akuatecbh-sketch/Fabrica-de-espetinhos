@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { formatarDataHora, formatarPreco } from "@/lib/format";
-import { pedidoEditavel } from "@/lib/pedido";
 import { CardRegistro } from "../card-registro";
+import { Paginacao } from "../paginacao";
+import { AcoesListaPedido } from "./acoes-lista-pedido";
 import { BadgeSituacaoPedido } from "./badge-situacao";
 
 type PedidoLista = {
@@ -13,37 +13,20 @@ type PedidoLista = {
   clienteNome: string | null;
 };
 
-const classeLink =
-  "inline-flex min-h-11 items-center text-texto-primario underline-offset-2 hover:underline md:min-h-0";
-
-function AcoesListaPedido({ pedido }: { pedido: PedidoLista }) {
-  const hrefVisualizar = `/pedidos/${pedido.id}?modo=visualizar`;
-  if (!pedidoEditavel(pedido.status)) {
-    return (
-      <Link href={hrefVisualizar} className={classeLink}>
-        Visualizar
-      </Link>
-    );
-  }
-
-  return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-      <Link href={`/pedidos/${pedido.id}`} className={classeLink}>
-        Editar
-      </Link>
-      <Link href={hrefVisualizar} className={classeLink}>
-        Visualizar
-      </Link>
-    </div>
-  );
-}
-
 export function ListaPedidos({
   pedidos,
   vazio,
+  podeCancelarPedido,
+  pagina,
+  totalPaginas,
+  hrefPagina,
 }: {
   pedidos: PedidoLista[];
   vazio: string;
+  podeCancelarPedido: boolean;
+  pagina: number;
+  totalPaginas: number;
+  hrefPagina: (pagina: number) => string;
 }) {
   if (pedidos.length === 0) {
     return <p className="text-sm text-texto-secundario">{vazio}</p>;
@@ -54,7 +37,14 @@ export function ListaPedidos({
       <ul className="flex flex-col gap-3 md:hidden">
         {pedidos.map((pedido) => (
           <li key={pedido.id}>
-            <CardRegistro acoes={<AcoesListaPedido pedido={pedido} />}>
+            <CardRegistro
+              acoes={
+                <AcoesListaPedido
+                  pedido={pedido}
+                  podeCancelarPedido={podeCancelarPedido}
+                />
+              }
+            >
               <p className="font-data font-medium text-texto-primario">
                 Pedido #{pedido.numero}
               </p>
@@ -87,7 +77,7 @@ export function ListaPedidos({
               <th className="px-3 py-2 font-medium">Situação</th>
               <th className="px-3 py-2 font-medium">Total</th>
               <th className="px-3 py-2 font-medium">Criado em</th>
-              <th className="px-3 py-2 font-medium">Ação</th>
+              <th className="px-3 py-2 font-medium">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -113,13 +103,22 @@ export function ListaPedidos({
                   {formatarDataHora(pedido.criado_em)}
                 </td>
                 <td className="px-3 py-2">
-                  <AcoesListaPedido pedido={pedido} />
+                  <AcoesListaPedido
+                    pedido={pedido}
+                    podeCancelarPedido={podeCancelarPedido}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <Paginacao
+        pagina={pagina}
+        totalPaginas={totalPaginas}
+        hrefPara={hrefPagina}
+      />
     </>
   );
 }

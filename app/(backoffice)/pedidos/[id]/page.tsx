@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { exigirAcesso } from "@/lib/permissoes";
+import { exigirAcesso, temAcesso } from "@/lib/permissoes";
 import {
   nomeExibicaoCliente,
   nomeMensagemWhatsAppCliente,
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export default async function PedidoPage({ params, searchParams }: Props) {
-  await exigirAcesso("pedidos");
+  const usuario = await exigirAcesso("pedidos");
   const { id: idBruto } = await params;
   const { modo } = await searchParams;
   const id = Number(idBruto);
@@ -43,10 +43,12 @@ export default async function PedidoPage({ params, searchParams }: Props) {
     },
   });
   if (!pedido) notFound();
+  const podeCancelarPedido = await temAcesso(usuario.id, "cancelar_pedido");
 
   return (
     <PedidoTela
       forcarLeitura={modo === "visualizar"}
+      podeCancelarPedido={podeCancelarPedido}
       pedido={{
         id: pedido.id,
         numero: pedido.numero,
@@ -74,6 +76,8 @@ export default async function PedidoPage({ params, searchParams }: Props) {
           tipo_preco_aplicado: item.tipo_preco_aplicado,
           produtoNome: item.produto.nome,
         })),
+        entregueEm: pedido.entregue_em,
+        recebidoPorNome: pedido.recebido_por_nome,
       }}
     />
   );
