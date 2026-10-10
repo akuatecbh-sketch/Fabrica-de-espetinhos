@@ -1,3 +1,4 @@
+import { VENDAS_LISTA_LIMITE } from "@/lib/paginacao";
 import { limitesDoPeriodoLocal } from "@/lib/periodo";
 import { prisma } from "@/lib/prisma";
 import { SELECT_USUARIO_RELACAO } from "@/lib/visibilidade";
@@ -80,6 +81,7 @@ export async function obterVendasHoje(
       finalizado_em: { gte: inicio, lt: fim },
     },
     orderBy: { finalizado_em: "desc" },
+    take: VENDAS_LISTA_LIMITE,
     include: {
       cliente: { select: { nome: true } },
       usuario: { select: SELECT_USUARIO_RELACAO },
@@ -90,16 +92,11 @@ export async function obterVendasHoje(
           danfe_url: true,
         },
       },
-      venda_item: {
-        include: {
-          produto: { select: { nome: true, vendido_por_peso: true } },
-        },
-        orderBy: { id: "asc" },
-      },
       venda_pagamento: {
         include: { forma_pagamento: { select: { nome: true } } },
         orderBy: { id: "asc" },
       },
+      _count: { select: { venda_item: true } },
     },
   });
 }

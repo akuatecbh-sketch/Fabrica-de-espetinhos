@@ -9,21 +9,14 @@ import {
   formatarDataHora,
   formatarHora,
   formatarPreco,
-  formatarQuantidade,
 } from "@/lib/format";
+import { VENDAS_LISTA_LIMITE } from "@/lib/paginacao";
 import { exigirAcesso } from "@/lib/permissoes";
 import {
   ehPeriodoHoje,
   periodoVendasDaUrl,
   tituloVendasPeriodo,
 } from "@/lib/periodo";
-import {
-  comFlagPeso,
-  itemUsaLinhaCompleta,
-  linhaItemVenda,
-  rotuloPrecoUnitarioItem,
-  rotuloQuantidadeItem,
-} from "@/lib/venda-item";
 import { nomeExibicao } from "@/lib/visibilidade";
 import { BadgeCategoriaPreco } from "../../badge-categoria-preco";
 import { CupomVendaBadge } from "./cupom-venda-badge";
@@ -101,6 +94,12 @@ export default async function VendasHojePage({ searchParams }: Props) {
         </p>
       ) : (
         <div className="flex flex-col gap-2">
+          {vendas.length >= VENDAS_LISTA_LIMITE ? (
+            <p className="text-sm text-texto-secundario">
+              Mostrando as {VENDAS_LISTA_LIMITE} vendas mais recentes deste
+              período. Abra a venda para ver os itens.
+            </p>
+          ) : null}
           {vendas.map((venda) => {
             const totais = totaisPagamento(
               venda.status === "cancelada"
@@ -147,8 +146,8 @@ export default async function VendasHojePage({ searchParams }: Props) {
                       <p className="flex flex-wrap items-center gap-2 text-sm text-zinc-600">
                         {venda.cliente?.nome ?? "Sem cliente"} ·{" "}
                         {nomeExibicao(venda.usuario, logado.perfil).nome} ·{" "}
-                        {venda.venda_item.length}{" "}
-                        {venda.venda_item.length === 1 ? "item" : "itens"}
+                        {venda._count.venda_item}{" "}
+                        {venda._count.venda_item === 1 ? "item" : "itens"}
                         <BadgeCategoriaPreco categoria={venda.tipo_preco} />
                       </p>
                       <p className="text-sm text-zinc-600">
@@ -184,85 +183,6 @@ export default async function VendasHojePage({ searchParams }: Props) {
                     nfce={venda.nfce}
                   />
                 </div>
-                <details>
-                  <summary className="cursor-pointer list-none border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 marker:content-none hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
-                    Clique para ver os itens
-                  </summary>
-                  <div className="border-t border-zinc-200 px-4 py-3">
-                  {venda.venda_item.length === 0 ? (
-                    <p className="text-sm text-zinc-600">Nenhum item nesta venda.</p>
-                  ) : (
-                    <>
-                      <ul className="flex flex-col gap-2 md:hidden">
-                        {venda.venda_item.map((item) => {
-                          const exibicao = comFlagPeso(item);
-                          return (
-                          <li
-                            key={item.id}
-                            className="flex items-start justify-between gap-3 text-sm"
-                          >
-                            <span className="min-w-0 break-words">
-                              {itemUsaLinhaCompleta(exibicao)
-                                ? linhaItemVenda(item.produto.nome, exibicao)
-                                : item.produto.nome}{" "}
-                              <BadgeCategoriaPreco
-                                categoria={item.tipo_preco_aplicado}
-                                ocultarVarejo
-                              />
-                            </span>
-                            {itemUsaLinhaCompleta(exibicao) ? null : (
-                              <span className="font-data shrink-0 text-texto-secundario">
-                                {formatarQuantidade(item.quantidade)} ×{" "}
-                                {formatarPreco(item.preco_unitario)}
-                              </span>
-                            )}
-                          </li>
-                          );
-                        })}
-                      </ul>
-                      <table className="hidden min-w-full text-left text-sm md:table">
-                      <thead className="text-zinc-600">
-                        <tr>
-                          <th className="py-1 pr-3 font-medium">Produto</th>
-                          <th className="py-1 pr-3 font-medium">Qtd</th>
-                          <th className="py-1 pr-3 font-medium">Preço unit.</th>
-                          <th className="py-1 font-medium">Subtotal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {venda.venda_item.map((item) => (
-                          <tr key={item.id} className="border-t border-zinc-100">
-                            <td className="py-1.5 pr-3">
-                              <span className="inline-flex flex-wrap items-center gap-2">
-                                {itemUsaLinhaCompleta(comFlagPeso(item))
-                                  ? linhaItemVenda(
-                                      item.produto.nome,
-                                      comFlagPeso(item),
-                                    )
-                                  : item.produto.nome}
-                                <BadgeCategoriaPreco
-                                  categoria={item.tipo_preco_aplicado}
-                                  ocultarVarejo
-                                />
-                              </span>
-                            </td>
-                            <td className="py-1.5 pr-3 font-data">
-                              {rotuloQuantidadeItem(comFlagPeso(item))}
-                            </td>
-                            <td className="py-1.5 pr-3 font-data">
-                              {rotuloPrecoUnitarioItem(comFlagPeso(item))}
-                            </td>
-                            <td className="py-1.5 font-data">
-                              {formatarPreco(item.subtotal)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    </>
-                  )}
-                </div>
-                </details>
               </article>
             );
           })}

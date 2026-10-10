@@ -7,6 +7,7 @@ import {
 } from "@/lib/cliente";
 import { CardRegistro } from "../card-registro";
 import { BadgeCategoriaPreco } from "../badge-categoria-preco";
+import { Paginacao } from "../paginacao";
 import { ExcluirClienteButton } from "./excluir-button";
 
 type ClienteLista = {
@@ -60,9 +61,15 @@ function AcoesCliente({
 export function ListaClientes({
   clientes,
   vazio,
+  pagina,
+  totalPaginas,
+  hrefPagina,
 }: {
   clientes: ClienteLista[];
   vazio: string;
+  pagina: number;
+  totalPaginas: number;
+  hrefPagina: (pagina: number) => string;
 }) {
   if (clientes.length === 0) {
     return <p className="text-sm text-texto-secundario">{vazio}</p>;
@@ -145,6 +152,12 @@ export function ListaClientes({
           </tbody>
         </table>
       </div>
+
+      <Paginacao
+        pagina={pagina}
+        totalPaginas={totalPaginas}
+        hrefPara={hrefPagina}
+      />
     </>
   );
 }

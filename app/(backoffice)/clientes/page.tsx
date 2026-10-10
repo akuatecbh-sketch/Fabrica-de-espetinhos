@@ -1,39 +1,56 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { soDigitos } from "@/lib/documento";
+import { LISTA_POR_PAGINA, paginaDaUrl } from "@/lib/paginacao";
 import { exigirAcesso } from "@/lib/permissoes";
 import { ListaClientes } from "./lista-clientes";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; pagina?: string }>;
 };
+
+function hrefListaClientes(params: { q?: string; pagina?: number }) {
+  const sp = new URLSearchParams();
+  if (params.q) sp.set("q", params.q);
+  if (params.pagina && params.pagina > 1) sp.set("pagina", String(params.pagina));
+  const qs = sp.toString();
+  return qs ? `/clientes?${qs}` : "/clientes";
+}
 
 export default async function ClientesPage({ searchParams }: Props) {
   await exigirAcesso("clientes");
-  const { q: buscaBruta } = await searchParams;
+  const { q: buscaBruta, pagina: paginaBruta } = await searchParams;
   const busca = (buscaBruta ?? "").trim();
   const digitos = soDigitos(busca);
+  const pagina = paginaDaUrl(paginaBruta);
+  const where = busca
+    ? {
+        OR: [
+          { nome: { contains: busca, mode: "insensitive" } },
+          { razao_social: { contains: busca, mode: "insensitive" } },
+          { nome_fantasia: { contains: busca, mode: "insensitive" } },
+          ...(digitos
+            ? [
+                { cpf: { contains: digitos } },
+                { cnpj: { contains: digitos } },
+              ]
+            : []),
+        ],
+      }
+    : undefined;
 
-  const clientes = await prisma.cliente.findMany({
-    where: busca
-      ? {
-          OR: [
-            { nome: { contains: busca, mode: "insensitive" } },
-            { razao_social: { contains: busca, mode: "insensitive" } },
-            { nome_fantasia: { contains: busca, mode: "insensitive" } },
-            ...(digitos
-              ? [
-                  { cpf: { contains: digitos } },
-                  { cnpj: { contains: digitos } },
-                ]
-              : []),
-          ],
-        }
-      : undefined,
-    orderBy: { nome: "asc" },
-  });
+  const [total, clientes] = await Promise.all([
+    prisma.cliente.count({ where }),
+    prisma.cliente.findMany({
+      where,
+      orderBy: { nome: "asc" },
+      skip: (pagina - 1) * LISTA_POR_PAGINA,
+      take: LISTA_POR_PAGINA,
+    }),
+  ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / LISTA_POR_PAGINA));
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,6 +84,11 @@ export default async function ClientesPage({ searchParams }: Props) {
 
       <ListaClientes
         clientes={clientes}
+        pagina={pagina}
+        totalPaginas={totalPaginas}
+        hrefPagina={(proxima) =>
+          hrefListaClientes({ q: busca || undefined, pagina: proxima })
+        }
         vazio={
           busca
             ? "Nenhum cliente encontrado para essa busca."

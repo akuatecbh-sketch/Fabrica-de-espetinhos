@@ -13,12 +13,14 @@ import { obterFaturamentoPeriodo } from "@/lib/faturamento";
 import { periodoFaturamentoDaUrl } from "@/lib/periodo";
 import { obterResumoDreMes } from "@/lib/resumo-financeiro";
 import type { Prisma } from "@/generated/prisma/client";
+import { LISTA_POR_PAGINA, paginaDaUrl } from "@/lib/paginacao";
 import { AbasFinanceiro } from "./abas";
 import { DespesasResumo } from "./despesas-resumo";
 import { FaturamentoPainel } from "./faturamento-painel";
 import { FiltrosContas } from "./filtros";
 import { ListaPagar } from "./lista-pagar";
 import { ListaReceber } from "./lista-receber";
+import { Paginacao } from "../paginacao";
 import { ResumoDre } from "./resumo-dre";
 import { TaxasPainel } from "./taxas-painel";
 
@@ -34,8 +36,27 @@ type Props = {
     mes?: string;
     tipo?: string;
     nova?: string;
+    pagina?: string;
   }>;
 };
+
+function hrefListaFinanceiro(params: {
+  aba: string;
+  status: string;
+  de: string;
+  ate: string;
+  tipo: string;
+  pagina?: number;
+}) {
+  const sp = new URLSearchParams();
+  sp.set("aba", params.aba);
+  if (params.status && params.status !== "aberta") sp.set("status", params.status);
+  if (params.de) sp.set("de", params.de);
+  if (params.ate) sp.set("ate", params.ate);
+  if (params.tipo && params.tipo !== "todos") sp.set("tipo", params.tipo);
+  if (params.pagina && params.pagina > 1) sp.set("pagina", String(params.pagina));
+  return `/financeiro?${sp.toString()}`;
+}
 
 function filtroPeriodo(de?: string, ate?: string) {
   const periodo: { gte?: Date; lte?: Date } = {};
@@ -111,22 +132,28 @@ async function AbaDespesas({
   de,
   ate,
   tipo,
+  pagina,
 }: {
   status: string;
   de: string;
   ate: string;
   tipo: string;
+  pagina: number;
 }) {
   const hoje = dataUtcMeiaNoite(dataLocalISO());
   const periodo = filtroPeriodo(de, ate);
-  const [contas, fixas, variaveis] = await Promise.all([
+  const where = wherePagar(status, hoje, periodo, tipo);
+  const [total, contas, fixas, variaveis] = await Promise.all([
+    prisma.conta_pagar.count({ where }),
     prisma.conta_pagar.findMany({
-      where: wherePagar(status, hoje, periodo, tipo),
+      where,
       include: {
         fornecedor: true,
         categoria_financeira: true,
       },
       orderBy: [{ data_vencimento: "asc" }, { id: "asc" }],
+      skip: (pagina - 1) * LISTA_POR_PAGINA,
+      take: LISTA_POR_PAGINA,
     }),
     prisma.conta_pagar.aggregate({
       where: {
@@ -166,6 +193,20 @@ async function AbaDespesas({
         tipo={tipo}
       />
       <ListaPagar contas={contas} />
+      <Paginacao
+        pagina={pagina}
+        totalPaginas={Math.max(1, Math.ceil(total / LISTA_POR_PAGINA))}
+        hrefPara={(proxima) =>
+          hrefListaFinanceiro({
+            aba: "despesas",
+            status,
+            de,
+            ate,
+            tipo,
+            pagina: proxima,
+          })
+        }
+      />
     </>
   );
 }
@@ -174,23 +215,45 @@ async function AbaReceber({
   status,
   de,
   ate,
+  pagina,
 }: {
   status: string;
   de: string;
   ate: string;
+  pagina: number;
 }) {
   const hoje = dataUtcMeiaNoite(dataLocalISO());
   const periodo = filtroPeriodo(de, ate);
-  const contas = await prisma.conta_receber.findMany({
-    where: whereReceber(status, hoje, periodo),
-    include: { cliente: true },
-    orderBy: [{ data_vencimento: "asc" }, { id: "asc" }],
-  });
+  const where = whereReceber(status, hoje, periodo);
+  const [total, contas] = await Promise.all([
+    prisma.conta_receber.count({ where }),
+    prisma.conta_receber.findMany({
+      where,
+      include: { cliente: true },
+      orderBy: [{ data_vencimento: "asc" }, { id: "asc" }],
+      skip: (pagina - 1) * LISTA_POR_PAGINA,
+      take: LISTA_POR_PAGINA,
+    }),
+  ]);
 
   return (
     <>
       <FiltrosContas aba="receber" status={status} de={de} ate={ate} />
       <ListaReceber contas={contas} />
+      <Paginacao
+        pagina={pagina}
+        totalPaginas={Math.max(1, Math.ceil(total / LISTA_POR_PAGINA))}
+        hrefPara={(proxima) =>
+          hrefListaFinanceiro({
+            aba: "receber",
+            status,
+            de,
+            ate,
+            tipo: "todos",
+            pagina: proxima,
+          })
+        }
+      />
     </>
   );
 }
@@ -247,6 +310,7 @@ export default async function FinanceiroPage({ searchParams }: Props) {
   const ate = params.ate && ehIsoData(params.ate) ? params.ate : "";
   const tipo =
     params.tipo && ehTipoCategoriaPagar(params.tipo) ? params.tipo : "todos";
+  const pagina = paginaDaUrl(params.pagina);
 
   const resumo = aba === "resumo" ? await obterResumoDreMes(mes) : null;
   const faturamento =
@@ -294,10 +358,16 @@ export default async function FinanceiroPage({ searchParams }: Props) {
         <FaturamentoPainel dados={faturamento} />
       ) : null}
       {aba === "despesas" ? (
-        <AbaDespesas status={status} de={de} ate={ate} tipo={tipo} />
+        <AbaDespesas
+          status={status}
+          de={de}
+          ate={ate}
+          tipo={tipo}
+          pagina={pagina}
+        />
       ) : null}
       {aba === "receber" ? (
-        <AbaReceber status={status} de={de} ate={ate} />
+        <AbaReceber status={status} de={de} ate={ate} pagina={pagina} />
       ) : null}
       {aba === "taxas" ? (
         <AbaTaxas nova={params.nova === "1"} />

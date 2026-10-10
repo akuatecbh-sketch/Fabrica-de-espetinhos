@@ -3,6 +3,7 @@ import { formatarPreco, formatarQuantidade } from "@/lib/format";
 import { estoqueCritico } from "@/lib/estoque-critico";
 import { produtoSemDadosFiscais } from "@/lib/classificacao-fiscal";
 import { CardRegistro } from "../card-registro";
+import { Paginacao } from "../paginacao";
 import { AlternarAtivoButton } from "./alternar-ativo-button";
 
 type ProdutoLista = {
@@ -79,9 +80,15 @@ function AcoesProduto({ produto }: { produto: ProdutoLista }) {
 export function ListaProdutos({
   produtos,
   vazio,
+  pagina,
+  totalPaginas,
+  hrefPagina,
 }: {
   produtos: ProdutoLista[];
   vazio: string;
+  pagina: number;
+  totalPaginas: number;
+  hrefPagina: (pagina: number) => string;
 }) {
   if (produtos.length === 0) {
     return <p className="text-sm text-texto-secundario">{vazio}</p>;
@@ -199,6 +206,12 @@ export function ListaProdutos({
           </tbody>
         </table>
       </div>
+
+      <Paginacao
+        pagina={pagina}
+        totalPaginas={totalPaginas}
+        hrefPara={hrefPagina}
+      />
     </>
   );
 }
