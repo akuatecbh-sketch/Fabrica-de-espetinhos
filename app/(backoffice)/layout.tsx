@@ -28,15 +28,15 @@ export default async function BackofficeLayout({
     return children;
   }
 
-  const [usuario, caixa] = await Promise.all([
-    obterUsuarioSessao(),
-    obterCaixaAberto(),
-  ]);
+  const usuario = await obterUsuarioSessao();
   if (!usuario.ativo) {
     await signOut({ redirectTo: "/login" });
   }
   if (usuario.senha_provisoria) redirect("/trocar-senha");
-  const acessos = await temAcessoMultiplo(usuario.id);
+  const [caixa, acessos] = await Promise.all([
+    obterCaixaAberto(),
+    temAcessoMultiplo(usuario.id),
+  ]);
   return (
     <BackofficeShell
       caixaAberto={caixa != null}

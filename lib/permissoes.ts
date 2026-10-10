@@ -1,59 +1,14 @@
 import { redirect } from "next/navigation";
+import { carregarContextoAcesso } from "@/lib/contexto-acesso";
 import { prisma } from "@/lib/prisma";
 import type { MapaAcessos } from "@/lib/permissoes-rotas";
+import { resolverAcesso } from "@/lib/resolver-acesso";
 import { obterUsuarioSessao } from "@/lib/usuario-sessao";
 
 export type { MapaAcessos } from "@/lib/permissoes-rotas";
 export { CHAVE_POR_HREF, moduloChaveDaRota } from "@/lib/permissoes-rotas";
 
-function resolverAcesso(params: {
-  perfil: string;
-  somenteSuperAdmin: boolean;
-  excecao: boolean | undefined;
-  perfilPode: boolean | undefined;
-}) {
-  if (params.somenteSuperAdmin) {
-    return params.perfil === "super_admin";
-  }
-  if (params.excecao !== undefined) return params.excecao;
-  return params.perfilPode ?? false;
-}
-
-export async function temAcesso(
-  usuarioId: number,
-  moduloChave: string,
-): Promise<boolean> {
-  const [usuario, modulo] = await Promise.all([
-    prisma.usuario.findUnique({
-      where: { id: usuarioId },
-      select: { perfil: true, ativo: true },
-    }),
-    prisma.modulo.findUnique({
-      where: { chave: moduloChave },
-      select: { id: true, somente_super_admin: true },
-    }),
-  ]);
-
-  if (!usuario?.ativo || !modulo) return false;
-
-  if (modulo.somente_super_admin) {
-    return usuario.perfil === "super_admin";
-  }
-
-  const excecao = await prisma.permissao_usuario.findFirst({
-    where: { usuario_id: usuarioId, modulo_id: modulo.id },
-    select: { pode_acessar: true },
-  });
-  if (excecao) return excecao.pode_acessar;
-
-  const doPerfil = await prisma.permissao_perfil.findFirst({
-    where: { perfil: usuario.perfil, modulo_id: modulo.id },
-    select: { pode_acessar: true },
-  });
-  return doPerfil?.pode_acessar ?? false;
-}
-
-export async function temAcessoMultiplo(usuarioId: number): Promise<MapaAcessos> {
+async function mapaAcessosAvulso(usuarioId: number): Promise<MapaAcessos> {
   const [usuario, modulos] = await Promise.all([
     prisma.usuario.findUnique({
       where: { id: usuarioId },
@@ -97,6 +52,32 @@ export async function temAcessoMultiplo(usuarioId: number): Promise<MapaAcessos>
     });
   }
   return mapa;
+}
+
+export async function temAcesso(
+  usuarioId: number,
+  moduloChave: string,
+): Promise<boolean> {
+  const contexto = await carregarContextoAcesso();
+  if (contexto.estado === "ok" && contexto.usuario.id === usuarioId) {
+    return Boolean(contexto.acessos[moduloChave]);
+  }
+  if (contexto.estado === "ok") {
+    const mapa = await mapaAcessosAvulso(usuarioId);
+    return Boolean(mapa[moduloChave]);
+  }
+  return false;
+}
+
+export async function temAcessoMultiplo(usuarioId: number): Promise<MapaAcessos> {
+  const contexto = await carregarContextoAcesso();
+  if (contexto.estado === "ok" && contexto.usuario.id === usuarioId) {
+    return contexto.acessos;
+  }
+  if (contexto.estado === "ok") {
+    return mapaAcessosAvulso(usuarioId);
+  }
+  return {};
 }
 
 export async function exigirAcesso(moduloChave: string) {
