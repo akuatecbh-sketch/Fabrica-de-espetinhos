@@ -6,6 +6,7 @@ import {
   podeGerenciarUsuario,
   podeSalvarPermissaoPerfil,
   podeSalvarPermissaoUsuario,
+  rotaPublica,
 } from "./acesso";
 
 describe("hierarquia proprietario", () => {
@@ -82,6 +83,12 @@ describe("hierarquia proprietario", () => {
         somenteSuperAdmin: false,
       }),
     ).toBe(true);
+  });
+
+  it("keepalive é público no auth; outras APIs não", () => {
+    expect(rotaPublica("/api/keepalive")).toBe(true);
+    expect(rotaPublica("/api/faq/search")).toBe(false);
+    expect(rotaPublica("/api/logo")).toBe(false);
   });
 
   it("ninguém perde Permissões ao mudar o próprio perfil", () => {

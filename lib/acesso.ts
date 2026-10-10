@@ -189,6 +189,7 @@ export function rotaPublica(pathname: string) {
     pathname.startsWith("/painel/") ||
     pathname.startsWith("/pedidos/publico") ||
     pathname.startsWith("/api/auth") ||
+    pathname === "/api/keepalive" ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   );

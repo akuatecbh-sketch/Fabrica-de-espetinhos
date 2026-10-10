@@ -11,7 +11,8 @@
  * não roda em Edge Runtime.
  *
  * Rotas públicas (lib/acesso.ts → rotaPublica): /login, /painel,
- * /pedidos/publico/*, /api/auth, /_next e favicon. O header x-pathname
+ * /pedidos/publico/*, /api/auth, /api/keepalive, /_next e favicon.
+ * O header x-pathname
  * permite ao layout do backoffice não exigir sessão nem Sidebar na
  * revisão pública do pedido.
  */
