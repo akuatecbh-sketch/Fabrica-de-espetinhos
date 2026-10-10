@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "4mb",
     },
+    optimizePackageImports: ["lucide-react"],
   },
   serverExternalPackages: [
     "@prisma/client",
