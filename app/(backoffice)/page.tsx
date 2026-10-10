@@ -1,5 +1,5 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import {
   ContactRound,
@@ -14,7 +14,7 @@ import { temAcessoMultiplo } from "@/lib/permissoes";
 import { obterUsuarioSessao } from "@/lib/sessao";
 import { ContagemValor } from "./contagem-valor";
 
-const DashboardGraficos = dynamic(
+const DashboardGraficos = nextDynamic(
   () => import("./dashboard-graficos").then((mod) => mod.DashboardGraficos),
   {
     ssr: false,

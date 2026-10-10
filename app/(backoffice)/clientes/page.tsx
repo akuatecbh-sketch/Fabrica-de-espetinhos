@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { soDigitos } from "@/lib/documento";
 import { LISTA_POR_PAGINA, paginaDaUrl } from "@/lib/paginacao";
@@ -25,7 +26,7 @@ export default async function ClientesPage({ searchParams }: Props) {
   const busca = (buscaBruta ?? "").trim();
   const digitos = soDigitos(busca);
   const pagina = paginaDaUrl(paginaBruta);
-  const where = busca
+  const where: Prisma.clienteWhereInput | undefined = busca
     ? {
         OR: [
           { nome: { contains: busca, mode: "insensitive" } },
