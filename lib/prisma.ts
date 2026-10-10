@@ -1,4 +1,5 @@
 import "server-only";
+import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -10,15 +11,25 @@ if (!connectionString) {
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
+  pool?: Pool;
 };
 
-function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString });
+function createPool() {
+  return new Pool({
+    connectionString,
+    max: 4,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
+  });
+}
+
+function createPrismaClient(pool: Pool) {
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+const pool = globalForPrisma.pool ?? createPool();
+export const prisma = globalForPrisma.prisma ?? createPrismaClient(pool);
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.pool = pool;
+globalForPrisma.prisma = prisma;
