@@ -64,6 +64,7 @@ function AcoesProduto({ produto }: { produto: ProdutoLista }) {
     <>
       <Link
         href={`/produtos/${produto.id}/editar`}
+        prefetch={false}
         className="inline-flex min-h-11 items-center text-texto-primario underline-offset-2 hover:underline md:min-h-0"
       >
         Editar

@@ -29,6 +29,7 @@ function AcoesNota({ nota }: { nota: NotaLista }) {
     <>
       <Link
         href={`/compras/${nota.id}`}
+        prefetch={false}
         className="inline-flex min-h-11 items-center text-texto-primario underline-offset-2 hover:underline md:min-h-0"
       >
         {nota.status === "lancada" ? "Continuar" : "Ver"}

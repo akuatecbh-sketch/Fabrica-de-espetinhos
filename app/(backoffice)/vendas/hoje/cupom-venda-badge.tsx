@@ -18,6 +18,7 @@ export function CupomVendaBadge({
         </span>
         <Link
           href={`/vendas/${vendaId}/cupom`}
+          prefetch={false}
           className="text-[11px] font-medium text-zinc-600 underline-offset-2 hover:underline"
         >
           Imprimir

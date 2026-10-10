@@ -38,7 +38,11 @@ export function AcoesListaPedido({
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-      <Link href={`/pedidos/${pedido.id}/imprimir`} className={classeLink}>
+      <Link
+        href={`/pedidos/${pedido.id}/imprimir`}
+        prefetch={false}
+        className={classeLink}
+      >
         Imprimir
       </Link>
       {motivoEditar ? (
@@ -48,6 +52,7 @@ export function AcoesListaPedido({
       ) : (
         <Link
           href={`/pedidos/${pedido.id}`}
+          prefetch={false}
           className={classeLink}
           onClick={(evento) => {
             if (avisarEdicao && !confirm(AVISO_EDICAO)) {

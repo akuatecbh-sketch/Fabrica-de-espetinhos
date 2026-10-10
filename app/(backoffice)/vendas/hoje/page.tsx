@@ -128,6 +128,7 @@ export default async function VendasHojePage({ searchParams }: Props) {
               >
                 <Link
                   href={`/vendas/${venda.id}`}
+                  prefetch={false}
                   className="block px-4 py-3 hover:bg-zinc-50"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">

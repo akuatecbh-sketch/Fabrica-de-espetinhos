@@ -23,6 +23,7 @@ function AcoesUsuario({ usuario }: { usuario: UsuarioLista }) {
     <>
       <Link
         href={`/usuarios/${usuario.id}/editar`}
+        prefetch={false}
         className="inline-flex min-h-11 items-center text-texto-primario underline-offset-2 hover:underline md:min-h-0"
       >
         Editar
