@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { carregarContextoAcesso } from "@/lib/contexto-acesso";
+import { mapaAcessosAntigo } from "@/lib/mapa-acessos";
 import { prisma } from "@/lib/prisma";
 import type { MapaAcessos } from "@/lib/permissoes-rotas";
-import { resolverAcesso } from "@/lib/resolver-acesso";
 import { obterUsuarioSessao } from "@/lib/usuario-sessao";
 
 export type { MapaAcessos } from "@/lib/permissoes-rotas";
@@ -19,10 +19,9 @@ async function mapaAcessosAvulso(usuarioId: number): Promise<MapaAcessos> {
     }),
   ]);
 
-  const vazio: MapaAcessos = Object.fromEntries(
-    modulos.map((modulo) => [modulo.chave, false]),
-  );
-  if (!usuario?.ativo) return vazio;
+  if (!usuario) {
+    return Object.fromEntries(modulos.map((modulo) => [modulo.chave, false]));
+  }
 
   const [excecoes, doPerfil] = await Promise.all([
     prisma.permissao_usuario.findMany({
@@ -35,23 +34,13 @@ async function mapaAcessosAvulso(usuarioId: number): Promise<MapaAcessos> {
     }),
   ]);
 
-  const porExcecao = new Map(
-    excecoes.map((linha) => [linha.modulo_id, linha.pode_acessar]),
-  );
-  const porPerfil = new Map(
-    doPerfil.map((linha) => [linha.modulo_id, linha.pode_acessar]),
-  );
-
-  const mapa: MapaAcessos = {};
-  for (const modulo of modulos) {
-    mapa[modulo.chave] = resolverAcesso({
-      perfil: usuario.perfil,
-      somenteSuperAdmin: modulo.somente_super_admin,
-      excecao: porExcecao.get(modulo.id),
-      perfilPode: porPerfil.get(modulo.id),
-    });
-  }
-  return mapa;
+  return mapaAcessosAntigo({
+    perfil: usuario.perfil,
+    ativo: usuario.ativo,
+    modulos,
+    excecoes,
+    doPerfil,
+  });
 }
 
 export async function temAcesso(

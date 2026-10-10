@@ -1,16 +1,9 @@
 import { cache } from "react";
 import { auth } from "@/auth";
+import { montarMapaAcessos, type LinhaAcesso } from "@/lib/mapa-acessos";
 import type { MapaAcessos } from "@/lib/permissoes-rotas";
 import { prisma } from "@/lib/prisma";
-import { resolverAcesso } from "@/lib/resolver-acesso";
 import type { UsuarioSessao } from "@/lib/usuario-tipos";
-
-type LinhaAcesso = {
-  chave: string;
-  somente_super_admin: boolean;
-  perfil_pode: boolean | null;
-  excecao: boolean | null;
-};
 
 export type ContextoAcessoOk = {
   estado: "ok";
@@ -29,10 +22,6 @@ function buscarCaixaAberto() {
     where: { status: "aberto" },
     orderBy: { data_abertura: "desc" },
   });
-}
-
-function boolOuUndefined(valor: boolean | null): boolean | undefined {
-  return valor === null ? undefined : valor;
 }
 
 export const carregarContextoAcesso = cache(
@@ -70,16 +59,11 @@ export const carregarContextoAcesso = cache(
 
     if (!usuario || !usuario.ativo) return { estado: "invalido" };
 
-    const acessos: MapaAcessos = {};
-    for (const linha of linhas) {
-      acessos[linha.chave] = resolverAcesso({
-        perfil: usuario.perfil,
-        somenteSuperAdmin: linha.somente_super_admin,
-        excecao: boolOuUndefined(linha.excecao),
-        perfilPode: boolOuUndefined(linha.perfil_pode),
-      });
-    }
-
-    return { estado: "ok", usuario, acessos, caixa };
+    return {
+      estado: "ok",
+      usuario,
+      acessos: montarMapaAcessos(usuario.perfil, linhas),
+      caixa,
+    };
   },
 );
