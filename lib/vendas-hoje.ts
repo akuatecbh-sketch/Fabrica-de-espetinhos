@@ -29,29 +29,41 @@ export async function obterResumoVendasHoje(
   periodo?: { de: string; ate: string },
 ): Promise<ResumoVendasHoje> {
   const { inicio, fim } = limitesConsulta(periodo);
-  const [quantidade, faturamento] = await Promise.all([
-    prisma.venda.count({
-      where: {
-        status: "finalizada",
-        finalizado_em: { gte: inicio, lt: fim },
-      },
-    }),
-    prisma.venda_pagamento.aggregate({
-      where: {
-        status: "confirmado",
-        venda: {
-          status: "finalizada",
-          finalizado_em: { gte: inicio, lt: fim },
-        },
-      },
-      _sum: { valor: true, valor_liquido: true },
-    }),
-  ]);
+  const [linha] = await prisma.$queryRaw<
+    { quantidade: number; bruto: unknown; liquido: unknown }[]
+  >`
+    SELECT
+      (
+        SELECT COUNT(*)::int
+        FROM venda
+        WHERE status = 'finalizada'
+          AND finalizado_em >= ${inicio}
+          AND finalizado_em < ${fim}
+      ) AS quantidade,
+      COALESCE((
+        SELECT SUM(vp.valor)
+        FROM venda_pagamento vp
+        INNER JOIN venda v ON v.id = vp.venda_id
+        WHERE vp.status = 'confirmado'
+          AND v.status = 'finalizada'
+          AND v.finalizado_em >= ${inicio}
+          AND v.finalizado_em < ${fim}
+      ), 0) AS bruto,
+      COALESCE((
+        SELECT SUM(vp.valor_liquido)
+        FROM venda_pagamento vp
+        INNER JOIN venda v ON v.id = vp.venda_id
+        WHERE vp.status = 'confirmado'
+          AND v.status = 'finalizada'
+          AND v.finalizado_em >= ${inicio}
+          AND v.finalizado_em < ${fim}
+      ), 0) AS liquido
+  `;
 
   return {
-    quantidade,
-    faturamentoBruto: numero(faturamento._sum.valor),
-    faturamentoLiquido: numero(faturamento._sum.valor_liquido),
+    quantidade: numero(linha?.quantidade),
+    faturamentoBruto: numero(linha?.bruto),
+    faturamentoLiquido: numero(linha?.liquido),
   };
 }
 

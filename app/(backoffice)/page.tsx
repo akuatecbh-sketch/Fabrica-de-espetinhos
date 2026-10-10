@@ -1,4 +1,5 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import {
   ContactRound,
@@ -10,13 +11,22 @@ import {
 } from "lucide-react";
 import { obterDadosDashboard } from "@/lib/dashboard";
 import { temAcessoMultiplo } from "@/lib/permissoes";
-import {
-  obterProdutosMaisVendidos,
-  periodoPadraoRelatorio,
-} from "@/lib/relatorios";
 import { obterUsuarioSessao } from "@/lib/sessao";
 import { ContagemValor } from "./contagem-valor";
-import { DashboardGraficos } from "./dashboard-graficos";
+
+const DashboardGraficos = dynamic(
+  () => import("./dashboard-graficos").then((mod) => mod.DashboardGraficos),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="h-80 animate-pulse rounded-lg border border-borda bg-zinc-100" />
+        <div className="h-80 animate-pulse rounded-lg border border-borda bg-zinc-100" />
+        <div className="h-80 animate-pulse rounded-lg border border-borda bg-zinc-100" />
+      </div>
+    ),
+  },
+);
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -176,15 +186,9 @@ function Linha({
 }
 
 export default async function DashboardPage() {
-  const periodoMaisVendidos = periodoPadraoRelatorio();
-  const [usuario, dados, maisVendidos] = await Promise.all([
+  const [usuario, dados] = await Promise.all([
     obterUsuarioSessao(),
     obterDadosDashboard(),
-    obterProdutosMaisVendidos({
-      de: periodoMaisVendidos.de,
-      ate: periodoMaisVendidos.ate,
-      limite: 5,
-    }),
   ]);
   const acessos = await temAcessoMultiplo(usuario.id);
   const caixaAberto = dados.caixa != null;
@@ -309,10 +313,7 @@ export default async function DashboardPage() {
       <DashboardGraficos
         faturamento7Dias={dados.faturamento7Dias}
         vendasPorForma={dados.vendasPorForma}
-        produtosMaisVendidos={maisVendidos.itens.map((item) => ({
-          nome: item.nome,
-          quantidade: item.quantidade,
-        }))}
+        produtosMaisVendidos={dados.produtosMaisVendidos}
       />
     </div>
   );
