@@ -1,5 +1,4 @@
 import Link from "next/link";
-import nextDynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import {
   ContactRound,
@@ -13,20 +12,7 @@ import { obterDadosDashboard } from "@/lib/dashboard";
 import { temAcessoMultiplo } from "@/lib/permissoes";
 import { obterUsuarioSessao } from "@/lib/sessao";
 import { ContagemValor } from "./contagem-valor";
-
-const DashboardGraficos = nextDynamic(
-  () => import("./dashboard-graficos").then((mod) => mod.DashboardGraficos),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <div className="h-80 animate-pulse rounded-lg border border-borda bg-zinc-100" />
-        <div className="h-80 animate-pulse rounded-lg border border-borda bg-zinc-100" />
-        <div className="h-80 animate-pulse rounded-lg border border-borda bg-zinc-100" />
-      </div>
-    ),
-  },
-);
+import { DashboardGraficosClient } from "./dashboard-graficos-client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -310,7 +296,7 @@ export default async function DashboardPage() {
         ) : null}
       </div>
 
-      <DashboardGraficos
+      <DashboardGraficosClient
         faturamento7Dias={dados.faturamento7Dias}
         vendasPorForma={dados.vendasPorForma}
         produtosMaisVendidos={dados.produtosMaisVendidos}
